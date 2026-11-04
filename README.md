@@ -1,6 +1,8 @@
-# Sprout — frontend draft
+# Sprout
 
-A locally runnable, responsive neo-brutalist website concept for Sprout. React 18 + Vite + JavaScript. No keys, accounts, external fonts, or backend needed.
+Financial literacy for kids, run through NGOs. A React + Vite website (`client/`) and a small
+Fastify + TypeScript API (`server/`) that will power the AI Paisa Mentor. New here? Read
+[`docs/LEARN.md`](docs/LEARN.md). The build plan is in [`PHASES.md`](PHASES.md).
 
 ## Run
 
@@ -11,13 +13,20 @@ npm install
 npm run dev
 ```
 
-Open the Local URL printed by Vite (normally http://127.0.0.1:5173).
+This starts the website on http://127.0.0.1:5173 and the API on http://127.0.0.1:8787 in one
+terminal. The website forwards `/api/*` to the API, so you only ever open port 5173.
 
-```sh
-npm test
-npm run build
-npm run preview
-```
+Optional: to use the real AI mentor (from Phase 1), copy `server/.env.example` to `server/.env`
+and paste your own Google AI Studio key. Without a key everything still runs, and the mentor
+uses prepared answers.
+
+| Command | What it does |
+| --- | --- |
+| `npm test` | Unit tests for the client maths and the server routes |
+| `npm run test:e2e` | Playwright browser tests in Chromium at laptop and phone size (first time: `npx playwright install chromium`) |
+| `npm run test:all` | Both of the above |
+| `npm run build` | Production build of website and API |
+| `npm run preview` | Serves the production build (website on port 4173, API on 8787) |
 
 Installation needs internet; the installed app and bundled fonts run locally without network access. Optional narration uses the browser's available speech engine; it may not provide an offline voice.
 
@@ -40,6 +49,11 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 ## Files
 
 - `LLM_CONTEXT.md`: self-contained project context and implementation handoff for another LLM.
+- `PHASES.md`: agreed decisions and the phase-by-phase build plan.
+- `docs/LEARN.md`: guided tour of the codebase for people learning it.
+- `docs/mentor-api.md`: the API contract between website and server.
+- `server/src/`: Fastify API (`config.ts` settings, `app.ts` app builder, `routes/health.ts`, `index.ts` entry).
+- `e2e/`: Playwright browser tests (`fixtures.js` fails any test that logs a browser error).
 
 - `client/src/App.jsx`: page sections and bounded sample interactions.
 - `client/src/components/Art.jsx`: original SVG icons, jars, flower and cursor mascot.
@@ -51,12 +65,16 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 
 ## Scope boundary
 
-This is a frontend draft, not the hackathon's complete working financial application. It has no authentication, database, server approvals, live AI, PayPal integration, or on-chain writes. A refresh resets sample state. Real payout permission, independent oversight, durable accounting, and fraud threat modeling remain backend work. The client role simulation is not an authorization system.
+This is a demo, not a complete financial application. The API server currently only answers a health check; the AI mentor arrives in Phase 1. There is no authentication, database, server approvals, PayPal integration, or on-chain writes; those are planned as clearly labelled previews. A refresh resets sample state. Real payout permission, independent oversight, durable accounting, and fraud threat modeling remain backend work. The client role simulation is not an authorization system.
 
 ## Dependencies
 
 - React + React DOM: UI components and state.
 - Vite: local development and production bundling.
 - @fontsource/space-grotesk + @fontsource/dm-sans: self-hosted fonts, so no third-party font request is required at runtime.
+- Fastify: the API server. zod: checks settings and request data.
+- TypeScript + tsx (dev): typed server code, run with auto-restart.
+- concurrently (dev): runs website and API in one terminal.
+- @playwright/test (dev): browser tests.
 
 All illustrations are authored in this repository. Grail is a composition and motion reference only; no Grail assets are bundled.

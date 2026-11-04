@@ -1,4 +1,37 @@
-# Frontend draft verification
+# Verification
+
+## Phase 0: server, proxy and browser tests (2026-11-05)
+
+Fresh results from this phase, on Windows 11, Node 24.20.0, Chromium via Playwright 1.64.
+
+- `npm test`: 9 passed (client: 5 maths/timing tests; server: 4 route/config tests). 0 failed.
+- `npx playwright test`: 65 passed, 5 skipped by design (desktop-only checks on phone and the
+  reverse), 0 failed. Run twice in a row (`--repeat-each=2`): 130 passed, 0 failed, no flaky tests.
+- `npm run build`: website built with Vite 6.4.5; server compiled with `tsc` to `server/dist`.
+- Compiled server started with `node dist/index.js` and answered `/api/health` with
+  `{"ok":true,"service":"sprout-server","mentor":{"aiConfigured":false}}`.
+- `npm run dev` started both processes; `/api/health` answered 200 through the Vite proxy in the
+  in-app browser.
+
+Browser tests cover (desktop 1366×768 and Pixel 7 phone): page title and headline, no sideways
+scroll, all tour sections present, skip link, header links, motion toggle, OS reduced motion,
+earn activity (reward, disable, reset, "See your jars"), jar selection, jar split conservation at
+0/35/100%, goal picker for three goal/amount pairs, goal line visibility, years slider, all six
+mentor questions' typing then answer (fake clock), reduced-motion mentor, trust timeline full
+cycle and replay, tour open/focus/Escape/focus return, next/previous incl. fast clicks, pause and
+resume, full 75-second playthrough and replay (fake clock), voice toggle, all tour entry points,
+phone menu open/navigate/close and Escape, API health and JSON 404 through the proxy. Every test
+also fails if the page logs a console error.
+
+Bug found by these tests and fixed: the tour clock lost time when the browser was busy, because
+the time step was computed inside a delayed React state update (`client/src/components/Tour.jsx`).
+
+Not covered yet: the AI mentor (Phase 1), real screen-reader use, audible voice quality.
+
+---
+
+## Earlier verification (historical, 2026-11-04, before Phase 0)
+
 
 Verified on 2026-11-04. All three requested delivery stages are complete for the frontend scope.
 

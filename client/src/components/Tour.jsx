@@ -52,8 +52,11 @@ export default function Tour({ open, onClose, returnFocusRef }) {
     let previous = performance.now();
     const timer = setInterval(() => {
       const now = performance.now();
-      setElapsed((value) => Math.min(tourDuration, value + (now - previous) / 1000));
+      // Work out the step size now. Reading `previous` inside the updater would be a bug: React
+      // may run it later, after `previous` has moved on, and the time would be lost.
+      const delta = (now - previous) / 1000;
       previous = now;
+      setElapsed((value) => Math.min(tourDuration, value + delta));
     }, 100);
     return () => clearInterval(timer);
   }, [open, paused, complete]);

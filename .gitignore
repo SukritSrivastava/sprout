@@ -4,3 +4,6 @@ dist/
 *.local
 .DS_Store
 qa/
+playwright-report/
+test-results/
+blob-report/

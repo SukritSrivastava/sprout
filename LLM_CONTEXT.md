@@ -1,10 +1,10 @@
 # Sprout: complete project handoff for another LLM
 
-Snapshot: 2026-11-04. This document describes the code and local documentation available at that date. Read it first when continuing this project. Source code takes precedence if this snapshot becomes stale.
+Snapshot: 2026-11-04 (updated after the polish commit and the planning session). Read this first, then `PHASES.md` for the agreed roadmap and decisions. Source code takes precedence if this snapshot becomes stale.
 
 ## Handoff prompt
 
-You are continuing Sprout, a financial-literacy frontend concept for teens aged 15–17, developed in a PayPal AI hackathon workspace. Preserve the existing working interactions, visual identity, accessibility behavior, and honest demo labels unless the user requests changes. Inspect the relevant source before editing. Distinguish implemented behavior from proposed features. Do not claim that payments, AI, authentication, or blockchain work: they are not implemented. Ask the user for their next objective if none is supplied. This file is context, not a request to implement every future feature.
+You are continuing Sprout, a financial-literacy frontend concept (current copy targets teens aged 15–17; the agreed audience is 8–17, see the roadmap at the end), developed in a PayPal AI hackathon workspace. Preserve the existing working interactions, visual identity, accessibility behavior, and honest demo labels unless the user requests changes. Inspect the relevant source before editing. Distinguish implemented behavior from proposed features. Do not claim that payments, AI, authentication, or blockchain work: they are not implemented. Ask the user for their next objective if none is supplied. This file is context, not a request to implement every future feature. The user requires: ask before any major change and before any tech decision not already recorded in `PHASES.md`; build frontend and backend tracks in parallel; keep this file current after every phase.
 
 ## Product and scope
 
@@ -18,9 +18,9 @@ Only the current source, README, DESIGN.md, and VERIFICATION.md were available w
 
 Application root: `sprout/` within the surrounding `Paypal AI hack` workspace. Run npm commands from `sprout/`, not the parent directory. The sibling `skill-install-staging/` contains agent skill material and is not application code.
 
-The app has its own `.git` directory inside a parent workspace that also has `.git`. At inspection, the app's branch was `main`, with no commits and all app files untracked. Check `git status` in the intended repository before committing. No commit, push, or deployment was performed for this handoff.
+The app has its own `.git` directory inside a parent workspace that also has `.git`. Commit only in `sprout/`. History on `main`: `56eece5` baseline, `1827deb` Prettier format only, `7f2f7b1` polish (projector text sizes, goal picker, mentor typing, count-ups, fixes). Nothing has been pushed or deployed. `.git/sprout-original/` holds untracked copies used once for a VS Code side-by-side comparison and can be deleted.
 
-Stack: JavaScript, React 18, React DOM, Vite 6, npm workspaces, plain CSS, and original SVG/CSS illustrations. No TypeScript, router, UI library, state library, chart library, server framework, or external AI SDK is present. The MIT license is in `LICENSE`.
+Stack: website in JavaScript, React 18, React DOM, Vite 6, plain CSS, original SVG/CSS illustrations (no router, UI library, state library or chart library). API in `server/`: Fastify 5, TypeScript 7, zod 4, run with tsx in dev and compiled with tsc. npm workspaces `client` and `server`. Dev tools: concurrently, @playwright/test (Chromium). No AI SDK is installed yet (`@google/genai` arrives in Phase 1). The MIT license is in `LICENSE`.
 
 README specifies Node.js 22+ and npm:
 
@@ -35,7 +35,7 @@ npm run preview
 
 Development and preview bind to `127.0.0.1`. Vite normally prints `http://127.0.0.1:5173` for development; use its actual printed URL. Production output is `client/dist/`. Use the committed/present `package-lock.json` for exact resolved versions; manifest versions use compatible ranges. Installation requires internet. Installed app assets and fonts are local; optional browser speech may depend on device/network voices.
 
-Root scripts delegate dev/build/preview to the `client` workspace. Tests run `node --test client/src/lib/model.test.js`. No lint, end-to-end test, or CI script is configured. `.gitignore` excludes `node_modules/`, `dist/`, `.env`, `*.local`, `.DS_Store`, and `qa/`.
+Root scripts delegate dev/build/preview to the `client` workspace. `npm run dev` starts the website (127.0.0.1:5173) and API (127.0.0.1:8787) together via concurrently; `client/vite.config.js` proxies `/api` to the API. `npm test` runs client unit tests (5, `node --test`) and server tests (4, `node --import tsx --test`). `npm run test:e2e` runs Playwright (`playwright.config.js`, tests in `e2e/`, projects `desktop` 1366×768 and `phone` Pixel 7; starts or reuses both servers). `e2e/fixtures.js` fails any test that logs a browser console error. The server reads `API_PORT` (not `PORT`, which tools set for the website), `HOST`, `ALLOWED_ORIGIN`, `GEMINI_API_KEY`, `GEMINI_MODEL` from env or `server/.env` (loaded with `process.loadEnvFile`, validated by zod in `server/src/config.ts`). `GET /api/health` returns `{ ok, service, mentor: { aiConfigured } }` and never the key. Source is formatted with Prettier 3 (print width 100, single quotes), run via npx; it is not a project dependency. No lint, end-to-end test, or CI script is configured. `.gitignore` excludes `node_modules/`, `dist/`, `.env` (any folder, so `server/.env` too), `*.local`, `.DS_Store`, `qa/`, and Playwright output folders.
 
 ## Source map
 
@@ -50,8 +50,20 @@ Root scripts delegate dev/build/preview to the `client` workspace. Tests run `no
 | `client/src/App.jsx` | entire landing page, section components, demo state, motion and navigation |
 | `client/src/components/Art.jsx` | Icon, Clicky, Flower and JarArt illustrations |
 | `client/src/components/Tour.jsx` | tour UI, clock, scrolling, speech, focus and cleanup; exports goTo |
-| `client/src/lib/model.js` | currency formatting, allocation math, growth math, tour schedule |
-| `client/src/lib/model.test.js` | three Node tests for math and timing |
+| `client/src/lib/model.js` | currency formatting, allocation math, growth math, savings goals, months-to-goal, tour schedule |
+| `client/src/lib/hooks.js` | `useCountUp` number animation and `motionReduced()` helper |
+| `client/src/lib/model.test.js` | five Node tests for math, goal timing and tour timing |
+| `PHASES.md` | agreed decisions, phase status, open decisions, and the phase-by-phase build prompts |
+| `client/vite.config.js` | dev/preview ports and the `/api` proxy to the server |
+| `server/src/config.ts` | loads and validates server settings |
+| `server/src/app.ts` | `buildApp(config)`: Fastify app with routes, 16KB body limit, JSON 404s |
+| `server/src/routes/health.ts` | `GET /api/health` |
+| `server/src/index.ts` | starts the server |
+| `server/test/health.test.ts` | route and config tests using `app.inject` |
+| `server/.env.example` | every server setting with comments; copy to `server/.env` |
+| `playwright.config.js`, `e2e/*.spec.js` | browser tests for every interaction, desktop and phone |
+| `docs/mentor-api.md` | API contract for health and the mentor chat |
+| `docs/LEARN.md` | learning guide: architecture, reading order, exercises |
 | `client/src/styles.css` | canonical tokens, CSS layers, layouts, illustration styling, motion, responsive rules |
 | `DESIGN.md` | visual intent, tokens and motion/access contract |
 | `VERIFICATION.md` | prior manual checks, build/test evidence and limitations |
@@ -62,10 +74,10 @@ Root scripts delegate dev/build/preview to the `client` workspace. Tests run `no
 This is one document with anchor navigation, not multiple routes. Section IDs also drive the tour: `home`, `earn`, `jars`, `grow`, `mentor`, `trust`, `start`. Main content has ID `main` for the skip link.
 
 1. **Hero:** “Small earnings. Big beginnings.” Original floating goal/reward cards, a sample headphones goal of ₹650/₹1,000, CTA to the activity, and “Explain me” tour launcher. Hero artwork is illustrative and independent of demo account state.
-2. **Earn:** sample 30-minute community reading activity worth ₹200. Initial sample balance is ₹200; completing the activity flips `earned` to true and supplies ₹400 to Jars. Button disables to prevent a second reward. Reset returns to ₹200. Approval is simulated immediately in the same client.
+2. **Earn:** sample 30-minute community reading activity worth ₹200. Initial sample balance is ₹200; completing the activity flips `earned` to true, plays a small burst of symbols on the button, and supplies ₹400 to Jars. Button disables to prevent a second reward. Reset returns to ₹200. Approval is simulated immediately in the same client.
 3. **Four jars:** Save, Spend, Give, Invest. Selecting a jar changes explanatory text. Save percentage begins at 50%; range is 0–100 in steps of 5. The remainder uses a fixed 60/20/20 Spend/Give/Invest split. This is not a fully editable four-way allocation tool. Jar colors and explanatory copy are defined in App.jsx. Giving is optional in the concept; the demo remainder formula itself is fixed.
-4. **Growth:** ₹100 monthly contribution, years range 1–10, default 5, illustrative annual rate 8% compounded monthly with deposits at month-end. SVG chart is derived from annual points. Growth never changes the sample balance. Display includes contributed amount and hypothetical-return disclosure.
-5. **Paisa Mentor:** three prepared questions: saving, compound interest, and whether giving is required. Selecting one swaps static question/answer content. There is no input box, model request, conversation memory, or live language support.
+4. **Growth:** goal chips (Headphones ₹1,000, Bicycle ₹6,000, Laptop ₹30,000; default Bicycle) and monthly chips (₹100/₹250/₹500; default ₹100) show months to the goal via `monthsToGoal` (null beyond 240 months) and a dashed goal line when the goal fits on the chart. Contribution follows the monthly chip; ₹100 monthly contribution, years range 1–10, default 5, illustrative annual rate 8% compounded monthly with deposits at month-end. SVG chart is derived from annual points. Growth never changes the sample balance. Display includes contributed amount and hypothetical-return disclosure.
+5. **Paisa Mentor:** six prepared questions: saving, compound interest, whether giving is required, budgeting, investing vs gambling, spotting scams. Selecting one shows a 750ms typing bubble (skipped when motion is off), then the static answer. There is no input box, model request, conversation memory, or live language support.
 6. **Trust:** independent sample ₹100 withdrawal timeline. Starts at “Withdrawal requested”; button progresses through “Approved by a mentor”, “Payout simulated”, and “Receipt preview ready”, then replays. Final status says “Preview only · no transaction published”. It does not deduct from jars or create a payment.
 7. **Closing/footer:** links back to the demo and tour; footer year comes from the browser date.
 
@@ -73,7 +85,9 @@ App owns tour visibility, earned state, mobile menu state, reduced-motion state,
 
 ## Model contracts
 
-`money(value)` uses `Intl.NumberFormat('en-IN')`, INR currency, zero displayed fractional digits.
+`money(value)` uses one shared `Intl.NumberFormat('en-IN')`, INR currency, zero displayed fractional digits. Jar amounts and the growth total animate with `useCountUp` (550ms ease-out; instant when motion is off).
+
+`monthsToGoal(monthly, goal, annualRate = 0.08, maxMonths = 240)` uses the same month-end compounding as `projectSavings` and returns months or null. `describeMonths(n)` renders e.g. "2 years 2 months".
 
 `splitReward(amount, savePercent)` returns integer amounts in `[save, spend, give, invest]` order:
 
@@ -146,3 +160,17 @@ Never place secret credentials in this file or browser code. If backend work is 
 ## Keeping this handoff current
 
 Update this file when architecture, commands, integration status, interactions, or model contracts change. Maintain README for quick setup, DESIGN.md for visual intent, and VERIFICATION.md for actual validation evidence. Share this file alone for conceptual context; provide the source repository as well when the receiving LLM needs to make code changes.
+
+## Direction and roadmap (revised 2026-11-04)
+
+The current code is still the single-page frontend described above. Full decisions, open questions and copy-paste prompts per phase are in `PHASES.md`. Summary of the **current scope**:
+
+- **Mission:** public-good financial literacy for kids aged 8–17 regardless of financial background, run through NGOs.
+- **Only one real feature gets built: the Paisa Mentor AI bot.** Google Gemini, called from a small Fastify + TypeScript server in `server/` (no database). Free-text questions plus suggested ones, English/Hindi replies, uses the demo's sample jars and goal in examples, guardrails for risky topics (`flagged`), prepared-answer fallback when there is no key or the API fails. Contract: `docs/mentor-api.md` (written in Phase 0).
+- **Everything else is a clickable "Coming soon" preview** with sample data and no real behavior: PayPal donations and guardian payouts, Mentor/NGO dashboard with 2-of-3 approvals, public blockchain impact ledger (Base Sepolia), Seedlings mode (8–11), full Hindi app, classroom/offline mode, guardian consent, certificates. Previews must be labelled "Coming soon · preview, nothing here is real". The "Later" section of `PHASES.md` keeps the full real-build design for these.
+- **Frontend stays JavaScript** (React 18 + Vite). Server is TypeScript.
+- **Design problem being fixed:** measured on 2026-11-04, 70% of visible text was under 14px and seven animations ran constantly. Phase 1 moves to a calm neo-brutalist style: 17–18px body, motion only on user action, no tilted cards or custom cursor, short landing page + `/app` demo + `/soon/*` previews.
+- **Phases:** 0 setup and API contract → 1 calm redesign ‖ mentor endpoint → 2 chat UI ‖ safety eval → 3 Coming-soon previews → 4 tour rewrite, offline fallback, deploy, docs.
+- **Hosting:** runs locally with one command and deployed online (client on Vercel, server host still to be chosen).
+- **Accounts:** the user has a Google AI Studio key; it goes only in `server/.env`, typed in by the user. PayPal and a crypto wallet are not needed for this scope.
+- **Phase status:** Phase 0 done on 2026-11-05 (server + health route, proxy, one-command dev, API contract, Playwright suite, learning guide; tour clock bug fixed). Phase 1 not started. Update this line as phases finish.
