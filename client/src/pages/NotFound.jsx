@@ -1,3 +1,4 @@
+// Shown for any address that isn't a real page, with a way back home.
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Mascot from '../components/Mascot.jsx';

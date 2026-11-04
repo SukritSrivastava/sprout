@@ -43,6 +43,8 @@ Installation needs internet; the installed app and bundled fonts run locally wit
   to guardians, NGO dashboard, public impact ledger with real receipt checking, Seedlings mode for
   ages 8–11, guardian consent and safety, Hindi everywhere, classroom mode, certificates). Sample
   data only, clearly labelled.
+- **Guided tour**: about 1½ minutes across the home page, demo, live mentor and previews, with
+  captions in English or Hindi. (A human voiceover is parked for later.)
 - **Sprout the mascot** guides a 75-second tour across both pages (captions always on, voice
   optional, pause/skip/replay, Escape to close).
 - **Motion**: smooth scrolling (Lenis) and purposeful animation (Motion). Turn it off with the
@@ -52,6 +54,7 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 
 - `LLM_CONTEXT.md`: full project briefing for an AI assistant.
 - `PHASES.md`: agreed decisions and the phase-by-phase plan.
+- `DEMO_SCRIPT.md`: a 3-minute script for presenting to judges, with backup plans.
 - `DESIGN.md`: colours, fonts, components and motion rules. `docs/REDESIGN.md`: the agreed look.
 - `docs/LEARN.md`: guided tour of the codebase. `docs/mentor-api.md`: the API contract.
 - `client/src/`: the website (`pages/`, `components/`, `lib/`, `styles.css`).

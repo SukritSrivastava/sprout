@@ -1,3 +1,5 @@
+// Tests for the AI mentor route. A fake Gemini (fakeModel) replies with fixed text, so these run
+// offline and free: streaming order, fallbacks, safety flags, bad input, rate limits, origins.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../src/app.js';

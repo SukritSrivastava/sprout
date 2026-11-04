@@ -1,3 +1,5 @@
+// Unit tests for the tour schedule in tour.js: right length, every step in both languages, and
+// the clock always points at the right step.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { tourDuration, tourSteps, tourStart, tourIndex } from './tour.js';

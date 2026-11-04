@@ -1,3 +1,5 @@
+// Tests for GET /api/health and for settings checks. app.inject() sends pretend requests straight
+// into the app, so no real port or network is used.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildApp } from '../src/app.js';

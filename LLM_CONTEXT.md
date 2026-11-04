@@ -73,6 +73,11 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 | --- | --- |
 | `client/src/main.jsx` | BrowserRouter, font (Bricolage opsz), Lenis CSS, styles |
 | `client/src/App.jsx` | shell: reduced-motion setting (OS + toggle, starts/stops Lenis), `useHashScrolling` (glide to `#section`, wait for fonts on first load, jump after page change), page transitions with `AnimatePresence` (instant swap when motion is off), routes, header/footer, tour |
+| `client/src/components/landing/*.jsx` | home page sections: `Hero` (with `HeroCard`), `HowItWorks`, `MeetMentor`, `Trust`, `ComingSoon`, `Closing` |
+| `client/src/lib/tour.js` | tour steps `{path, id, seconds, en:{title,text}, hi:{title,text}}`, `tourLanguages`, `tourDuration`, `tourStart`, `tourIndex` (~84s, 8 steps) |
+| `client/src/lib/useMentorChat.js` | mentor chat logic hook; `ChatBubble.jsx` draws one message |
+| `client/src/lib/icons.js` | shared Lucide props `icon`, `iconSized(size, stroke)` |
+| `DEMO_SCRIPT.md` | 3-minute judge script, pre-flight checklist, failure plan, likely questions |
 | `client/src/pages/Landing.jsx` | `/`: hero (id `home`), how it works (`how`), mentor teaser (`meet-mentor`), trust (`trust`), coming soon (`soon`, 5 rows), closing |
 | `client/src/pages/Demo.jsx` | `/app`: greeting + balance card, then Earn, Jars, Growth, Mentor, Withdraw; owns `earned` state and the cheer/burst |
 | `client/src/pages/NotFound.jsx` | any other path |
@@ -81,7 +86,7 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 | `client/src/lib/ledger.js` | real SHA-256 leaf/node hashing, `buildTree`, `proofFor`, `verifyReceipt`, `short` (tested in `ledger.test.js`) |
 | `client/src/components/Layout.jsx` | `Brand`, `SiteHeader` (nav links to `/#how`, `/#meet-mentor`, `/#soon`; motion toggle; demo/Home button; phone menu with Escape), `SiteFooter`, `TourLauncher` (label hides past 320px scroll; slides away while scrolling down) |
 | `client/src/components/Mascot.jsx` | Sprout SVG, moods `happy`/`think`/`cheer`, blink + leaf sway idle, cheer bounce |
-| `client/src/components/Tour.jsx` | 75s tour across both pages; each step navigates to `path#id` (replace) and adds `.tour-target` |
+| `client/src/components/Tour.jsx` | tour panel: clock, EN/हिंदी caption switch, each step navigates to `path#id` (replace) and adds `.tour-target`; no voice |
 | `client/src/components/demo/*.jsx` | `Earn` (ids `earn`), `Jars` (`jars`), `Growth` (`grow`), `Mentor` (`mentor`), `Withdraw` (`withdraw`) |
 | `client/src/lib/model.js` | `money`, `splitReward`, `projectSavings`, `savingsGoals`, `monthlyOptions`, `monthsToGoal`, `describeMonths`, `tourSteps` (with `path`), `tourDuration`, `tourStart`, `tourIndex` |
 | `client/src/lib/content.js` | `jars` (name, colour var, note, detail), six prepared `answers`, `sampleKid` (Aanya, ₹200 base, ₹200 reward) |
@@ -111,10 +116,10 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
   flagged, notices for 429/400, client prepared fallback if the server is unreachable, Clear chat.
   `Demo.jsx` owns `save`, `goalId`, `monthly` so the mentor gets live sample context. Withdraw: four-stage simulated trail ending "Preview only · no real
   transaction".
-- **Tour**: 8 steps, 75s (`/` home 9, how 9, trust 8; `/app` earn 10, jars 10, grow 10,
-  mentor 11, withdraw 8). Pause/resume, previous/next (fast clicks safe), replay, optional
-  `en-IN` voice, Escape closes and returns focus, pauses when the tab is hidden. The clock adds
-  real elapsed time computed outside the state updater (a bug the tests caught earlier).
+- **Tour**: 8 steps, about 84s: `/` home, how; `/app` earn, jars, grow, mentor; `/soon/impact`
+  (section id `preview`); `/soon` (id `soon-hub`). Captions in English or Hindi. Pause/resume,
+  previous/next (fast clicks safe), replay, Escape closes and returns focus, pauses when the tab
+  is hidden. The robotic browser voice was removed; a Gemini voiceover is parked.
 - **Motion off**: OS `prefers-reduced-motion` or header toggle (desktop ≥1100px) sets
   `html[data-reduced]`, stops Lenis, sets `MotionConfig reducedMotion="always"`, removes idle
   loops/bursts/typing delay, swaps pages instantly.
@@ -125,7 +130,7 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 `amount` (invest absorbs rounding). `projectSavings(monthly, years, rate = 0.08)` month-end
 deposits, monthly compounding → `{ balance, contributed, points }` (₹100 × 5y = ₹7,348).
 `monthsToGoal(monthly, goal, rate = 0.08, max = 240)` → months or `null`. `describeMonths(n)` →
-"2 years 2 months". `tourIndex(75)` = -1 (Tour handles completion).
+"2 years 2 months". `tourIndex(tourDuration)` = -1 (Tour handles completion); tour schedule lives in `lib/tour.js`.
 
 ## Verification
 
@@ -135,7 +140,7 @@ Playwright test enforces that no visible text on either page is under 14px.
 
 Testing notes: the in-app preview pane freezes animations when hidden, so judge motion bugs with
 Playwright, not a hidden pane. Under Playwright's fake clock, Motion finishes animations on
-timers that only move with the clock; the 75s tour playthrough test runs with reduced motion and
+timers that only move with the clock; the full tour playthrough test runs with reduced motion and
 checks the step counter, URL and highlighted section rather than animated captions.
 
 ## Roadmap and phase status

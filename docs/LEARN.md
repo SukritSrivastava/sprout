@@ -67,7 +67,7 @@ sprout/
 │     ├─ App.jsx              app shell: routes, page transitions, smooth scroll, motion toggle
 │     ├─ styles.css           the whole design system: tokens at the top, phone rules at the end
 │     ├─ pages/
-│     │  ├─ Landing.jsx       "/"   the home page (hero, how it works, mentor, trust, coming soon)
+│     │  ├─ Landing.jsx       "/"   the home page: just lists its sections, in order
 │     │  ├─ Demo.jsx          "/app" the demo, built from the sections below
 │     │  └─ NotFound.jsx      any other address
 │     ├─ previews/             the nine Coming-soon walkthroughs (/soon/...)
@@ -77,10 +77,14 @@ sprout/
 │     ├─ components/
 │     │  ├─ Layout.jsx        header, footer, floating tour button
 │     │  ├─ Mascot.jsx        Sprout the mascot (moods: happy, think, cheer)
-│     │  ├─ Tour.jsx          the 75-second guided tour across both pages
-│     │  └─ demo/             Earn, Jars, Growth, Mentor, Withdraw sections of /app
+│     │  ├─ Tour.jsx          the guided tour panel (its steps and words are in lib/tour.js)
+│     │  ├─ landing/          Hero, HowItWorks, MeetMentor, Trust, ComingSoon, Closing
+│     │  └─ demo/             Earn, Jars, Growth, Mentor (+ ChatBubble), Withdraw sections of /app
 │     └─ lib/
-│        ├─ model.js          the maths: jar split, savings growth, goals, tour timing
+│        ├─ model.js          the maths: jar split, savings growth, goals
+│        ├─ tour.js           the guided tour: 8 steps, where each goes, words in English + Hindi
+│        ├─ useMentorChat.js  the mentor chat logic (send, stream, errors, offline answers)
+│        ├─ icons.js          one shared size/stroke for every icon
 │        ├─ model.test.js     unit tests for that maths
 │        ├─ content.js        words and sample data (jars, mentor answers, sample kid)
 │        ├─ motion.jsx        shared animation pieces (Reveal, Stagger, reduced-motion flag)
@@ -141,6 +145,7 @@ Read these in order. Each step says what to look for.
 11. **`server/test/health.test.ts`**: `app.inject()` sends a pretend request straight into the
     app. No port, no network, very fast.
 12. **The AI mentor, end to end**: `components/demo/Mentor.jsx` (the chat screen) →
+    `lib/useMentorChat.js` (what happens when you press Send) →
     `lib/mentorApi.js` (sends the question, reads the reply line by line) →
     `server/src/routes/mentor.ts` (checks the request, picks AI or backup answer, streams it) →
     `server/src/mentor/model.ts` (the only file that talks to Gemini). Read `mentor/prompt.ts` to

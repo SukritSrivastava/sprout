@@ -66,7 +66,16 @@ demo `/app` via React Router; Lucide icons; tour kept and restyled.
   donate, payout (2-of-3), NGO dashboard, impact ledger (real SHA-256/Merkle verify on sample
   data), Seedlings, safety/consent, Hindi, classroom (PIN, offline), certificates. Header
   "Coming soon" opens the hub; home page rows open previews.
-- Next: Phase 4 (tour rewrite, demo hardening, deploy, demo script).
+- **Phase 4 (without deploy): done (2026-11-05).** Tour rewritten as an ~85s bilingual story
+  (`lib/tour.js`), robotic browser voice removed, `DEMO_SCRIPT.md`, readability pass (every file
+  has a plain-English header; home page split into `components/landing/`; mentor logic moved to
+  `lib/useMentorChat.js`; shared `lib/icons.js`; dead CSS removed).
+- **Parked by the user:** human voiceover. `npm run make:voice` (Gemini TTS
+  `gemini-3.1-flash-tts-preview`, voice Achird, MP3) works; free tier allows ~3 clips/minute
+  and ~10/day per model. 6 English clips are in git-ignored `qa/voice-parked/`. Lip-sync for
+  the mascot was planned with it.
+- **Not done by choice:** deployment (client Vercel, server host TBD; set `TRUST_PROXY`,
+  `ALLOWED_ORIGIN`).
 
 ### Open decisions (ask at the start of the phase named)
 - Phase 1: router: React Router (recommended) or keep a single page with hash sections?

@@ -1,3 +1,5 @@
+// The website's starting point: loads the font, smooth-scroll styles and our CSS, then shows
+// <App /> inside the router (which picks the page from the address bar).
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

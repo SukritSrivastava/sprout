@@ -1,5 +1,20 @@
 # Verification
 
+## Phase 4: tour, readability, demo script (2026-11-05)
+
+- `npm test`: 29 passed (11 client incl. 3 tour tests for length, both languages, clock
+  boundaries; 18 server). Server type-check clean.
+- `npx playwright test`: 143 passed, 9 skipped by design, 0 failed, after the readability
+  refactor (home page split into sections, mentor logic moved to a hook): no behaviour changed.
+- New tour tests: English/Hindi caption switch; cross-page steps now include `/soon/impact` and
+  `/soon`; the full playthrough checks each step's page, address and highlight.
+- Fixed a flaky test: after scrolling down, the tour-button test now waits for smooth scrolling
+  to settle before scrolling up (16/16 repeats pass).
+- Voiceover: Gemini TTS generation was tested (6 English clips made, ~12–14s each at a natural
+  pace) and then parked at the user's request; nothing audio-related ships in the site.
+
+---
+
 ## Phase 3: Coming-soon previews (2026-11-05)
 
 - `npm test`: 27 passed (9 client incl. 4 new ledger tests: SHA-256 known value, every receipt

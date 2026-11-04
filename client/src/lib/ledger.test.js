@@ -1,3 +1,5 @@
+// Unit tests for ledger.js: real SHA-256 fingerprints, every receipt verifies against the batch
+// root, and any edit to a receipt makes verification fail.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildTree, proofFor, verifyReceipt, sha256 } from './ledger.js';

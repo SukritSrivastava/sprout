@@ -1,3 +1,5 @@
+// Unit tests for the money maths in model.js: jar splits never lose a rupee, savings growth is
+// right, and goal timing reads naturally. Run with `npm test`.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {

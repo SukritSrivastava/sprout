@@ -1,3 +1,6 @@
+// Small reusable React helpers.
+// useCountUp: when a number changes (like a jar amount), it rolls to the new value instead of
+// jumping. When motion is turned off it jumps straight there.
 import { useEffect, useRef, useState } from 'react';
 
 export const motionReduced = () => document.documentElement.dataset.reduced === 'true';

@@ -1,3 +1,4 @@
+// Settings for Vite, the tool that serves the website in development and builds it for release.
 import { defineConfig } from 'vite';
 
 // The browser only ever talks to the website's own address. Vite forwards anything under /api to
