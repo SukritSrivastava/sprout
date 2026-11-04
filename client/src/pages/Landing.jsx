@@ -97,7 +97,7 @@ function Hero({ onTour }) {
               Open the demo <ArrowRight {...icon} />
             </Link>
             <button className="link-btn" onClick={onTour}>
-              Take the 75-second tour
+              Take the 1½-minute tour
             </button>
           </motion.div>
         </div>

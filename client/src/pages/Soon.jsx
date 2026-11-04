@@ -9,7 +9,7 @@ import NotFound from './NotFound.jsx';
 
 export function SoonHub() {
   return (
-    <section className="section">
+    <section id="soon-hub" className="section">
       <div className="container">
         <PreviewBanner />
         <Reveal className="section-head split-head">

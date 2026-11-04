@@ -125,7 +125,7 @@ export function TourLauncher({ hidden, onTour }) {
       hidden={hidden}
       className="tour-launcher"
       onClick={onTour}
-      aria-label="Start the 75-second tour"
+      aria-label="Start the guided tour"
       animate={{ y: tucked ? 140 : 0, opacity: tucked ? 0 : 1 }}
       transition={{ duration: 0.3, ease }}
       style={{ pointerEvents: tucked ? 'none' : 'auto' }}
@@ -140,7 +140,7 @@ export function TourLauncher({ hidden, onTour }) {
             exit={{ opacity: 0, x: 16, scale: 0.9 }}
             transition={{ duration: 0.25, ease }}
           >
-            Take the tour<small>75 seconds with Sprout</small>
+            Take the tour<small>About 1½ minutes with Sprout</small>
           </motion.span>
         )}
       </AnimatePresence>

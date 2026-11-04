@@ -64,10 +64,19 @@ test('switching pages still animates after motion is turned off and on again', a
 
 test('the tour button slides away while scrolling down and returns on scroll up', async ({ page }) => {
   await page.goto('/');
-  const launcher = page.getByRole('button', { name: 'Start the 75-second tour' });
+  const launcher = page.getByRole('button', { name: 'Start the guided tour' });
   await page.mouse.move(200, 400);
   await page.mouse.wheel(0, 1500);
   await expect(launcher).toHaveCSS('pointer-events', 'none');
+  // Smooth scrolling keeps gliding for a moment; wait until the page has stopped moving,
+  // like a person who has finished scrolling down and then scrolls back up.
+  await expect
+    .poll(async () => {
+      const before = await page.evaluate(() => window.scrollY);
+      await page.waitForTimeout(200);
+      return before === (await page.evaluate(() => window.scrollY));
+    })
+    .toBe(true);
   await page.mouse.wheel(0, -400);
   await expect(launcher).toHaveCSS('pointer-events', 'auto');
 });

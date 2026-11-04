@@ -535,6 +535,7 @@ input[type='range'] { width: 100%; height: 32px; accent-color: var(--ink); curso
   box-shadow: var(--shadow-lg); padding: 16px 20px 18px;
 }
 .tour-top { display: flex; align-items: center; justify-content: space-between; }
+.tour-top-actions { display: flex; align-items: center; gap: 10px; }
 .tour-step-count { font-size: 15px; font-weight: 700; color: var(--muted); }
 .tour-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 14px; align-items: start; margin: 6px 0 16px; }
 .tour-body h3 { font-size: 22px; margin-bottom: 6px; }

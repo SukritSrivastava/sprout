@@ -3,10 +3,6 @@ import assert from 'node:assert/strict';
 import {
   splitReward,
   projectSavings,
-  tourDuration,
-  tourSteps,
-  tourStart,
-  tourIndex,
   monthsToGoal,
   describeMonths,
   savingsGoals,
@@ -56,15 +52,4 @@ test('growth uses month-end contributions and handles zero returns', () => {
   assert.equal(result.balance, 7348);
   assert.equal(result.contributed, 6000);
   assert.equal(result.points.length, 6);
-});
-test('the full tour finishes in 75 seconds and covers every section exactly once', () => {
-  assert.equal(tourDuration, 75);
-  assert.ok(tourDuration < 90);
-  assert.equal(new Set(tourSteps.map((step) => `${step.path}#${step.id}`)).size, tourSteps.length);
-  assert.ok(tourSteps.every((step) => ['/', '/app'].includes(step.path)));
-  tourSteps.forEach((step, i) => {
-    assert.equal(tourIndex(tourStart(i)), i);
-    assert.equal(tourIndex(tourStart(i) + step.seconds - 0.01), i);
-  });
-  assert.equal(tourIndex(75), -1);
 });

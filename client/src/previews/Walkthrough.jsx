@@ -62,7 +62,7 @@ export default function Walkthrough({ id, title, intro, color, steps, live }) {
   const step = all[index];
 
   return (
-    <section className="section preview" style={{ '--accent': color }} data-preview={id}>
+    <section id="preview" className="section preview" style={{ '--accent': color }} data-preview={id}>
       <div className="container">
         <PreviewBanner />
         <div className="preview-head">
