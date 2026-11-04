@@ -56,7 +56,8 @@ npm run preview    # production website on 4173 + compiled API
 `client/vite.config.js` proxies `/api` to the API. The server reads `API_PORT` (not `PORT`, which
 tools set for the website), `HOST`, `ALLOWED_ORIGIN`, `GEMINI_API_KEY`, `GEMINI_MODEL` from env or
 `server/.env` (git-ignored; `.env.example` documents them), validated with zod.
-`GET /api/health` → `{ ok, service, mentor: { aiConfigured } }`, never the key. Prettier 3
+`GET /api/health` → `{ ok, service, mentor: { aiConfigured } }`, never the key. Also
+`ALLOWED_ORIGIN` (comma list, default local 5173/4173), `TRUST_PROXY`, `MENTOR_HOURLY_LIMIT`. Prettier 3
 (width 100, single quotes) via npx, not a dependency. No lint or CI.
 
 ### Dependencies
@@ -85,7 +86,7 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 | `client/src/lib/scroll.js` | Lenis start/stop, `scrollToId` (96px header offset), `scrollToTop`, `waitForId` |
 | `client/src/lib/hooks.js` | `useCountUp` (instant when `data-reduced=true`) |
 | `client/src/styles.css` | the design system (tokens → base → components → pages → tour → reduced motion → tablet/phone) |
-| `server/src/*` | `config.ts`, `app.ts` (`buildApp(config, { model, rateLimit })`, 16KB body limit, JSON 404), `routes/health.ts`, `routes/mentor.ts` (NDJSON stream, AI-or-prepared, abort on disconnect/15s), `mentor/schema.ts`, `mentor/prompt.ts` (system rules), `mentor/model.ts` (only Gemini caller; `MentorModel` interface for fakes), `mentor/safety.ts`, `mentor/prepared.ts` (en+hi backups, suggestions), `rate-limit.ts` (20/5min/IP), `index.ts` |
+| `server/src/*` | `config.ts`, `app.ts` (`buildApp(config, { model, rateLimit })`, 16KB body limit, JSON 404), `routes/health.ts`, `routes/mentor.ts` (NDJSON stream, AI-or-prepared, abort on disconnect/15s), `mentor/schema.ts`, `mentor/prompt.ts` (system rules), `mentor/model.ts` (only Gemini caller; `MentorModel` interface for fakes), `mentor/safety.ts`, `mentor/prepared.ts` (en+hi backups, suggestions), `rate-limit.ts` (per-key window, sweeps quiet keys), `index.ts`; `scripts/eval-mentor.ts` (`npm run eval:mentor`, 12 misuse cases vs real Gemini) |
 | `client/src/lib/mentorApi.js` | `askMentor` (fetch + stream reader with onStart/onDelta/onDone), `mentorStatus`, `MentorError` |
 | `e2e/*.spec.js` | `api`, `page`, `demo`, `tour`, `phone`; `fixtures.js` fails tests on console errors and has `goToSection` |
 | `docs/` | `LEARN.md`, `REDESIGN.md`, `mentor-api.md` (contract for Phase 1) |
@@ -141,7 +142,10 @@ checks the step counter, URL and highlighted section rather than animated captio
   2026-11-05.
 - Phases 1–2 (live AI mentor): **done** 2026-11-05. Model `gemini-3.5-flash-lite`, streamed,
   chat in `/app#mentor`, prepared fallback. Key is in git-ignored `server/.env` (the user pasted
-  it in chat once; recommend rotating it after the hackathon). Open: larger safety eval set.
+  it in chat once; recommend rotating it after the hackathon). Misuse hardening done: goal label enum, empty-list fix, origin allow-list (403 + CORS),
+  shared hourly cap `MENTOR_HOURLY_LIMIT` (300) + 20/5min per address, `TRUST_PROXY` (set true only
+  behind a host proxy), limiter sweep, Hinglish safety words, prompt rule distrusting edited history;
+  `npm run eval:mentor` 12/12.
 - Phase 3: Coming-soon previews · Phase 4: tour/demo hardening, deploy (client Vercel; server
   host to choose; add CORS for `ALLOWED_ORIGIN` then), docs.
 

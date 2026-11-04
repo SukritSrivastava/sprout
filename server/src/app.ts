@@ -17,12 +17,20 @@ export function buildApp(config: Config, options: AppOptions = {}) {
   const app = Fastify({
     logger: options.logger ?? false,
     bodyLimit: 16 * 1024, // 16KB is plenty for chat messages and blocks oversized requests.
+    // Behind a host's proxy, read the user's real address from X-Forwarded-For. Off locally,
+    // so nobody can fake their address to dodge the rate limit.
+    trustProxy: config.TRUST_PROXY,
   });
 
   const model = options.model === undefined ? createGeminiModel(config) : options.model;
 
   app.register(healthRoutes, { config });
-  app.register(mentorRoutes, { model, rateLimit: options.rateLimit });
+  app.register(mentorRoutes, {
+    model,
+    allowedOrigins: config.ALLOWED_ORIGIN,
+    hourlyLimit: config.MENTOR_HOURLY_LIMIT,
+    rateLimit: options.rateLimit,
+  });
 
   // Unknown /api paths get a clear JSON error instead of Fastify's default text.
   app.setNotFoundHandler((request, reply) => {

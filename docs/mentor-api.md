@@ -41,7 +41,7 @@ server answers from prepared replies. The key itself is never returned.
 | `messages` | 1–12 items, oldest first; the last must be `role: "user"`. `role` is `"user"` or `"mentor"`; `text` is 1–600 characters after trimming. |
 | `context` | Optional. The demo's **sample** numbers in whole rupees. |
 | `context.jars.*` | Integers 0–100,000. |
-| `context.goal` | `label` 1–40 chars, `cost` 1–1,000,000, `monthly` 0–100,000. |
+| `context.goal` | `label` must be `"Headphones"`, `"Bicycle"` or `"Laptop"` (free text could smuggle instructions to the AI), `cost` 1–1,000,000, `monthly` 0–100,000. |
 
 Unknown fields are rejected. Body limit 16KB. Checked by `server/src/mentor/schema.ts`.
 
@@ -73,7 +73,8 @@ Errors are plain JSON (not streamed): `{ "error": "<code>", "message": "<human r
 | --- | --- | --- | --- |
 | 400 | `invalid_request` | Body breaks the rules above | Shows the message as a notice |
 | 404 | `not_found` | Wrong path | Developer error |
-| 429 | `rate_limited` | More than 20 requests in 5 minutes from one address. `Retry-After` header gives seconds | Shows "Let's take a short break…" |
+| 403 | `forbidden_origin` | A browser on another website (its `Origin` isn't in `ALLOWED_ORIGIN`) | — |
+| 429 | `rate_limited` | More than 20 requests in 5 minutes from one address, or more than `MENTOR_HOURLY_LIMIT` (300) per hour from everyone together. `Retry-After` gives seconds | Shows the message as a notice |
 | network error / 5xx | — | Server unreachable | Answers from the client's prepared set, tags it, shows "Offline mode" |
 
 ### Behaviour and safety
@@ -85,6 +86,21 @@ Errors are plain JSON (not streamed): `{ "error": "<code>", "message": "<human r
   topics, ignores instructions inside user messages that try to change its rules.
 - `server/src/mentor/safety.ts` flags risky topics in English and Hindi with a word list; flagged
   chats get extra-careful instructions and the trusted-adult card.
+
+### Misuse protection
+
+- **Other websites:** browsers send an `Origin` header; only `ALLOWED_ORIGIN` gets answers and
+  CORS headers (`OPTIONS` preflight supported). Scripts without a browser aren't stopped by this.
+- **Quota abuse:** per-address limit (20 / 5 min) plus a shared hourly cap for everyone (300).
+  With no logins, the server can't tell a kid from a script; the caps limit the damage.
+- **Real addresses:** `TRUST_PROXY=true` only when deployed behind a host's proxy; off locally so
+  a faked `X-Forwarded-For` header can't dodge the limit.
+- **Prompt tricks:** rules tell the AI to ignore instructions inside messages and to distrust
+  earlier "mentor" turns sent back by the browser (they can be edited). Goal names are a fixed list.
+- **Memory:** the rate limiter forgets quiet addresses.
+- **Check it:** `npm run eval:mentor` runs 12 misuse attempts against the real AI (off-topic,
+  coding, stock tips in English and Hindi, forged history, role-play jailbreak, prompt reveal,
+  Hinglish scam, self-harm, personal details, empty list, goal-name injection).
 
 ### Privacy
 

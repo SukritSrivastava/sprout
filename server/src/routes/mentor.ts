@@ -16,6 +16,8 @@ import { createRateLimiter } from '../rate-limit.js';
 
 type Options = {
   model: MentorModel | null;
+  allowedOrigins: string[];
+  hourlyLimit: number;
   rateLimit?: { limit: number; windowMs: number };
   timeoutMs?: number;
 };
@@ -28,17 +30,43 @@ function* words(text: string) {
 }
 
 export async function mentorRoutes(app: FastifyInstance, options: Options) {
-  const limiter = createRateLimiter(options.rateLimit ?? { limit: 20, windowMs: 5 * 60_000 });
+  // Two limits: one per address, and one shared by everyone to protect the Gemini quota.
+  const perAddress = createRateLimiter(options.rateLimit ?? { limit: 20, windowMs: 5 * 60_000 });
+  const everyone = createRateLimiter({ limit: options.hourlyLimit, windowMs: 60 * 60_000 });
   const timeoutMs = options.timeoutMs ?? 15_000;
 
+  // Browsers send an Origin header. Only our own website may use the mentor from a browser;
+  // other websites are refused. Allowed origins also get the header that lets them read replies.
+  app.addHook('onRequest', async (request, reply) => {
+    if (!request.url.startsWith('/api/mentor/')) return;
+    const origin = request.headers.origin;
+    if (!origin) return; // not a browser (curl, scripts): the rate limits handle those
+    if (!options.allowedOrigins.includes(origin)) {
+      return reply.code(403).send({ error: 'forbidden_origin', message: 'This website may not use the mentor.' });
+    }
+    reply.header('access-control-allow-origin', origin).header('vary', 'origin');
+  });
+  // Browsers ask permission first ("preflight") before a cross-site POST with JSON.
+  app.options('/api/mentor/chat', async (_request, reply) =>
+    reply
+      .header('access-control-allow-methods', 'POST')
+      .header('access-control-allow-headers', 'content-type')
+      .header('access-control-max-age', '600')
+      .code(204)
+      .send(),
+  );
+
   app.post('/api/mentor/chat', async (request, reply) => {
-    const wait = limiter.check(request.ip);
-    if (wait) {
+    const tooBusy = (wait: number, message: string) => {
       reply.header('retry-after', String(wait));
-      return reply.code(429).send({
-        error: 'rate_limited',
-        message: `Let's take a short break. Try again in ${wait} seconds.`,
-      });
+      return reply.code(429).send({ error: 'rate_limited', message });
+    };
+    const wait = perAddress.check(request.ip);
+    if (wait) return tooBusy(wait, `Let's take a short break. Try again in ${wait} seconds.`);
+    const shared = everyone.check('everyone');
+    if (shared) {
+      request.log.warn('mentor hourly limit reached');
+      return tooBusy(shared, 'Lots of people are asking right now. Try again in a little while.');
     }
 
     const parsed = chatRequestSchema.safeParse(request.body);

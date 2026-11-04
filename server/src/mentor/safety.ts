@@ -8,6 +8,12 @@ const patterns: RegExp[] = [
   /\bstole|steal|took my (money|savings)|snatch/i,
   /\bbull(y|ied|ying)|threat|blackmail|hit me|beat(s|ing)? me|hurts? me|abuse/i,
   /\bkill myself|suicide|self[- ]?harm|hurt myself|want to die|end my life/i,
+  // Hinglish (Hindi typed in English letters), as many kids write on phones
+  /\b(dhokha|dhoka|thagi|thag|paise double|paisa double|double kar)/i,
+  /\b(udhaar|udhar|karza|karz|karja|qarz)\b/i,
+  /\b(chori|chura (liya|liye|li)|chheen)/i,
+  /\b(maarte|marte hai|maarta|maarti|peet(te|ta|ti)|dhamki|dhamka|pareshan karte|tang karte)/i,
+  /\b(mar jaun|marna chahta|marna chahti|khud ko (hurt|chot)|suicide kar)/i,
   // Hindi
   /धोखा|ठगी|फ्रॉड|ओटीपी|पासवर्ड|लॉटरी/,
   /कर्ज|क़र्ज़|उधार/,

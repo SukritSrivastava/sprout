@@ -12,8 +12,18 @@ const schema = z.object({
   // API_PORT, not PORT: tools and hosts often set PORT for the website, which would clash.
   API_PORT: z.coerce.number().int().min(1).max(65535).default(8787),
   HOST: z.string().default('127.0.0.1'),
-  // The website's address. Only this origin may call the API from a browser (used from Phase 1).
-  ALLOWED_ORIGIN: z.url().default('http://127.0.0.1:5173'),
+  // Website addresses allowed to use the mentor from a browser, comma-separated. Other websites
+  // get 403. (Scripts without a browser aren't stopped by this; the hourly cap limits them.)
+  ALLOWED_ORIGIN: z
+    .string()
+    .default('http://127.0.0.1:5173,http://127.0.0.1:4173,http://localhost:5173,http://localhost:4173')
+    .transform((value) => value.split(',').map((origin) => origin.trim()).filter(Boolean))
+    .pipe(z.array(z.url()).min(1)),
+  // Set to "true" when deployed behind a host's proxy (Render, Railway, Fly), so each user's real
+  // address is used for rate limiting. Leave "false" locally: then nobody can fake their address.
+  TRUST_PROXY: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
+  // Most mentor questions per hour from everyone together, to protect the Gemini quota.
+  MENTOR_HOURLY_LIMIT: z.coerce.number().int().min(1).default(300),
   // Secret. Lives only on the server; never sent to the browser or written to logs.
   GEMINI_API_KEY: z.string().trim().optional(),
   GEMINI_MODEL: z.string().trim().optional(),

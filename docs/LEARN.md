@@ -95,6 +95,7 @@ sprout/
 │  │  │                       prepared (backup answers)
 │  │  └─ rate-limit.ts        max 20 questions per 5 minutes per address
 │  ├─ test/                  route tests with a fake Gemini (no real network needed)
+│  ├─ scripts/eval-mentor.ts `npm run eval:mentor`: misuse attempts against the real AI
 │  └─ .env.example            the settings you can set; copy to .env
 ├─ e2e/                       Playwright browser tests
 ├─ docs/

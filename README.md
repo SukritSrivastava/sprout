@@ -19,7 +19,8 @@ terminal. The website forwards `/api/*` to the API, so you only ever open port 5
 **AI mentor:** copy `server/.env.example` to `server/.env` and paste your own Google AI Studio
 key into `GEMINI_API_KEY` (`GEMINI_MODEL=gemini-3.5-flash-lite`). Restart `npm run dev`. Without a
 key everything still runs and the mentor uses prepared answers, tagged "Offline mode".
-`LIVE_AI=1 npm run test:e2e` adds one test that calls the real AI.
+`LIVE_AI=1 npm run test:e2e` adds one test that calls the real AI. `npm run eval:mentor` tries
+12 misuse attempts (off-topic, jailbreaks, scams, stock tips…) on the real AI and reports each.
 
 | Command | What it does |
 | --- | --- |
