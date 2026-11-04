@@ -25,9 +25,9 @@ Kids do small useful activities at an NGO, a mentor approves, the reward lands i
 jars (Save, Spend, Give, Invest), they plan goals, and ask Paisa Mentor money questions in
 English or Hindi. The NGO holds real money; adults approve payouts to guardians. Rupees (₹).
 
-**Current deliverable:** a two-page website with a sample demo, plus a small API server. All
-money is sample data in browser memory; a refresh resets it. The only planned real feature is
-the Gemini-powered mentor (Phase 1). Everything else (PayPal donations/payouts, NGO dashboard,
+**Current deliverable:** a two-page website with a sample demo, plus a small API server running
+the **live Gemini AI mentor** (the only real feature). All money is sample data in browser memory;
+a refresh resets it. Everything else (PayPal donations/payouts, NGO dashboard,
 public impact ledger on Base Sepolia, Seedlings mode for 8–11, full Hindi UI) will be clickable
 "Coming soon" previews with no real behaviour (Phase 3). Full plans for making them real are kept
 in the "Later" section of `PHASES.md`.
@@ -62,7 +62,8 @@ tools set for the website), `HOST`, `ALLOWED_ORIGIN`, `GEMINI_API_KEY`, `GEMINI_
 ### Dependencies
 
 Client: react 18, react-dom, react-router-dom 7, motion 14 (`motion/react`), lenis 1.3,
-lucide-react, @fontsource-variable/bricolage-grotesque (opsz file). Server: fastify 5, zod 4.
+lucide-react, @fontsource-variable/bricolage-grotesque (opsz file). Server: fastify 5, zod 4,
+@google/genai 2.32.
 Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 
 ## Source map
@@ -84,7 +85,8 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 | `client/src/lib/scroll.js` | Lenis start/stop, `scrollToId` (96px header offset), `scrollToTop`, `waitForId` |
 | `client/src/lib/hooks.js` | `useCountUp` (instant when `data-reduced=true`) |
 | `client/src/styles.css` | the design system (tokens → base → components → pages → tour → reduced motion → tablet/phone) |
-| `server/src/*` | `config.ts`, `app.ts` (`buildApp`, 16KB body limit, JSON 404), `routes/health.ts`, `index.ts` |
+| `server/src/*` | `config.ts`, `app.ts` (`buildApp(config, { model, rateLimit })`, 16KB body limit, JSON 404), `routes/health.ts`, `routes/mentor.ts` (NDJSON stream, AI-or-prepared, abort on disconnect/15s), `mentor/schema.ts`, `mentor/prompt.ts` (system rules), `mentor/model.ts` (only Gemini caller; `MentorModel` interface for fakes), `mentor/safety.ts`, `mentor/prepared.ts` (en+hi backups, suggestions), `rate-limit.ts` (20/5min/IP), `index.ts` |
+| `client/src/lib/mentorApi.js` | `askMentor` (fetch + stream reader with onStart/onDelta/onDone), `mentorStatus`, `MentorError` |
 | `e2e/*.spec.js` | `api`, `page`, `demo`, `tour`, `phone`; `fixtures.js` fails tests on console errors and has `goToSection` |
 | `docs/` | `LEARN.md`, `REDESIGN.md`, `mentor-api.md` (contract for Phase 1) |
 
@@ -99,8 +101,11 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
   undoes. Jars: select one (aria-pressed), save slider 0–100 step 5, remainder 60/20/20, meters
   fill, amounts count up. Growth: goal chips (Headphones ₹1,000 / Bicycle ₹6,000 / Laptop
   ₹30,000), monthly chips (₹100/250/500), months-to-goal text, years slider 1–10, chart line
-  draws, dashed goal line when it fits. Mentor: six prepared questions, 750ms "thinking" state
-  (skipped with motion off). Withdraw: four-stage simulated trail ending "Preview only · no real
+  draws, dashed goal line when it fits. Mentor (live AI): free text (600 chars, Enter sends, Shift+Enter new line), suggestion
+  chips (from server `done`), English/हिंदी switch, status tag (Live AI / Offline mode), thinking
+  dots until first words, streamed text with caret, "Prepared answer" tag, trusted-adult card when
+  flagged, notices for 429/400, client prepared fallback if the server is unreachable, Clear chat.
+  `Demo.jsx` owns `save`, `goalId`, `monthly` so the mentor gets live sample context. Withdraw: four-stage simulated trail ending "Preview only · no real
   transaction".
 - **Tour**: 8 steps, 75s (`/` home 9, how 9, trust 8; `/app` earn 10, jars 10, grow 10,
   mentor 11, withdraw 8). Pause/resume, previous/next (fast clicks safe), replay, optional
@@ -120,8 +125,8 @@ deposits, monthly compounding → `{ balance, contributed, points }` (₹100 × 
 
 ## Verification
 
-See `VERIFICATION.md` for dated evidence. As of the redesign: 9 unit tests and 85 Playwright
-tests per run (desktop + phone, 7 skipped by design); two consecutive full runs green. A
+See `VERIFICATION.md` for dated evidence. As of the AI mentor: 19 unit/server tests and 99 Playwright
+tests per run (desktop + phone, 9 skipped by design), plus an opt-in `LIVE_AI=1` real-Gemini test; two consecutive full runs green. A
 Playwright test enforces that no visible text on either page is under 14px.
 
 Testing notes: the in-app preview pane freezes animations when hidden, so judge motion bugs with
@@ -134,10 +139,11 @@ checks the step counter, URL and highlighted section rather than animated captio
 - Phase 0 (server, proxy, contract, Playwright, LEARN.md): **done** 2026-11-05.
 - Redesign v2 (bold neo-brutalist, Bricolage, mascot, two pages, Motion + Lenis): **done**
   2026-11-05.
-- Phase 1: Gemini mentor endpoint (server) ‖ remaining design work — **not started**. Open
-  decisions to ask first: Gemini model name, streaming vs full replies.
-- Phase 2: chat UI + safety eval · Phase 3: Coming-soon previews · Phase 4: tour/demo
-  hardening, deploy (client Vercel; server host to choose), docs.
+- Phases 1–2 (live AI mentor): **done** 2026-11-05. Model `gemini-3.5-flash-lite`, streamed,
+  chat in `/app#mentor`, prepared fallback. Key is in git-ignored `server/.env` (the user pasted
+  it in chat once; recommend rotating it after the hackathon). Open: larger safety eval set.
+- Phase 3: Coming-soon previews · Phase 4: tour/demo hardening, deploy (client Vercel; server
+  host to choose; add CORS for `ALLOWED_ORIGIN` then), docs.
 
 Never put secrets in this file, client code or docs. Keys live only in `server/.env`, entered by
 the user.

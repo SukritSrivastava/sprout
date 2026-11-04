@@ -56,8 +56,13 @@ demo `/app` via React Router; Lucide icons; tour kept and restyled.
   `docs/mentor-api.md`, Playwright suite (65 tests), `docs/LEARN.md`.
 - **Redesign v2: done (2026-11-05).** Bold neo-brutalist, landing `/` + demo `/app`, Sprout
   mascot, Motion + Lenis, Bricolage Grotesque; Playwright suite rewritten (85 tests per run).
-- Phase 1: not started (Gemini mentor endpoint; the calm-redesign frontend track is replaced by
-  the redesign above).
+- **Phase 1 + 2 (AI mentor): done (2026-11-05).** Gemini `gemini-3.5-flash-lite` via
+  `@google/genai`, streamed NDJSON replies, English/Hindi, sample jars/goal context, safety word
+  list + trusted-adult card, prepared-answer fallback (server and client), in-memory rate limit,
+  chat UI in `/app#mentor`. Server tests use a fake model; Playwright mocks the API, plus an
+  opt-in `LIVE_AI=1` test. Still open from Phase 2: a larger safety eval set
+  (`npm run eval:mentor`) for the user to review.
+- Next: Phase 3 (Coming-soon clickable previews).
 
 ### Open decisions (ask at the start of the phase named)
 - Phase 1: router: React Router (recommended) or keep a single page with hash sections?

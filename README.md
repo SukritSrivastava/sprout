@@ -16,9 +16,10 @@ npm run dev
 This starts the website on http://127.0.0.1:5173 and the API on http://127.0.0.1:8787 in one
 terminal. The website forwards `/api/*` to the API, so you only ever open port 5173.
 
-Optional: to use the real AI mentor (from Phase 1), copy `server/.env.example` to `server/.env`
-and paste your own Google AI Studio key. Without a key everything still runs, and the mentor
-uses prepared answers.
+**AI mentor:** copy `server/.env.example` to `server/.env` and paste your own Google AI Studio
+key into `GEMINI_API_KEY` (`GEMINI_MODEL=gemini-3.5-flash-lite`). Restart `npm run dev`. Without a
+key everything still runs and the mentor uses prepared answers, tagged "Offline mode".
+`LIVE_AI=1 npm run test:e2e` adds one test that calls the real AI.
 
 | Command | What it does |
 | --- | --- |
@@ -35,7 +36,8 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 - **`/` home page**: what Sprout is, how it works, Paisa Mentor, how money is kept safe, and
   what's coming soon.
 - **`/app` demo**: a sample kid's Sprout. Earn ₹200, split it into four jars, pick a savings goal,
-  ask the mentor, and step through a simulated withdrawal. All money is sample data.
+  chat with **Paisa Mentor, a live AI (Google Gemini)** in English or Hindi, and step through a
+  simulated withdrawal. All money is sample data; the mentor knows the sample jars and goal.
 - **Sprout the mascot** guides a 75-second tour across both pages (captions always on, voice
   optional, pause/skip/replay, Escape to close).
 - **Motion**: smooth scrolling (Lenis) and purposeful animation (Motion). Turn it off with the
@@ -53,14 +55,14 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 
 ## Scope boundary
 
-This is a demo, not a complete financial application. The API server currently only answers a health check; the AI mentor arrives in Phase 1. There is no authentication, database, server approvals, PayPal integration, or on-chain writes; those are planned as clearly labelled previews. A refresh resets sample state. Real payout permission, independent oversight, durable accounting, and fraud threat modeling remain backend work. The client role simulation is not an authorization system.
+This is a demo, not a complete financial application. The API server runs the live AI mentor and a health check. There is no authentication, database, server approvals, PayPal integration, or on-chain writes; those are planned as clearly labelled previews. A refresh resets sample state. Real payout permission, independent oversight, durable accounting, and fraud threat modeling remain backend work. The client role simulation is not an authorization system.
 
 ## Dependencies
 
 - React + React DOM, React Router: pages and state.
 - Motion and Lenis: animation and smooth scrolling. Lucide: icons.
 - @fontsource-variable/bricolage-grotesque: self-hosted font, no font requests at runtime.
-- Fastify + zod: the API server and its input checks.
+- Fastify + zod: the API server and its input checks. @google/genai: the Gemini AI mentor.
 - Vite, TypeScript, tsx, concurrently, Playwright: build, dev and test tools.
 
 All illustrations (the Sprout mascot) are drawn in code in this repository.

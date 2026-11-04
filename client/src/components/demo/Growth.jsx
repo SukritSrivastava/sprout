@@ -32,11 +32,10 @@ function Chips({ label, options, value, onChange }) {
   );
 }
 
-export default function Growth() {
+// The goal and monthly amount live in Demo.jsx so the AI mentor can talk about the same goal.
+export default function Growth({ goalId, setGoalId, monthly, setMonthly }) {
   const reduced = useReduced();
   const [years, setYears] = useState(5);
-  const [goalId, setGoalId] = useState('bicycle');
-  const [monthly, setMonthly] = useState(100);
   const goal = savingsGoals.find((item) => item.id === goalId);
   const result = projectSavings(monthly, years);
   const months = monthsToGoal(monthly, goal.cost);

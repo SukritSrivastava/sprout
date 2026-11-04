@@ -103,7 +103,7 @@ export const tourSteps = [
     id: 'mentor',
     seconds: 11,
     title: 'Ask Paisa Mentor.',
-    text: 'Tap a question and get a plain answer. These are prepared answers for now; the live AI mentor, in English and Hindi, comes next.',
+    text: 'A live AI mentor. Type any money question or tap a suggestion, in English or Hindi. It knows your sample jars and goal.',
   },
   {
     path: '/app',

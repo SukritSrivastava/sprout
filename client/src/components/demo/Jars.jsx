@@ -11,8 +11,8 @@ function JarAmount({ value }) {
   return money(useCountUp(value));
 }
 
-export default function Jars({ balance }) {
-  const [save, setSave] = useState(50);
+// `save` (the % saved) lives in Demo.jsx so the AI mentor can see the same split.
+export default function Jars({ balance, save, setSave }) {
   const [selected, setSelected] = useState(0);
   const reduced = useReduced();
   const values = splitReward(balance, save);

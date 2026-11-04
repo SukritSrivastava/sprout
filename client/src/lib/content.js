@@ -43,3 +43,55 @@ export const answers = {
 };
 
 export const sampleKid = { name: 'Aanya', baseBalance: 200, reward: 200 };
+
+// Words in the mentor chat, per reply language.
+export const mentorText = {
+  en: {
+    greeting: `Hi ${sampleKid.name}! I’m Paisa Mentor. Ask me anything about money: saving, spending, giving, scams, anything. I can see your sample jars and goal.`,
+    placeholder: 'Ask a money question…',
+    send: 'Send',
+    suggestions: [
+      'When can I reach my goal?',
+      'Is it okay to spend some now?',
+      'What is compound interest?',
+      'How do I spot a money scam?',
+    ],
+    adultTitle: 'This sounds important.',
+    adultText:
+      'Please talk to a parent, guardian, teacher or your NGO mentor today. If you ever feel unsafe, call Childline on 1098, free, any time.',
+    privacy: 'Don’t share your real name, phone number, address or passwords.',
+    offline: 'The mentor can’t be reached, so here’s a prepared answer.',
+  },
+  hi: {
+    greeting: `नमस्ते ${sampleKid.name}! मैं पैसा मेंटर हूँ। पैसों के बारे में कुछ भी पूछो: बचत, खर्च, दान, धोखाधड़ी, कुछ भी। मैं तुम्हारे सैंपल जार और लक्ष्य देख सकता हूँ।`,
+    placeholder: 'पैसों के बारे में सवाल पूछो…',
+    send: 'भेजो',
+    suggestions: [
+      'मैं अपना लक्ष्य कब पूरा कर पाऊँगी?',
+      'क्या अभी थोड़ा खर्च करना ठीक है?',
+      'चक्रवृद्धि ब्याज क्या है?',
+      'पैसों का धोखा कैसे पहचानूँ?',
+    ],
+    adultTitle: 'यह बात ज़रूरी लगती है।',
+    adultText:
+      'आज ही अपने माता-पिता, अभिभावक, टीचर या NGO मेंटर से बात करो। अगर कभी असुरक्षित लगे, तो Childline 1098 पर मुफ़्त कॉल करो, कभी भी।',
+    privacy: 'अपना असली नाम, फ़ोन नंबर, पता या पासवर्ड शेयर मत करो।',
+    offline: 'मेंटर से अभी जुड़ नहीं पाए, इसलिए यह पहले से तैयार जवाब है।',
+  },
+};
+
+// Last resort when the server can't be reached at all: the closest English prepared answer.
+export function offlineAnswer(question, language) {
+  if (language === 'hi') {
+    return 'अभी मैं जुड़ नहीं पा रहा। तब तक एक बात याद रखो: हर बार कमाने पर थोड़ा Save जार में डालो, और किसी को अपना OTP या पासवर्ड मत बताओ।';
+  }
+  const text = question.toLowerCase();
+  const pick = [
+    [/scam|fraud|otp|password/, 'How do I spot a money scam?'],
+    [/invest|gambl|stock|crypto/, 'Is investing like gambling?'],
+    [/compound|interest|grow/, 'What is compound interest?'],
+    [/budget|plan/, 'What is a budget?'],
+    [/give|donat|charity/, 'Do I have to give?'],
+  ].find(([pattern]) => pattern.test(text));
+  return answers[pick ? pick[1] : 'Why should I save?'];
+}

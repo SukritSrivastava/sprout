@@ -1,4 +1,5 @@
 // The demo at "/app": a sample kid's Sprout with earn, jars, growth, mentor and withdraw.
+// Shared sample state lives here so sections stay in sync and the AI mentor knows the numbers.
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import Mascot from '../components/Mascot.jsx';
@@ -9,12 +10,15 @@ import Mentor from '../components/demo/Mentor.jsx';
 import Withdraw from '../components/demo/Withdraw.jsx';
 import { ease, useReduced } from '../lib/motion.jsx';
 import { useCountUp } from '../lib/hooks.js';
-import { money } from '../lib/model.js';
+import { money, savingsGoals, splitReward } from '../lib/model.js';
 import { sampleKid } from '../lib/content.js';
 
 export default function Demo() {
   const reduced = useReduced();
   const [earned, setEarned] = useState(false);
+  const [save, setSave] = useState(50);
+  const [goalId, setGoalId] = useState('bicycle');
+  const [monthly, setMonthly] = useState(100);
   const [burstId, setBurstId] = useState(0);
   const [cheering, setCheering] = useState(false);
   const cheerTimer = useRef(0);
@@ -22,6 +26,14 @@ export default function Demo() {
 
   const balance = sampleKid.baseBalance + (earned ? sampleKid.reward : 0);
   const shown = useCountUp(balance, 700);
+
+  // What the mentor is told about this sample kid (whole rupees, no personal details).
+  const [jarSave, jarSpend, jarGive, jarInvest] = splitReward(balance, save);
+  const goal = savingsGoals.find((item) => item.id === goalId);
+  const mentorContext = {
+    jars: { save: jarSave, spend: jarSpend, give: jarGive, invest: jarInvest },
+    goal: { label: goal.label, cost: goal.cost, monthly },
+  };
 
   const earn = () => {
     setEarned(true);
@@ -60,9 +72,9 @@ export default function Demo() {
         onReset={() => setEarned(false)}
         reward={sampleKid.reward}
       />
-      <Jars balance={balance} />
-      <Growth />
-      <Mentor />
+      <Jars balance={balance} save={save} setSave={setSave} />
+      <Growth goalId={goalId} setGoalId={setGoalId} monthly={monthly} setMonthly={setMonthly} />
+      <Mentor context={mentorContext} />
       <Withdraw />
     </>
   );

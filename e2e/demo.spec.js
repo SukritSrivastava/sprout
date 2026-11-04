@@ -126,41 +126,7 @@ test.describe('Growth calculator', () => {
   });
 });
 
-test.describe('Paisa Mentor (prepared answers)', () => {
-  const questions = [
-    ['What is a budget?', 'A plan for your money'],
-    ['Is investing like gambling?', 'Not really.'],
-    ['How do I spot a money scam?', 'Watch for hurry'],
-  ];
-  for (const [question, answerStart] of questions) {
-    test(`"${question}" shows Sprout thinking, then the answer`, async ({ page }) => {
-      // A fake clock holds the "thinking" state until we move time forward ourselves.
-      await page.clock.install();
-      await page.reload();
-      await goToSection(page, 'mentor');
-      await page.getByRole('button', { name: question }).click();
-      await expect(page.locator('.chat-body .bubble-user')).toHaveText(question);
-      await expect(page.getByLabel('Paisa Mentor is typing')).toBeVisible();
-      await page.clock.runFor(1200);
-      await expect(page.getByLabel('Paisa Mentor is typing')).toHaveCount(0);
-      await expect(page.locator('.chat-body .bubble-mentor')).toContainText(answerStart);
-      await expect(page.getByRole('button', { name: question })).toHaveAttribute('aria-pressed', 'true');
-    });
-  }
-
-  test('offers six questions', async ({ page }) => {
-    await expect(page.locator('.question-list .chip')).toHaveCount(6);
-  });
-
-  test('answers straight away when motion is reduced', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.reload();
-    await goToSection(page, 'mentor');
-    await page.getByRole('button', { name: 'Do I have to give?' }).click();
-    await expect(page.getByLabel('Paisa Mentor is typing')).toHaveCount(0);
-    await expect(page.locator('.chat-body .bubble-mentor')).toContainText('No. Giving is a choice');
-  });
-});
+// The live mentor chat has its own file: mentor.spec.js
 
 test.describe('Withdraw: accountability trail', () => {
   test('steps through approval, payout and receipt, then starts again', async ({ page }) => {

@@ -81,14 +81,20 @@ sprout/
 │        ├─ content.js        words and sample data (jars, mentor answers, sample kid)
 │        ├─ motion.jsx        shared animation pieces (Reveal, Stagger, reduced-motion flag)
 │        ├─ scroll.js         Lenis smooth scrolling + "scroll to section" helpers
-│        └─ hooks.js          useCountUp: numbers that roll to their new value
+│        ├─ hooks.js          useCountUp: numbers that roll to their new value
+│        └─ mentorApi.js      sends a question to the server and reads the streamed reply
 ├─ server/                    the API
 │  ├─ src/
 │  │  ├─ index.ts             starts the server
 │  │  ├─ app.ts               builds the app and plugs in routes
 │  │  ├─ config.ts            reads + checks settings from server/.env
-│  │  └─ routes/health.ts     GET /api/health
-│  ├─ test/health.test.ts     route tests (no real network needed)
+│  │  ├─ routes/health.ts     GET /api/health
+│  │  ├─ routes/mentor.ts     POST /api/mentor/chat: streams the AI mentor's reply
+│  │  ├─ mentor/              schema (what a request may contain), prompt (the mentor's rules),
+│  │  │                       model (talks to Gemini), safety (risky-topic word list),
+│  │  │                       prepared (backup answers)
+│  │  └─ rate-limit.ts        max 20 questions per 5 minutes per address
+│  ├─ test/                  route tests with a fake Gemini (no real network needed)
 │  └─ .env.example            the settings you can set; copy to .env
 ├─ e2e/                       Playwright browser tests
 ├─ docs/
@@ -128,7 +134,12 @@ Read these in order. Each step says what to look for.
     are checked once with zod, routes are plugged into the app, then it listens.
 11. **`server/test/health.test.ts`**: `app.inject()` sends a pretend request straight into the
     app. No port, no network, very fast.
-12. **`e2e/demo.spec.js`**: a real browser clicks buttons and checks what appears. Expected
+12. **The AI mentor, end to end**: `components/demo/Mentor.jsx` (the chat screen) →
+    `lib/mentorApi.js` (sends the question, reads the reply line by line) →
+    `server/src/routes/mentor.ts` (checks the request, picks AI or backup answer, streams it) →
+    `server/src/mentor/model.ts` (the only file that talks to Gemini). Read `mentor/prompt.ts` to
+    see the mentor's rules.
+13. **`e2e/demo.spec.js`**: a real browser clicks buttons and checks what appears. Expected
     numbers are imported from `model.js`, so the test checks the page against the maths.
 
 ---
@@ -164,7 +175,9 @@ Small exercises that touch each part. Undo them afterwards with `git checkout .`
    `server/src/routes/health.ts`, update its type, and fix the server test that now fails.
 4. Give Sprout a new mood in `Mascot.jsx` (say, `'sleepy'` with half-closed eyes) and show it in
    the demo greeting.
-5. Run `npx playwright test --ui`, pick the tour test, and step through it frame by frame.
+5. Change the mentor's personality in `server/src/mentor/prompt.ts` (say, "answer like a cricket
+   commentator"), ask it something in the demo, then change it back.
+6. Run `npx playwright test --ui`, pick the tour test, and step through it frame by frame.
 
 ---
 

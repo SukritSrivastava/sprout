@@ -227,7 +227,7 @@ function MeetMentor() {
               Yes! That’s what your Spend jar is for. Saving works best when it doesn’t feel like a
               punishment.
             </p>
-            <p className="chat-note">The live AI mentor is being built. These are sample replies.</p>
+            <p className="chat-note">Sample replies. The live AI mentor is in the demo.</p>
           </div>
         </Reveal>
       </div>

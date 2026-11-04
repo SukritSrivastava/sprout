@@ -3,15 +3,26 @@
 import Fastify from 'fastify';
 import type { Config } from './config.js';
 import { healthRoutes } from './routes/health.js';
+import { mentorRoutes } from './routes/mentor.js';
+import { createGeminiModel, type MentorModel } from './mentor/model.js';
 
-export function buildApp(config: Config, options: { logger?: boolean } = {}) {
+type AppOptions = {
+  logger?: boolean;
+  // Tests pass a fake model; `undefined` means "use Gemini if a key is set".
+  model?: MentorModel | null;
+  rateLimit?: { limit: number; windowMs: number };
+};
+
+export function buildApp(config: Config, options: AppOptions = {}) {
   const app = Fastify({
     logger: options.logger ?? false,
     bodyLimit: 16 * 1024, // 16KB is plenty for chat messages and blocks oversized requests.
   });
 
+  const model = options.model === undefined ? createGeminiModel(config) : options.model;
+
   app.register(healthRoutes, { config });
-  // Phase 1 adds: app.register(mentorRoutes, { config });
+  app.register(mentorRoutes, { model, rateLimit: options.rateLimit });
 
   // Unknown /api paths get a clear JSON error instead of Fastify's default text.
   app.setNotFoundHandler((request, reply) => {
