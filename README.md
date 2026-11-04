@@ -32,8 +32,8 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 - Click **Explain me** in the hero or the floating cursor for the 75-second tour. Captions are always available. Voice is opt-in. Pause, skip, go back, replay, or press Escape to close. Active playback is 75 seconds; pausing extends the tour.
 - Complete the demo activity: a simulated mentor approval adds a sample ₹200 to the starting ₹200. Reset is available beside the success message.
 - Select jars and move the savings allocation slider; the total is always conserved. The remaining amount uses a fixed illustrative 60/20/20 Spend/Give/Invest split. This is not a complete allocation editor.
-- Move the years slider to explore monthly contributions at an illustrative annual rate of 8%. Returns are not guaranteed and never credited to the sample balance.
-- Select a prepared mentor question.
+- Pick a savings goal (headphones, bicycle, laptop) and a monthly amount to see how long it could take, then move the years slider. Uses an illustrative annual rate of 8%. Returns are not guaranteed and never credited to the sample balance.
+- Select one of six prepared mentor questions (including budgeting, investing vs gambling, and spotting scams). The mentor shows a short typing pause before answering.
 - Step through simulated withdrawal approval, payout, and receipt preview. No real transactions occur.
 - Turn motion off using the desktop header control; the OS reduced-motion setting also applies on every screen size.
 
@@ -45,7 +45,8 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 - `client/src/components/Art.jsx`: original SVG icons, jars, flower and cursor mascot.
 - `client/src/components/Tour.jsx`: guide, narration, playback, section scrolling, focus and cleanup.
 - `client/src/styles.css`: tokens, layouts, animation and responsive rules.
-- `client/src/lib/model.js`: allocation, savings math and tour schedule.
+- `client/src/lib/model.js`: allocation, savings math, goal timing and tour schedule.
+- `client/src/lib/hooks.js`: count-up animation for money values (skipped when motion is off).
 - `client/src/lib/model.test.js`: allocation invariants, savings calculation and tour timing.
 
 ## Scope boundary

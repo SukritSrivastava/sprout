@@ -1,7 +1,20 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Icon, Clicky, Flower, JarArt } from './components/Art.jsx';
 import Tour, { goTo } from './components/Tour.jsx';
-import { money, splitReward, projectSavings } from './lib/model.js';
+import {
+  money,
+  splitReward,
+  projectSavings,
+  savingsGoals,
+  monthlyOptions,
+  monthsToGoal,
+  describeMonths,
+} from './lib/model.js';
+import { useCountUp, motionReduced } from './lib/hooks.js';
+
+function Money({ value }) {
+  return money(useCountUp(value));
+}
 
 const jars = [
   {
@@ -42,6 +55,12 @@ const answers = {
     'It means growth can earn more growth. Imagine a seed becoming a plant, then making more seeds. The calculator above shows a hypothetical example; real returns can vary and are not guaranteed.',
   'Do I have to give?':
     'No. Giving is a choice, never a requirement. Take care of your own needs and goals first. Helping with your time can matter just as much as helping with money.',
+  'What is a budget?':
+    'A budget is a plan for your money before you spend it. Your four jars are a tiny budget: you decide where each rupee goes, then check if the plan still fits your life.',
+  'Is investing like gambling?':
+    'Not quite. Gambling is a bet on one quick outcome. Investing means owning a small part of something for years, and spreading money out lowers risk. It can still lose value, so learn first and never invest money you need soon.',
+  'How do I spot a money scam?':
+    'Watch for pressure, secrecy and promises that sound too good. Nobody real needs your password or OTP. If a deal says “act now” or “guaranteed returns,” pause and ask a trusted adult first.',
 };
 
 function useMotion(reduced) {
@@ -64,7 +83,11 @@ function useMotion(reduced) {
 
 function HeroCards() {
   return (
-    <div className="hero-art" aria-label="Illustrative savings goal and reward cards">
+    <div
+      className="hero-art"
+      role="img"
+      aria-label="Illustrative cards: a headphones goal 65% saved, and a ₹200 reward earned"
+    >
       <div className="orbit orbit-one" />
       <div className="orbit orbit-two" />
       <div className="little-note">
@@ -158,7 +181,9 @@ function Jars({ reward }) {
             />
             <h3>{jar.name}</h3>
             <p>{jar.note}</p>
-            <strong>{money(values[i])}</strong>
+            <strong>
+              <Money value={values[i]} />
+            </strong>
             <span className="jar-select">
               <Icon name={selected === i ? 'check' : 'diagonal'} size={17} />
             </span>
@@ -193,15 +218,40 @@ function Jars({ reward }) {
   );
 }
 
+function ChipGroup({ label, options, value, onChange, format }) {
+  return (
+    <div className="chip-group" role="group" aria-label={label}>
+      <span className="chip-label">{label}</span>
+      <div className="chips">
+        {options.map((option) => (
+          <button
+            key={option.id}
+            className="chip"
+            aria-pressed={value === option.id}
+            onClick={() => onChange(option.id)}
+          >
+            {format(option)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Growth() {
   const [years, setYears] = useState(5);
-  const result = projectSavings(100, years);
+  const [goalId, setGoalId] = useState('bicycle');
+  const [monthly, setMonthly] = useState(100);
+  const goal = savingsGoals.find((item) => item.id === goalId);
+  const result = projectSavings(monthly, years);
+  const months = monthsToGoal(monthly, goal.cost);
+  const balance = useCountUp(result.balance);
   const max = Math.max(...result.points);
+  const y = (value) => 160 - (value / max) * 140;
   const path = result.points
-    .map(
-      (point, i) => `${i === 0 ? 'M' : 'L'}${12 + (i / years) * 356},${160 - (point / max) * 140}`,
-    )
+    .map((point, i) => `${i === 0 ? 'M' : 'L'}${12 + (i / years) * 356},${y(point)}`)
     .join(' ');
+  const goalOnChart = goal.cost <= max;
   return (
     <section id="grow" className="growth-section section-pad">
       <div className="growth-copy reveal">
@@ -228,11 +278,37 @@ function Growth() {
           <span>THE WHAT-IF CALCULATOR</span>
           <span className="small-pill">ILLUSTRATION</span>
         </div>
-        <p>
-          If you set aside <strong>₹100 / month</strong>
+        <div className="growth-pickers">
+          <ChipGroup
+            label="Saving for"
+            options={savingsGoals}
+            value={goalId}
+            onChange={setGoalId}
+            format={(item) => item.label}
+          />
+          <ChipGroup
+            label="Each month"
+            options={monthlyOptions.map((amount) => ({ id: amount }))}
+            value={monthly}
+            onChange={setMonthly}
+            format={(item) => money(item.id)}
+          />
+        </div>
+        <p className="goal-eta" aria-live="polite">
+          {months === null ? (
+            <>
+              A {money(goal.cost)} {goal.label.toLowerCase()} needs a bigger monthly amount or more
+              time.
+            </>
+          ) : (
+            <>
+              Your {money(goal.cost)} {goal.label.toLowerCase()} in{' '}
+              <strong>{describeMonths(months)}</strong>
+            </>
+          )}
         </p>
-        <div className="growth-value" aria-live="polite">
-          {money(result.balance)}
+        <div className="growth-value">
+          {money(balance)}
           <span>after {years} years</span>
         </div>
         <svg
@@ -249,6 +325,19 @@ function Growth() {
           />
           <path d={`${path} L368,160 L12,160Z`} fill="#d9efdf" />
           <path d={path} fill="none" stroke="#426f54" strokeWidth="4" strokeLinejoin="round" />
+          {goalOnChart && (
+            <g className="goal-line">
+              <path
+                d={`M12 ${y(goal.cost)}h356`}
+                stroke="#7356a3"
+                strokeWidth="2"
+                strokeDasharray="6 5"
+              />
+              <text x="16" y={y(goal.cost) - 7} fill="#5b3f8c">
+                {goal.label} goal
+              </text>
+            </g>
+          )}
           <circle cx="368" cy="20" r="6" fill="#c1aff0" stroke="#1b2922" strokeWidth="2" />
         </svg>
         <div className="chart-labels">
@@ -268,7 +357,7 @@ function Growth() {
           onChange={(e) => setYears(Number(e.target.value))}
         />
         <p className="calculator-note">
-          You put in {money(result.contributed)}. Assumes 8% annual growth, compounded monthly, with
+          You put in {money(result.contributed)} over {years} years. Assumes 8% annual growth, compounded monthly, with
           deposits at month-end. Hypothetical, not guaranteed. No actual investing.
         </p>
       </div>
@@ -278,6 +367,17 @@ function Growth() {
 
 function Mentor() {
   const [question, setQuestion] = useState('Why should I save?');
+  const [typing, setTyping] = useState(false);
+  const timer = useRef(0);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const ask = (text) => {
+    if (text === question && !typing) return;
+    setQuestion(text);
+    clearTimeout(timer.current);
+    if (motionReduced()) return setTyping(false);
+    setTyping(true);
+    timer.current = setTimeout(() => setTyping(false), 750);
+  };
   return (
     <section id="mentor" className="mentor-section section-pad">
       <div className="mentor-chat reveal">
@@ -293,17 +393,25 @@ function Mentor() {
         </div>
         <div className="chat-content" aria-live="polite">
           <div className="message user-message">{question}</div>
-          <div className="message mentor-message">
-            {answers[question]}
-            <span className="message-sign">A LITTLE WISDOM, ZERO JUDGEMENT.</span>
-          </div>
+          {typing ? (
+            <div className="message mentor-message typing" aria-label="Paisa Mentor is typing">
+              <span />
+              <span />
+              <span />
+            </div>
+          ) : (
+            <div className="message mentor-message" key={question}>
+              {answers[question]}
+              <span className="message-sign">A LITTLE WISDOM, ZERO JUDGEMENT.</span>
+            </div>
+          )}
         </div>
         <div className="question-label">TRY A QUESTION</div>
         <div className="question-options">
           {Object.keys(answers).map((text) => (
             <button
               className={question === text ? 'active' : ''}
-              onClick={() => setQuestion(text)}
+              onClick={() => ask(text)}
               aria-pressed={question === text}
               key={text}
             >
@@ -442,6 +550,7 @@ function Trust() {
 export default function App() {
   const [tourOpen, setTourOpen] = useState(false);
   const [earned, setEarned] = useState(false);
+  const [burst, setBurst] = useState(0);
   const [menu, setMenu] = useState(false);
   const [reduced, setReduced] = useState(
     () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
@@ -473,6 +582,16 @@ export default function App() {
     window.addEventListener('pointerdown', click);
     return () => window.removeEventListener('pointerdown', click);
   }, [reduced]);
+  useEffect(() => {
+    if (!menu) return;
+    const key = (event) => event.key === 'Escape' && setMenu(false);
+    window.addEventListener('keydown', key);
+    return () => window.removeEventListener('keydown', key);
+  }, [menu]);
+  const earn = () => {
+    setEarned(true);
+    setBurst((value) => value + 1);
+  };
   const startTour = (event) => {
     tourTrigger.current = event.currentTarget;
     setMenu(false);
@@ -578,7 +697,7 @@ export default function App() {
             </a>
           </div>
         </section>
-        <div className="ticker" aria-label="Earn with purpose. Save for something. Learn by doing.">
+        <div className="ticker">
           <div className="ticker-track">
             {[0, 1].map((i) => (
               <div key={i} aria-hidden={i === 1 ? 'true' : undefined}>
@@ -640,10 +759,19 @@ export default function App() {
               <button
                 className={`button ${earned ? 'button-mint' : 'button-dark'}`}
                 disabled={earned}
-                onClick={() => setEarned(true)}
+                onClick={earn}
               >
                 {earned ? 'Sample reward added' : 'Complete demo activity'}
                 <Icon name={earned ? 'check' : 'arrow'} size={18} />
+                {burst > 0 && (
+                  <span className="reward-burst" key={burst} aria-hidden="true">
+                    {['₹', '✳', '₹', '✦', '₹', '✳', '₹', '✦'].map((symbol, i) => (
+                      <span key={i} style={{ '--i': i }}>
+                        {symbol}
+                      </span>
+                    ))}
+                  </span>
+                )}
               </button>
               <small>
                 {earned

@@ -83,8 +83,12 @@ export default function Tour({ open, onClose, returnFocusRef }) {
   }, [open, voice, index, paused, complete, speechAvailable, step.text]);
 
   if (!open) return null;
-  const jump = (next) =>
-    setElapsed(next >= tourSteps.length ? tourDuration : tourStart(Math.max(0, next)));
+  // Step from the latest elapsed value so fast repeated clicks never read a stale step.
+  const jump = (delta) =>
+    setElapsed((value) => {
+      const next = tourIndex(value) + delta;
+      return next >= tourSteps.length ? tourDuration : tourStart(Math.max(0, next));
+    });
   return (
     <aside className="tour-panel" aria-label="Sprout guided tour">
       <div className="tour-top">
@@ -136,7 +140,7 @@ export default function Tour({ open, onClose, returnFocusRef }) {
               className="icon-button"
               aria-label="Previous tour step"
               disabled={index === 0}
-              onClick={() => jump(index - 1)}
+              onClick={() => jump(-1)}
             >
               ←
             </button>
@@ -146,7 +150,7 @@ export default function Tour({ open, onClose, returnFocusRef }) {
             <button
               className="icon-button"
               aria-label="Next tour step"
-              onClick={() => jump(index + 1)}
+              onClick={() => jump(1)}
             >
               →
             </button>
