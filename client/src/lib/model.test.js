@@ -60,7 +60,8 @@ test('growth uses month-end contributions and handles zero returns', () => {
 test('the full tour finishes in 75 seconds and covers every section exactly once', () => {
   assert.equal(tourDuration, 75);
   assert.ok(tourDuration < 90);
-  assert.equal(new Set(tourSteps.map((step) => step.id)).size, tourSteps.length);
+  assert.equal(new Set(tourSteps.map((step) => `${step.path}#${step.id}`)).size, tourSteps.length);
+  assert.ok(tourSteps.every((step) => ['/', '/app'].includes(step.path)));
   tourSteps.forEach((step, i) => {
     assert.equal(tourIndex(tourStart(i)), i);
     assert.equal(tourIndex(tourStart(i) + step.seconds - 0.01), i);

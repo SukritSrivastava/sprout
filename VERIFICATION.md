@@ -1,5 +1,41 @@
 # Verification
 
+## Redesign v2: bold neo-brutalist, two pages, motion (2026-11-05)
+
+Fresh results, Windows 11, Node 24.20.0, Playwright 1.64 Chromium.
+
+- `npm test`: 9 passed (5 client, 4 server), 0 failed.
+- `npx playwright test --repeat-each=2`: 170 passed, 14 skipped by design (phone-only checks on
+  desktop and the reverse), 0 failed, no flaky tests.
+- `npm run build`: website and server build cleanly. (Vite prints harmless "use client"
+  directive warnings from the animation library.)
+- Text size: a Playwright test confirms **0%** of visible text on `/` and `/app` is under 14px
+  (it was 70% before the redesign).
+- Screenshots reviewed at 1366×768 and phone size (saved in git-ignored `qa/after-*.png`).
+
+Browser tests now cover: both pages load without sideways scroll; all sections present; demo
+link, Home link, "Try it in the demo" deep link, direct `#section` links, 404 page; skip link;
+header links gliding to sections from either page; motion toggle switching Lenis and animations;
+OS reduced motion; page switching with motion off and after toggling it back on; tour button
+sliding away on scroll down; earn/celebrate/reset (and no burst when motion is off); jar
+selection and split at 0/35/100%; goal picker cases, goal line, years slider; mentor thinking
+then answering (fake clock) and instant answers with motion off; withdraw trail; tour open,
+focus, Escape, cross-page next/previous, pause/resume, full 75s playthrough, voice toggle, all
+entry points; phone menu and Escape; API health and JSON 404.
+
+Bugs found and fixed during this work:
+- With motion off, switching pages got stuck on the old page (fade-out never completed). Pages
+  now swap instantly when motion is off; a regression test covers it.
+- Opening `/app#jars` directly stopped short because it scrolled before fonts loaded; it now
+  waits for fonts.
+- The floating tour button covered buttons near the bottom of the screen on phones; it now
+  slides away while scrolling down.
+
+Not covered: live AI (Phase 1), screen-reader walkthrough, audible voice quality. Motion
+smoothness was judged by eye in a visible browser; animations freeze in hidden preview panes.
+
+---
+
 ## Phase 0: server, proxy and browser tests (2026-11-05)
 
 Fresh results from this phase, on Windows 11, Node 24.20.0, Chromium via Playwright 1.64.

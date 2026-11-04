@@ -63,15 +63,24 @@ sprout/
 │  ├─ index.html              the empty page React fills in
 │  ├─ vite.config.js          dev server + the /api proxy
 │  └─ src/
-│     ├─ main.jsx             starts React, loads fonts and CSS
-│     ├─ App.jsx              every section of the page (start here)
-│     ├─ styles.css           all styling: colour tokens at the top, phone rules at the bottom
+│     ├─ main.jsx             starts React and the router, loads the font and CSS
+│     ├─ App.jsx              app shell: routes, page transitions, smooth scroll, motion toggle
+│     ├─ styles.css           the whole design system: tokens at the top, phone rules at the end
+│     ├─ pages/
+│     │  ├─ Landing.jsx       "/"   the home page (hero, how it works, mentor, trust, coming soon)
+│     │  ├─ Demo.jsx          "/app" the demo, built from the sections below
+│     │  └─ NotFound.jsx      any other address
 │     ├─ components/
-│     │  ├─ Art.jsx           drawings as code: icons, jars, Clicky, the flower
-│     │  └─ Tour.jsx          Clicky's 75-second guided tour
+│     │  ├─ Layout.jsx        header, footer, floating tour button
+│     │  ├─ Mascot.jsx        Sprout the mascot (moods: happy, think, cheer)
+│     │  ├─ Tour.jsx          the 75-second guided tour across both pages
+│     │  └─ demo/             Earn, Jars, Growth, Mentor, Withdraw sections of /app
 │     └─ lib/
 │        ├─ model.js          the maths: jar split, savings growth, goals, tour timing
 │        ├─ model.test.js     unit tests for that maths
+│        ├─ content.js        words and sample data (jars, mentor answers, sample kid)
+│        ├─ motion.jsx        shared animation pieces (Reveal, Stagger, reduced-motion flag)
+│        ├─ scroll.js         Lenis smooth scrolling + "scroll to section" helpers
 │        └─ hooks.js          useCountUp: numbers that roll to their new value
 ├─ server/                    the API
 │  ├─ src/
@@ -84,7 +93,9 @@ sprout/
 ├─ e2e/                       Playwright browser tests
 ├─ docs/
 │  ├─ LEARN.md                you are here
+│  ├─ REDESIGN.md             the agreed look and feel
 │  └─ mentor-api.md           the exact shape of every API request and reply
+├─ DESIGN.md                  design tokens, components and motion rules
 ├─ PHASES.md                  the build plan, phase by phase
 └─ LLM_CONTEXT.md             full project briefing for an AI assistant
 ```
@@ -95,24 +106,30 @@ sprout/
 
 Read these in order. Each step says what to look for.
 
-1. **`client/src/lib/model.js`**: plain functions, no React. `splitReward` divides a reward
+1. **`client/src/lib/model.js`**: plain functions, no React. `splitReward` divides money
    between four jars and always keeps every rupee. `projectSavings` and `monthsToGoal` do the
    "what if I save ₹100 a month" maths. Everything else on the page just shows these answers.
 2. **`client/src/lib/model.test.js`**: how those functions are proven correct. Run `npm test`.
-3. **`client/src/App.jsx`**, the `Jars` function: `useState` holds the slider value; every
-   time it changes React re-runs the function and the page updates. That is the core React idea.
-4. **`App.jsx`**, the `App` function at the bottom: page-wide state (`earned`, `tourOpen`, the
-   mobile `menu`) lives here and flows down to sections as props (`<Jars reward={...} />`).
-5. **`client/src/components/Tour.jsx`**: `useEffect` = "do this when something changes, undo it
-   when it stops". A timer, keyboard listener and voice are each started and cleaned up this way.
-6. **`client/vite.config.js`**: the proxy that links the website to the server.
-7. **`server/src/config.ts`** → **`app.ts`** → **`routes/health.ts`** → **`index.ts`**: settings
-   are checked once with zod, routes are plugged into the app, then it listens.
-8. **`server/test/health.test.ts`**: `app.inject()` sends a pretend request straight into the
-   app. No port, no network, very fast.
-9. **`e2e/demo.spec.js`**: a real browser clicks buttons and checks what appears. Note how the
-   expected numbers are imported from `model.js`, so the test checks the page against the maths.
-10. **`docs/mentor-api.md`**: the contract the AI mentor will follow in Phase 1.
+3. **`client/src/components/demo/Jars.jsx`**: `useState` holds the slider value; every time it
+   changes React re-runs the function and the page updates. That is the core React idea.
+4. **`client/src/pages/Demo.jsx`**: shared state (`earned`) lives in the page and flows down to
+   sections as props (`<Jars balance={...} />`), so earning in one section updates another.
+5. **`client/src/App.jsx`**: React Router picks a page from the address; `AnimatePresence` fades
+   the old page out and the new one in; `useHashScrolling` glides to `#section` links.
+6. **`client/src/lib/motion.jsx`** and **`lib/scroll.js`**: how every reveal and smooth scroll
+   works, and how "motion off" switches it all off in one place.
+7. **`client/src/components/Mascot.jsx`**: an SVG drawn in code, with Motion animating the blink
+   and leaf sway, and different faces per `mood`.
+8. **`client/src/components/Tour.jsx`**: `useEffect` = "do this when something changes, undo it
+   when it stops". The tour's timer, keyboard listener and voice are each started and cleaned up
+   this way; each step navigates to its page and section.
+9. **`client/vite.config.js`**: the proxy that links the website to the server.
+10. **`server/src/config.ts`** → **`app.ts`** → **`routes/health.ts`** → **`index.ts`**: settings
+    are checked once with zod, routes are plugged into the app, then it listens.
+11. **`server/test/health.test.ts`**: `app.inject()` sends a pretend request straight into the
+    app. No port, no network, very fast.
+12. **`e2e/demo.spec.js`**: a real browser clicks buttons and checks what appears. Expected
+    numbers are imported from `model.js`, so the test checks the page against the maths.
 
 ---
 
@@ -140,12 +157,14 @@ Read these in order. Each step says what to look for.
 Small exercises that touch each part. Undo them afterwards with `git checkout .`.
 
 1. Add a fourth savings goal (e.g. "School bag", ₹800) in `savingsGoals` in `model.js`. Watch
-   it appear in the calculator. Which test would you add?
-2. Change the default jar split from 50% to 30% saving in `App.jsx`. Run `npm run test:e2e` and
+   it appear in the calculator on /app. Which test would you add?
+2. Change the default jar split from 50% to 30% saving in `components/demo/Jars.jsx`. Run `npm run test:e2e` and
    read which test fails and why.
 3. Add `uptimeSeconds: Math.round(process.uptime())` to the health response in
    `server/src/routes/health.ts`, update its type, and fix the server test that now fails.
-4. Run `npx playwright test --ui`, pick the tour test, and step through it frame by frame.
+4. Give Sprout a new mood in `Mascot.jsx` (say, `'sleepy'` with half-closed eyes) and show it in
+   the demo greeting.
+5. Run `npx playwright test --ui`, pick the tour test, and step through it frame by frame.
 
 ---
 
@@ -162,3 +181,6 @@ Small exercises that touch each part. Undo them afterwards with `git checkout .`
 | Schema | A description of valid data that zod checks against |
 | E2E test | End-to-end: a real browser using the real site |
 | Workspace | One npm project (`client`, `server`) inside the root project |
+| Route (website) | An address like `/` or `/app` that React Router maps to a page |
+| Smooth scroll | Lenis easing the page toward where you scrolled, instead of jumping |
+| Reduced motion | The setting (OS or header toggle) that turns animations off |

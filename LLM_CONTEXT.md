@@ -1,176 +1,143 @@
 # Sprout: complete project handoff for another LLM
 
-Snapshot: 2026-11-04 (updated after the polish commit and the planning session). Read this first, then `PHASES.md` for the agreed roadmap and decisions. Source code takes precedence if this snapshot becomes stale.
+Snapshot: 2026-11-05, after the bold neo-brutalist redesign. Read this first, then `PHASES.md`
+(roadmap, decisions, phase status), `docs/REDESIGN.md` (agreed look), `DESIGN.md` (tokens and
+motion rules) and `docs/LEARN.md` (codebase walkthrough). Source code wins if this file is stale.
 
 ## Handoff prompt
 
-You are continuing Sprout, a financial-literacy frontend concept (current copy targets teens aged 15–17; the agreed audience is 8–17, see the roadmap at the end), developed in a PayPal AI hackathon workspace. Preserve the existing working interactions, visual identity, accessibility behavior, and honest demo labels unless the user requests changes. Inspect the relevant source before editing. Distinguish implemented behavior from proposed features. Do not claim that payments, AI, authentication, or blockchain work: they are not implemented. Ask the user for their next objective if none is supplied. This file is context, not a request to implement every future feature. The user requires: ask before any major change and before any tech decision not already recorded in `PHASES.md`; build frontend and backend tracks in parallel; keep this file current after every phase.
+You are continuing Sprout, a financial-literacy demo for kids aged 8–17, run through NGOs, built
+in a PayPal AI hackathon workspace. Preserve working interactions, the bold neo-brutalist look,
+accessibility and motion behaviour, and honest labels ("Sample", "simulated", "AI, can make
+mistakes"). Inspect source before editing. Distinguish implemented behaviour from planned
+features: payments, live AI, authentication, database and blockchain are **not** implemented.
+
+The user requires: **ask before any major change** and **before any tech decision** not already
+recorded in `PHASES.md`; grill them with questions when direction is unclear; build frontend and
+backend tracks in parallel; test with Playwright; keep this file, README, VERIFICATION and
+PHASES current after every phase; commit after each phase. The user is learning the codebase, so
+keep files small, commented in plain words, and update `docs/LEARN.md` when structure changes.
+The user rejected a "premium fintech / AI-looking" style: keep it neo-brutalist and human-made.
 
 ## Product and scope
 
-Sprout helps teens learn money skills through NGO-backed activities, learning rewards, four virtual money jars, hypothetical savings growth, and mentorship. The concept has NGOs managing real funds and authorized adults approving withdrawals. Currency examples use Indian rupees.
+Kids do small useful activities at an NGO, a mentor approves, the reward lands in four virtual
+jars (Save, Spend, Give, Invest), they plan goals, and ask Paisa Mentor money questions in
+English or Hindi. The NGO holds real money; adults approve payouts to guardians. Rupees (₹).
 
-The current deliverable is a responsive, locally runnable, presentation-led website with bounded interactive demonstrations. It is not a complete financial application. There is no backend, authentication, database, persistent ledger, actual activity submission, independent approval, live AI, PayPal API integration, wallet, smart contract, or blockchain transaction. A refresh resets React state. There are no required API keys or environment variables.
-
-Only the current source, README, DESIGN.md, and VERIFICATION.md were available when compiling this handoff. Earlier conversations, a complete hackathon brief, judging criteria, and unrecorded decisions are not recoverable from these files. Planned features below are concept descriptions, not proof of a finalized specification.
+**Current deliverable:** a two-page website with a sample demo, plus a small API server. All
+money is sample data in browser memory; a refresh resets it. The only planned real feature is
+the Gemini-powered mentor (Phase 1). Everything else (PayPal donations/payouts, NGO dashboard,
+public impact ledger on Base Sepolia, Seedlings mode for 8–11, full Hindi UI) will be clickable
+"Coming soon" previews with no real behaviour (Phase 3). Full plans for making them real are kept
+in the "Later" section of `PHASES.md`.
 
 ## Repository and setup
 
-Application root: `sprout/` within the surrounding `Paypal AI hack` workspace. Run npm commands from `sprout/`, not the parent directory. The sibling `skill-install-staging/` contains agent skill material and is not application code.
+App root: `sprout/` inside the `Paypal AI hack` workspace (which also has `skill-install-staging/`,
+not app code, and a `.claude/launch.json` that starts `npm --prefix sprout run dev` for the
+in-app preview). `sprout/` has its own git repo; commit only there. Nothing pushed or deployed.
 
-The app has its own `.git` directory inside a parent workspace that also has `.git`. Commit only in `sprout/`. History on `main`: `56eece5` baseline, `1827deb` Prettier format only, `7f2f7b1` polish (projector text sizes, goal picker, mentor typing, count-ups, fixes). Nothing has been pushed or deployed. `.git/sprout-original/` holds untracked copies used once for a VS Code side-by-side comparison and can be deleted.
+History on `main`: `56eece5` baseline · `1827deb` Prettier format · `7f2f7b1` polish ·
+`4b8e9dd` Phase 0 (server, proxy, Playwright, LEARN.md) · then the redesign commit.
 
-Stack: website in JavaScript, React 18, React DOM, Vite 6, plain CSS, original SVG/CSS illustrations (no router, UI library, state library or chart library). API in `server/`: Fastify 5, TypeScript 7, zod 4, run with tsx in dev and compiled with tsc. npm workspaces `client` and `server`. Dev tools: concurrently, @playwright/test (Chromium). No AI SDK is installed yet (`@google/genai` arrives in Phase 1). The MIT license is in `LICENSE`.
-
-README specifies Node.js 22+ and npm:
+Node 22+ (developed on 24.20) and npm workspaces `client` and `server`:
 
 ```sh
-cd sprout
 npm install
-npm run dev
-npm test
-npm run build
-npm run preview
+npx playwright install chromium   # once, for browser tests
+npm run dev        # website 127.0.0.1:5173 + API 127.0.0.1:8787 (concurrently, coloured labels)
+npm test           # client unit tests (5) + server tests (4)
+npm run test:e2e   # Playwright: desktop 1366x768 + Pixel 7 phone
+npm run build      # client to client/dist, server to server/dist
+npm run preview    # production website on 4173 + compiled API
 ```
 
-Development and preview bind to `127.0.0.1`. Vite normally prints `http://127.0.0.1:5173` for development; use its actual printed URL. Production output is `client/dist/`. Use the committed/present `package-lock.json` for exact resolved versions; manifest versions use compatible ranges. Installation requires internet. Installed app assets and fonts are local; optional browser speech may depend on device/network voices.
+`client/vite.config.js` proxies `/api` to the API. The server reads `API_PORT` (not `PORT`, which
+tools set for the website), `HOST`, `ALLOWED_ORIGIN`, `GEMINI_API_KEY`, `GEMINI_MODEL` from env or
+`server/.env` (git-ignored; `.env.example` documents them), validated with zod.
+`GET /api/health` → `{ ok, service, mentor: { aiConfigured } }`, never the key. Prettier 3
+(width 100, single quotes) via npx, not a dependency. No lint or CI.
 
-Root scripts delegate dev/build/preview to the `client` workspace. `npm run dev` starts the website (127.0.0.1:5173) and API (127.0.0.1:8787) together via concurrently; `client/vite.config.js` proxies `/api` to the API. `npm test` runs client unit tests (5, `node --test`) and server tests (4, `node --import tsx --test`). `npm run test:e2e` runs Playwright (`playwright.config.js`, tests in `e2e/`, projects `desktop` 1366×768 and `phone` Pixel 7; starts or reuses both servers). `e2e/fixtures.js` fails any test that logs a browser console error. The server reads `API_PORT` (not `PORT`, which tools set for the website), `HOST`, `ALLOWED_ORIGIN`, `GEMINI_API_KEY`, `GEMINI_MODEL` from env or `server/.env` (loaded with `process.loadEnvFile`, validated by zod in `server/src/config.ts`). `GET /api/health` returns `{ ok, service, mentor: { aiConfigured } }` and never the key. Source is formatted with Prettier 3 (print width 100, single quotes), run via npx; it is not a project dependency. No lint, end-to-end test, or CI script is configured. `.gitignore` excludes `node_modules/`, `dist/`, `.env` (any folder, so `server/.env` too), `*.local`, `.DS_Store`, `qa/`, and Playwright output folders.
+### Dependencies
+
+Client: react 18, react-dom, react-router-dom 7, motion 14 (`motion/react`), lenis 1.3,
+lucide-react, @fontsource-variable/bricolage-grotesque (opsz file). Server: fastify 5, zod 4.
+Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 
 ## Source map
 
 | File | Responsibility |
 | --- | --- |
-| `package.json` | npm workspace and root commands |
-| `package-lock.json` | resolved dependencies |
-| `client/package.json` | React, Vite, bundled-font dependencies and client commands |
-| `client/index.html` | English document shell, metadata, favicon and JSX entry |
-| `client/public/sprout.svg` | original favicon |
-| `client/src/main.jsx` | mounts App in React.StrictMode; imports fonts and CSS |
-| `client/src/App.jsx` | entire landing page, section components, demo state, motion and navigation |
-| `client/src/components/Art.jsx` | Icon, Clicky, Flower and JarArt illustrations |
-| `client/src/components/Tour.jsx` | tour UI, clock, scrolling, speech, focus and cleanup; exports goTo |
-| `client/src/lib/model.js` | currency formatting, allocation math, growth math, savings goals, months-to-goal, tour schedule |
-| `client/src/lib/hooks.js` | `useCountUp` number animation and `motionReduced()` helper |
-| `client/src/lib/model.test.js` | five Node tests for math, goal timing and tour timing |
-| `PHASES.md` | agreed decisions, phase status, open decisions, and the phase-by-phase build prompts |
-| `client/vite.config.js` | dev/preview ports and the `/api` proxy to the server |
-| `server/src/config.ts` | loads and validates server settings |
-| `server/src/app.ts` | `buildApp(config)`: Fastify app with routes, 16KB body limit, JSON 404s |
-| `server/src/routes/health.ts` | `GET /api/health` |
-| `server/src/index.ts` | starts the server |
-| `server/test/health.test.ts` | route and config tests using `app.inject` |
-| `server/.env.example` | every server setting with comments; copy to `server/.env` |
-| `playwright.config.js`, `e2e/*.spec.js` | browser tests for every interaction, desktop and phone |
-| `docs/mentor-api.md` | API contract for health and the mentor chat |
-| `docs/LEARN.md` | learning guide: architecture, reading order, exercises |
-| `client/src/styles.css` | canonical tokens, CSS layers, layouts, illustration styling, motion, responsive rules |
-| `DESIGN.md` | visual intent, tokens and motion/access contract |
-| `VERIFICATION.md` | prior manual checks, build/test evidence and limitations |
-| `README.md` | setup, demo instructions and scope |
+| `client/src/main.jsx` | BrowserRouter, font (Bricolage opsz), Lenis CSS, styles |
+| `client/src/App.jsx` | shell: reduced-motion setting (OS + toggle, starts/stops Lenis), `useHashScrolling` (glide to `#section`, wait for fonts on first load, jump after page change), page transitions with `AnimatePresence` (instant swap when motion is off), routes, header/footer, tour |
+| `client/src/pages/Landing.jsx` | `/`: hero (id `home`), how it works (`how`), mentor teaser (`meet-mentor`), trust (`trust`), coming soon (`soon`, 5 rows), closing |
+| `client/src/pages/Demo.jsx` | `/app`: greeting + balance card, then Earn, Jars, Growth, Mentor, Withdraw; owns `earned` state and the cheer/burst |
+| `client/src/pages/NotFound.jsx` | any other path |
+| `client/src/components/Layout.jsx` | `Brand`, `SiteHeader` (nav links to `/#how`, `/#meet-mentor`, `/#soon`; motion toggle; demo/Home button; phone menu with Escape), `SiteFooter`, `TourLauncher` (label hides past 320px scroll; slides away while scrolling down) |
+| `client/src/components/Mascot.jsx` | Sprout SVG, moods `happy`/`think`/`cheer`, blink + leaf sway idle, cheer bounce |
+| `client/src/components/Tour.jsx` | 75s tour across both pages; each step navigates to `path#id` (replace) and adds `.tour-target` |
+| `client/src/components/demo/*.jsx` | `Earn` (ids `earn`), `Jars` (`jars`), `Growth` (`grow`), `Mentor` (`mentor`), `Withdraw` (`withdraw`) |
+| `client/src/lib/model.js` | `money`, `splitReward`, `projectSavings`, `savingsGoals`, `monthlyOptions`, `monthsToGoal`, `describeMonths`, `tourSteps` (with `path`), `tourDuration`, `tourStart`, `tourIndex` |
+| `client/src/lib/content.js` | `jars` (name, colour var, note, detail), six prepared `answers`, `sampleKid` (Aanya, ₹200 base, ₹200 reward) |
+| `client/src/lib/motion.jsx` | `ReducedMotion` context + `useReduced`, `ease`, `Reveal`, `Stagger`/`Stagger.Item`, `liftOnHover` |
+| `client/src/lib/scroll.js` | Lenis start/stop, `scrollToId` (96px header offset), `scrollToTop`, `waitForId` |
+| `client/src/lib/hooks.js` | `useCountUp` (instant when `data-reduced=true`) |
+| `client/src/styles.css` | the design system (tokens → base → components → pages → tour → reduced motion → tablet/phone) |
+| `server/src/*` | `config.ts`, `app.ts` (`buildApp`, 16KB body limit, JSON 404), `routes/health.ts`, `index.ts` |
+| `e2e/*.spec.js` | `api`, `page`, `demo`, `tour`, `phone`; `fixtures.js` fails tests on console errors and has `goToSection` |
+| `docs/` | `LEARN.md`, `REDESIGN.md`, `mentor-api.md` (contract for Phase 1) |
 
-## Page narrative and implemented behavior
+## Behaviour
 
-This is one document with anchor navigation, not multiple routes. Section IDs also drive the tour: `home`, `earn`, `jars`, `grow`, `mentor`, `trust`, `start`. Main content has ID `main` for the skip link.
-
-1. **Hero:** “Small earnings. Big beginnings.” Original floating goal/reward cards, a sample headphones goal of ₹650/₹1,000, CTA to the activity, and “Explain me” tour launcher. Hero artwork is illustrative and independent of demo account state.
-2. **Earn:** sample 30-minute community reading activity worth ₹200. Initial sample balance is ₹200; completing the activity flips `earned` to true, plays a small burst of symbols on the button, and supplies ₹400 to Jars. Button disables to prevent a second reward. Reset returns to ₹200. Approval is simulated immediately in the same client.
-3. **Four jars:** Save, Spend, Give, Invest. Selecting a jar changes explanatory text. Save percentage begins at 50%; range is 0–100 in steps of 5. The remainder uses a fixed 60/20/20 Spend/Give/Invest split. This is not a fully editable four-way allocation tool. Jar colors and explanatory copy are defined in App.jsx. Giving is optional in the concept; the demo remainder formula itself is fixed.
-4. **Growth:** goal chips (Headphones ₹1,000, Bicycle ₹6,000, Laptop ₹30,000; default Bicycle) and monthly chips (₹100/₹250/₹500; default ₹100) show months to the goal via `monthsToGoal` (null beyond 240 months) and a dashed goal line when the goal fits on the chart. Contribution follows the monthly chip; ₹100 monthly contribution, years range 1–10, default 5, illustrative annual rate 8% compounded monthly with deposits at month-end. SVG chart is derived from annual points. Growth never changes the sample balance. Display includes contributed amount and hypothetical-return disclosure.
-5. **Paisa Mentor:** six prepared questions: saving, compound interest, whether giving is required, budgeting, investing vs gambling, spotting scams. Selecting one shows a 750ms typing bubble (skipped when motion is off), then the static answer. There is no input box, model request, conversation memory, or live language support.
-6. **Trust:** independent sample ₹100 withdrawal timeline. Starts at “Withdrawal requested”; button progresses through “Approved by a mentor”, “Payout simulated”, and “Receipt preview ready”, then replays. Final status says “Preview only · no transaction published”. It does not deduct from jars or create a payment.
-7. **Closing/footer:** links back to the demo and tour; footer year comes from the browser date.
-
-App owns tour visibility, earned state, mobile menu state, reduced-motion state, pointer ring ref, and tour trigger ref. Jars, Growth, Mentor, Trust, and Tour each own local state. There is no persistence or centralized store and no network data flow.
+- **Landing `/`**: animated hero (lines rise in sequence, sample jars card with Sprout peeking,
+  bicycle meter fills), zig-zag three steps with UI cards, yellow mentor band with an
+  English/Hindi sample chat, black trust band, ledger of five coming-soon items with stamps,
+  "Start with ₹0" closing with cheering Sprout.
+- **Demo `/app`**: balance starts ₹200. "Complete the activity" adds ₹200 (button disables, card
+  turns mint, ₹ burst, Sprout cheers, balance counts up), "See your jars" glides to jars, "Reset"
+  undoes. Jars: select one (aria-pressed), save slider 0–100 step 5, remainder 60/20/20, meters
+  fill, amounts count up. Growth: goal chips (Headphones ₹1,000 / Bicycle ₹6,000 / Laptop
+  ₹30,000), monthly chips (₹100/250/500), months-to-goal text, years slider 1–10, chart line
+  draws, dashed goal line when it fits. Mentor: six prepared questions, 750ms "thinking" state
+  (skipped with motion off). Withdraw: four-stage simulated trail ending "Preview only · no real
+  transaction".
+- **Tour**: 8 steps, 75s (`/` home 9, how 9, trust 8; `/app` earn 10, jars 10, grow 10,
+  mentor 11, withdraw 8). Pause/resume, previous/next (fast clicks safe), replay, optional
+  `en-IN` voice, Escape closes and returns focus, pauses when the tab is hidden. The clock adds
+  real elapsed time computed outside the state updater (a bug the tests caught earlier).
+- **Motion off**: OS `prefers-reduced-motion` or header toggle (desktop ≥1100px) sets
+  `html[data-reduced]`, stops Lenis, sets `MotionConfig reducedMotion="always"`, removes idle
+  loops/bursts/typing delay, swaps pages instantly.
 
 ## Model contracts
 
-`money(value)` uses one shared `Intl.NumberFormat('en-IN')`, INR currency, zero displayed fractional digits. Jar amounts and the growth total animate with `useCountUp` (550ms ease-out; instant when motion is off).
+`splitReward(amount, savePercent)` → `[save, spend, give, invest]` integers that always sum to
+`amount` (invest absorbs rounding). `projectSavings(monthly, years, rate = 0.08)` month-end
+deposits, monthly compounding → `{ balance, contributed, points }` (₹100 × 5y = ₹7,348).
+`monthsToGoal(monthly, goal, rate = 0.08, max = 240)` → months or `null`. `describeMonths(n)` →
+"2 years 2 months". `tourIndex(75)` = -1 (Tour handles completion).
 
-`monthsToGoal(monthly, goal, annualRate = 0.08, maxMonths = 240)` uses the same month-end compounding as `projectSavings` and returns months or null. `describeMonths(n)` renders e.g. "2 years 2 months".
+## Verification
 
-`splitReward(amount, savePercent)` returns integer amounts in `[save, spend, give, invest]` order:
+See `VERIFICATION.md` for dated evidence. As of the redesign: 9 unit tests and 85 Playwright
+tests per run (desktop + phone, 7 skipped by design); two consecutive full runs green. A
+Playwright test enforces that no visible text on either page is under 14px.
 
-```js
-save = Math.round(amount * savePercent / 100)
-rest = amount - save
-spend = Math.round(rest * 0.6)
-give = Math.round(rest * 0.2)
-invest = rest - spend - give
-```
+Testing notes: the in-app preview pane freezes animations when hidden, so judge motion bugs with
+Playwright, not a hidden pane. Under Playwright's fake clock, Motion finishes animations on
+timers that only move with the clock; the 75s tour playthrough test runs with reduced motion and
+checks the step counter, URL and highlighted section rather than animated captions.
 
-For the UI's inputs this conserves every rupee, with Invest absorbing rounding. Example: `splitReward(200, 50)` gives `[100, 60, 20, 20]`. UI bounds are the current input guard; these helpers do not validate arbitrary external/untrusted values. Monetary demo arithmetic is not a production ledger design.
+## Roadmap and phase status
 
-`projectSavings(monthly, years, annualRate = 0.08)` begins at zero, loops for `years * 12` months, and applies `balance = balance * (1 + annualRate / 12) + monthly`. It returns rounded final `balance`, total `contributed`, and rounded annual `points` starting with zero. Five years at ₹100/month returns ₹7,348 from ₹6,000 contributions; ten years displays ₹18,295 from ₹12,000.
+- Phase 0 (server, proxy, contract, Playwright, LEARN.md): **done** 2026-11-05.
+- Redesign v2 (bold neo-brutalist, Bricolage, mascot, two pages, Motion + Lenis): **done**
+  2026-11-05.
+- Phase 1: Gemini mentor endpoint (server) ‖ remaining design work — **not started**. Open
+  decisions to ask first: Gemini model name, streaming vs full replies.
+- Phase 2: chat UI + safety eval · Phase 3: Coming-soon previews · Phase 4: tour/demo
+  hardening, deploy (client Vercel; server host to choose), docs.
 
-Tour exports: `tourSteps`, `tourDuration`, `tourStart(index)`, `tourIndex(seconds)`. The schedule is 10/11/12/12/11/12/7 seconds in page-section order, totaling 75 seconds. `tourIndex(75)` returns -1; Tour handles completion separately.
-
-## Clicky guided tour
-
-Clicky is the original cursor mascot. Entry points include hero, floating launcher, closing section and footer. Tour is a non-modal aside so the page remains usable. It scrolls to and highlights each chapter. Captions define the schedule; voice is optional and off when opened.
-
-Playback updates every 100ms using performance.now deltas. Pause/resume, previous/next, completion and replay are implemented. A hidden tab pauses playback; resume is manual. Seventy-five seconds means active playback, not guaranteed wall-clock duration including pauses.
-
-Optional Web Speech API narration uses `SpeechSynthesisUtterance`, `en-IN`, rate 1.15. Unsupported speech disables the voice control. Speech errors fall back to captions. Closing cancels speech and timers/listeners through effect cleanup. Escape closes; opening focuses Close; closing restores the originating launcher's focus. Preserve cleanup and React.StrictMode compatibility when editing.
-
-## Design and accessibility contract
-
-Visual identity: soft neo-brutalism, geometric oversized headings, pastel surfaces, dark outlines, offset shadows, tactile controls, editorial section variety, and original illustrations. Grail was recorded as a composition/motion reference; no Grail assets are bundled. Reference URL in existing docs: https://grail-app.com/ . It was not re-reviewed for this handoff.
-
-Canonical CSS tokens in `styles.css`, `@layer base`, `:root`:
-
-| Token | Value/use |
-| --- | --- |
-| `--ink` | `#1b2922`, text/outlines |
-| `--paper` | `#faf9f4`, paper |
-| `--mint` | `#d9efdf`, main surface |
-| `--green` | `#a8cfb4`, Save |
-| `--purple` | `#c1aff0`, Spend/guide |
-| `--peach` | `#f3b4a2`, Give |
-| `--yellow` | `#f9ca6b`, Invest/mentor |
-| `--muted` | `#56645b`, secondary text |
-| `--border` | `2px solid var(--ink)` |
-| `--shadow` | `5px 5px 0 var(--ink)` |
-| `--radius` | `12px` |
-
-Display font: bundled Space Grotesk 500/700. Body: bundled DM Sans 400/500/700. Occasional Georgia italic adds contrast. CSS layers are reset, base, components, responsive. Some art/jar colors also appear directly in JSX, so inspect both files for palette changes.
-
-Motion includes IntersectionObserver reveals, floating cards, ticker, jar transitions and pointer click rings. Native document scrolling is primary. Reduced motion follows OS preference and the desktop header toggle via `document.documentElement.dataset.reduced`; OS changes are listened for. Pointer effects are restricted by device/motion behavior. Preserve reduced-motion CSS and usable content when changing animations.
-
-Responsive behavior includes collapsing hero/editorial layouts at 640px, a two-column jar grid, expandable mobile navigation, and a tour panel within the viewport. Body minimum width is 300px. Prior verification covered 320px and 390px screens.
-
-Existing access features include skip link, semantic landmarks, native labeled range controls, live status/answer updates, aria-pressed selection state, expanded mobile-menu state, keyboard navigation, Escape-close and focus restoration. Formal WCAG/screen-reader certification has not been performed.
-
-## Verification evidence and limits
-
-`VERIFICATION.md` records prior 2026-11-04 checks: installation, all three tests, production build (Vite 6.4.5), development HTTP 200, desktop/mobile review, reward duplicate prevention, slider keyboard End behavior, mentor answer swap, receipt transitions, mobile navigation, tour controls/focus, full 75-second completion, reduced motion, and no console errors/warnings during that session. A screenshot was recorded at ignored `qa/sprout-desktop.png`. These are historical results, not a guarantee about future edits.
-
-Tests assert allocation conservation/nonnegative integers for selected amounts and percentages, zero-return and five-year savings examples, and all tour chapter boundaries/total duration. They do not cover DOM interaction, payment authorization, AI, persistence, or external services. Voice audibility/device quality and full screen-reader behavior were not verified. A prior sandbox issue required approved local execution for the dev server; that is environment-specific.
-
-For changes, run the relevant tests and build from the app root. For UI changes, additionally review desktop/mobile layouts and affected keyboard, motion, and tour behavior. Do not describe old browser evidence as freshly rerun.
-
-## Planned integrations and open decisions
-
-The concept mentions PayPal sandbox payouts to approved adult recipients, live Paisa Mentor AI, and blockchain receipts for tamper evidence. No provider configuration, API routes, schema, chain, model, credentials, recipient onboarding, deployment target, or persistence architecture has been selected in the available code.
-
-A future working implementation needs decisions and server-side implementation for identity and roles, independent adult approval, NGO fund custody/accounting, durable reward/withdrawal records, payout authorization/status/reconciliation and retries, AI service behavior, and receipt publication/verification. Client role simulation cannot authorize payments. On-chain receipts can reveal changed records but cannot establish the truth of the original claim or guarantee fraud prevention. Keep public demo labels until behavior is actually integrated and verified.
-
-Never place secret credentials in this file or browser code. If backend work is requested, establish its requirements and security boundaries with the user; do not silently turn illustrative savings into real investing or sample balances into spendable funds.
-
-## Keeping this handoff current
-
-Update this file when architecture, commands, integration status, interactions, or model contracts change. Maintain README for quick setup, DESIGN.md for visual intent, and VERIFICATION.md for actual validation evidence. Share this file alone for conceptual context; provide the source repository as well when the receiving LLM needs to make code changes.
-
-## Direction and roadmap (revised 2026-11-04)
-
-The current code is still the single-page frontend described above. Full decisions, open questions and copy-paste prompts per phase are in `PHASES.md`. Summary of the **current scope**:
-
-- **Mission:** public-good financial literacy for kids aged 8–17 regardless of financial background, run through NGOs.
-- **Only one real feature gets built: the Paisa Mentor AI bot.** Google Gemini, called from a small Fastify + TypeScript server in `server/` (no database). Free-text questions plus suggested ones, English/Hindi replies, uses the demo's sample jars and goal in examples, guardrails for risky topics (`flagged`), prepared-answer fallback when there is no key or the API fails. Contract: `docs/mentor-api.md` (written in Phase 0).
-- **Everything else is a clickable "Coming soon" preview** with sample data and no real behavior: PayPal donations and guardian payouts, Mentor/NGO dashboard with 2-of-3 approvals, public blockchain impact ledger (Base Sepolia), Seedlings mode (8–11), full Hindi app, classroom/offline mode, guardian consent, certificates. Previews must be labelled "Coming soon · preview, nothing here is real". The "Later" section of `PHASES.md` keeps the full real-build design for these.
-- **Frontend stays JavaScript** (React 18 + Vite). Server is TypeScript.
-- **Design problem being fixed:** measured on 2026-11-04, 70% of visible text was under 14px and seven animations ran constantly. Phase 1 moves to a calm neo-brutalist style: 17–18px body, motion only on user action, no tilted cards or custom cursor, short landing page + `/app` demo + `/soon/*` previews.
-- **Phases:** 0 setup and API contract → 1 calm redesign ‖ mentor endpoint → 2 chat UI ‖ safety eval → 3 Coming-soon previews → 4 tour rewrite, offline fallback, deploy, docs.
-- **Hosting:** runs locally with one command and deployed online (client on Vercel, server host still to be chosen).
-- **Accounts:** the user has a Google AI Studio key; it goes only in `server/.env`, typed in by the user. PayPal and a crypto wallet are not needed for this scope.
-- **Phase status:** Phase 0 done on 2026-11-05 (server + health route, proxy, one-command dev, API contract, Playwright suite, learning guide; tour clock bug fixed). Phase 1 not started. Update this line as phases finish.
+Never put secrets in this file, client code or docs. Keys live only in `server/.env`, entered by
+the user.

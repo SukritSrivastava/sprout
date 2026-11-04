@@ -53,48 +53,64 @@ export function projectSavings(monthly, years, annualRate = 0.08) {
   return { balance: Math.round(balance), contributed: monthly * years * 12, points };
 }
 
+// The guided tour. Each step names the page (`path`) and section (`id`) it shows.
+// Steps add up to 75 seconds of playback.
 export const tourSteps = [
   {
+    path: '/',
     id: 'home',
-    seconds: 10,
-    title: 'Meet your money era.',
-    text: 'Welcome to Sprout. Teens earn NGO-funded learning rewards, make their own money choices, and build confidence with a mentor beside them.',
+    seconds: 9,
+    title: 'Hi, I’m Sprout.',
+    text: 'Sprout teaches kids money skills through NGOs. Kids earn small rewards for useful activities, plan them, and ask a mentor anything.',
   },
   {
+    path: '/',
+    id: 'how',
+    seconds: 9,
+    title: 'Three steps. No bank account.',
+    text: 'Do something useful, a mentor checks it, then you decide where the reward goes. It works even if you start with nothing.',
+  },
+  {
+    path: '/',
+    id: 'trust',
+    seconds: 8,
+    title: 'Adults hold the money.',
+    text: 'The NGO keeps the funds and two adults approve every payout. Payouts and public receipts are planned; today they are simulated.',
+  },
+  {
+    path: '/app',
     id: 'earn',
-    seconds: 11,
-    title: 'Do a little. Earn a little.',
-    text: 'Start with a useful activity. Submit it for mentor approval. Once approved, the reward appears in your virtual balance. Try the sample activity here.',
+    seconds: 10,
+    title: 'Earn your first ₹200.',
+    text: 'This is the demo. Complete the sample activity and watch the reward land in your jars.',
   },
   {
+    path: '/app',
     id: 'jars',
-    seconds: 12,
-    title: 'One reward. Four possibilities.',
-    text: 'Split a reward between Save, Spend, Give, and Invest. Move the slider to see the trade-off. These are virtual jars, and giving is your choice.',
+    seconds: 10,
+    title: 'Four jars, your split.',
+    text: 'Save, Spend, Give and Invest. Move the slider and every rupee stays accounted for. Giving is always your choice.',
   },
   {
+    path: '/app',
     id: 'grow',
-    seconds: 12,
-    title: 'Give your future a head start.',
-    text: 'Pick a goal and a monthly amount to see when you could reach it. This calculator illustrates compound growth. Its returns are hypothetical, never money added to your balance.',
+    seconds: 10,
+    title: 'When can I get it?',
+    text: 'Pick a goal and a monthly amount to see how long it could take. The growth is a pretend example, never added to your money.',
   },
   {
+    path: '/app',
     id: 'mentor',
     seconds: 11,
-    title: 'Money questions welcome.',
-    text: 'Paisa Mentor explains the why behind your choices in everyday language. Try a sample question. This draft uses prepared answers; live AI comes in a later stage.',
+    title: 'Ask Paisa Mentor.',
+    text: 'Tap a question and get a plain answer. These are prepared answers for now; the live AI mentor, in English and Hindi, comes next.',
   },
   {
-    id: 'trust',
-    seconds: 12,
-    title: 'A little more accountability.',
-    text: 'Adults approve withdrawals. The planned PayPal connection will track payouts, while blockchain receipts can expose changed records. This frontend simulates the flow. It cannot prevent every kind of fraud.',
-  },
-  {
-    id: 'start',
-    seconds: 7,
-    title: 'Small start. Yours to grow.',
-    text: 'That is Sprout. Try the demo, change your plan, and make your next money decision a little more confidently.',
+    path: '/app',
+    id: 'withdraw',
+    seconds: 8,
+    title: 'Every step leaves a trail.',
+    text: 'Request money for a goal, a mentor approves, and you get a receipt. No real money moves in this demo.',
   },
 ];
 export const tourDuration = tourSteps.reduce((total, step) => total + step.seconds, 0);

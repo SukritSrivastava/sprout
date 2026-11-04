@@ -1,16 +1,16 @@
-// Clicky's guided tour. A fake clock lets the 75-second tour finish in milliseconds.
+// Sprout's guided tour across both pages. A fake clock lets the 75-second tour finish in moments.
 import { test, expect, isPhone } from './fixtures.js';
 import { tourSteps, tourDuration } from '../client/src/lib/model.js';
 
 const panel = (page) => page.getByRole('complementary', { name: 'Sprout guided tour' });
-const launcher = (page) =>
-  page.getByRole('button', { name: 'Explain me: start the 75-second website tour' });
+const heading = (page) => panel(page).getByRole('heading');
+const launcher = (page) => page.getByRole('button', { name: 'Start the 75-second tour' });
 
 test('opens on the first step, focuses Close, and Escape returns focus', async ({ page }, testInfo) => {
   await page.goto('/');
   await launcher(page).click();
   await expect(panel(page)).toBeVisible();
-  await expect(panel(page).getByRole('heading')).toHaveText(tourSteps[0].title);
+  await expect(heading(page)).toHaveText(tourSteps[0].title);
   await expect(page.getByRole('button', { name: 'Close tour' })).toBeFocused();
   await expect(launcher(page)).toBeHidden();
 
@@ -19,7 +19,7 @@ test('opens on the first step, focuses Close, and Escape returns focus', async (
   if (!isPhone(testInfo)) await expect(launcher(page)).toBeFocused();
 });
 
-test('next and previous move between steps, and fast clicks never skip', async ({ page }) => {
+test('next moves to the demo page, previous comes back, fast clicks never skip', async ({ page }) => {
   await page.goto('/');
   await launcher(page).click();
   const next = page.getByRole('button', { name: 'Next tour step' });
@@ -29,11 +29,14 @@ test('next and previous move between steps, and fast clicks never skip', async (
   await next.click();
   await next.click();
   await next.click();
-  await expect(panel(page).getByRole('heading')).toHaveText(tourSteps[3].title);
-  await expect(page.locator(`#${tourSteps[3].id}`)).toHaveClass(/tour-target/);
+  const step = tourSteps[3];
+  await expect(heading(page)).toHaveText(step.title);
+  await expect(page).toHaveURL(new RegExp(`${step.path}#${step.id}$`));
+  await expect(page.locator(`#${step.id}`)).toHaveClass(/tour-target/);
 
   await previous.click();
-  await expect(panel(page).getByRole('heading')).toHaveText(tourSteps[2].title);
+  await expect(heading(page)).toHaveText(tourSteps[2].title);
+  await expect(page).toHaveURL(new RegExp(`/#${tourSteps[2].id}$`));
 });
 
 test('pause stops the clock and resume continues it', async ({ page }) => {
@@ -52,21 +55,30 @@ test('pause stops the clock and resume continues it', async ({ page }) => {
   await expect(time).not.toHaveText(paused);
 });
 
-test('plays through every step and finishes at 75 seconds, then replays', async ({ page }) => {
+test('plays every step on the right page and finishes at 75 seconds', async ({ page }) => {
+  // Reduced motion turns off idle animations and smooth scrolling, so fast-forwarding 75 seconds
+  // doesn't have to compute thousands of animation frames. The tour's timing is the same.
+  test.setTimeout(90_000);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.clock.install();
   await page.goto('/');
   await launcher(page).click();
-  // Check each step half a second after it starts, safely away from the step boundaries.
-  await page.clock.runFor(500);
-  for (const step of tourSteps) {
-    await expect(panel(page).getByRole('heading')).toHaveText(step.title);
+  // Under a fake clock we check what changes the instant a step starts: the step counter, the
+  // page address and the highlighted section. (Caption text animates in; the next/previous test
+  // checks captions in real time.) Each check is 3 seconds into its step, well clear of edges.
+  const counter = page.locator('.tour-step-count');
+  await page.clock.runFor(3000);
+  for (const [i, step] of tourSteps.entries()) {
+    await expect(counter).toHaveText(`Step ${i + 1} of ${tourSteps.length}`);
+    await expect(page).toHaveURL(new RegExp(`${step.path === '/' ? '' : step.path}#${step.id}$`));
+    await expect(page.locator(`#${step.id}`)).toHaveClass(/tour-target/);
     await page.clock.runFor(step.seconds * 1000);
   }
-  await expect(panel(page).getByRole('heading')).toHaveText('You’re ready to grow.');
+  await expect(counter).toHaveText('Done');
   await expect(page.locator('.tour-time')).toHaveText(`${tourDuration} / ${tourDuration}s`);
 
-  await page.getByRole('button', { name: 'Replay ↻' }).click();
-  await expect(panel(page).getByRole('heading')).toHaveText(tourSteps[0].title);
+  await page.getByRole('button', { name: 'Replay' }).click();
+  await expect(counter).toHaveText(`Step 1 of ${tourSteps.length}`);
 });
 
 test('voice toggle switches on and off', async ({ page }) => {
@@ -82,8 +94,8 @@ test('voice toggle switches on and off', async ({ page }) => {
 
 test('every tour entry point opens the tour', async ({ page }) => {
   await page.goto('/');
-  for (const name of ['Explain me 75 sec', 'Take the 75-second tour ↗', 'Meet Clicky ↗']) {
-    await page.getByRole('button', { name }).click();
+  for (const name of ['Take the 75-second tour', 'Tour with Sprout', 'Start the 75-second tour']) {
+    await page.getByRole('button', { name, exact: true }).click();
     await expect(panel(page)).toBeVisible();
     await page.getByRole('button', { name: 'Close tour' }).click();
     await expect(panel(page)).toBeHidden();

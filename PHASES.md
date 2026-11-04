@@ -43,10 +43,21 @@ Phase 0 fixes the API contract (`docs/mentor-api.md`) so both sides build agains
 | Browser tests | **Playwright**, Chromium only, desktop 1366×768 + Pixel 7 phone |
 | Server port | `API_PORT` (default 8787), not `PORT`, which tools set for the website |
 
+### Redesign decisions (2026-11-05, supersede the visual rows above)
+The user asked to fix the look before Phase 1's AI work. Full brief: `docs/REDESIGN.md`.
+v2 (v1 premium/Nunito was rejected): **bold neo-brutalist** (3px black borders, hard shadows,
+pressable buttons) with today's pastels; light only; Bricolage Grotesque; 17–18px body;
+neo-brutalist UI cards replace CSS drawings; new sprout mascot replaces Clicky; asymmetric
+non-template layouts and plain wording (must not look AI-made); subtle motion; landing `/` +
+demo `/app` via React Router; Lucide icons; tour kept and restyled.
+
 ### Phase status
 - **Phase 0: done (2026-11-05).** Server with `/api/health`, Vite proxy, one-command dev,
   `docs/mentor-api.md`, Playwright suite (65 tests), `docs/LEARN.md`.
-- Phase 1: not started.
+- **Redesign v2: done (2026-11-05).** Bold neo-brutalist, landing `/` + demo `/app`, Sprout
+  mascot, Motion + Lenis, Bricolage Grotesque; Playwright suite rewritten (85 tests per run).
+- Phase 1: not started (Gemini mentor endpoint; the calm-redesign frontend track is replaced by
+  the redesign above).
 
 ### Open decisions (ask at the start of the phase named)
 - Phase 1: router: React Router (recommended) or keep a single page with hash sections?

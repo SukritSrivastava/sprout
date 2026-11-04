@@ -6,19 +6,19 @@ test.beforeEach(async ({ page }, testInfo) => {
   await page.goto('/');
 });
 
-test('menu opens, navigates, and closes itself', async ({ page }) => {
-  const toggle = page.getByRole('button', { name: 'Open navigation' });
+test('menu opens, takes you to a section, and closes itself', async ({ page }) => {
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
-  await expect(nav.getByRole('link', { name: 'The four jars' })).toBeHidden();
+  await expect(nav.getByRole('link', { name: 'Coming soon' })).toBeHidden();
 
-  await toggle.click();
+  await page.getByRole('button', { name: 'Open navigation' }).click();
   await expect(page.getByRole('button', { name: 'Close navigation' })).toHaveAttribute(
     'aria-expanded',
     'true',
   );
-  await nav.getByRole('link', { name: 'The four jars' }).click();
-  await expect(page).toHaveURL(/#jars$/);
-  await expect(nav.getByRole('link', { name: 'The four jars' })).toBeHidden();
+  await nav.getByRole('link', { name: 'Coming soon' }).click();
+  await expect(page).toHaveURL(/#soon$/);
+  await expect(nav.getByRole('link', { name: 'Coming soon' })).toBeHidden();
+  await expect(page.locator('#soon h2')).toBeInViewport();
 });
 
 test('Escape closes the menu', async ({ page }) => {
