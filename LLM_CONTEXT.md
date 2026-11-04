@@ -76,6 +76,9 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 | `client/src/pages/Landing.jsx` | `/`: hero (id `home`), how it works (`how`), mentor teaser (`meet-mentor`), trust (`trust`), coming soon (`soon`, 5 rows), closing |
 | `client/src/pages/Demo.jsx` | `/app`: greeting + balance card, then Earn, Jars, Growth, Mentor, Withdraw; owns `earned` state and the cheer/burst |
 | `client/src/pages/NotFound.jsx` | any other path |
+| `client/src/pages/Soon.jsx` | `SoonHub` (`/soon`, lists `previews`) and `SoonPreview` (`/soon/:id`, unknown id → NotFound) |
+| `client/src/previews/` | `index.js` registry (id, title, line, icon, color, component), `Walkthrough.jsx` (banner, steps `{title, render({next})}`, dots, Back/Next, auto "when it's live" last step, scrolls card into view on step change), `Donate`, `Payout`, `NgoDashboard`, `ImpactLedger`, `Seedlings`, `Safety`, `More` (`Hindi`, `Classroom` with sample PIN 1234, `Certificates` with code SPR-MB1-7Q4K) |
+| `client/src/lib/ledger.js` | real SHA-256 leaf/node hashing, `buildTree`, `proofFor`, `verifyReceipt`, `short` (tested in `ledger.test.js`) |
 | `client/src/components/Layout.jsx` | `Brand`, `SiteHeader` (nav links to `/#how`, `/#meet-mentor`, `/#soon`; motion toggle; demo/Home button; phone menu with Escape), `SiteFooter`, `TourLauncher` (label hides past 320px scroll; slides away while scrolling down) |
 | `client/src/components/Mascot.jsx` | Sprout SVG, moods `happy`/`think`/`cheer`, blink + leaf sway idle, cheer bounce |
 | `client/src/components/Tour.jsx` | 75s tour across both pages; each step navigates to `path#id` (replace) and adds `.tour-target` |
@@ -126,7 +129,7 @@ deposits, monthly compounding → `{ balance, contributed, points }` (₹100 × 
 
 ## Verification
 
-See `VERIFICATION.md` for dated evidence. As of the AI mentor: 19 unit/server tests and 99 Playwright
+See `VERIFICATION.md` for dated evidence. As of Phase 3: 27 unit/server tests and 143 Playwright
 tests per run (desktop + phone, 9 skipped by design), plus an opt-in `LIVE_AI=1` real-Gemini test; two consecutive full runs green. A
 Playwright test enforces that no visible text on either page is under 14px.
 
@@ -146,7 +149,10 @@ checks the step counter, URL and highlighted section rather than animated captio
   shared hourly cap `MENTOR_HOURLY_LIMIT` (300) + 20/5min per address, `TRUST_PROXY` (set true only
   behind a host proxy), limiter sweep, Hinglish safety words, prompt rule distrusting edited history;
   `npm run eval:mentor` 12/12.
-- Phase 3: Coming-soon previews · Phase 4: tour/demo hardening, deploy (client Vercel; server
+- Phase 3 (Coming-soon previews): **done** 2026-11-05. Nine walkthroughs at `/soon/*`, all
+  frontend-only sample data with a "Nothing here is real" banner; the ledger preview does real
+  hashing in the browser. Header "Coming soon" → `/soon`; home rows link to previews.
+- Phase 4: tour/demo hardening, deploy (client Vercel; server
   host to choose; add CORS for `ALLOWED_ORIGIN` then), docs.
 
 Never put secrets in this file, client code or docs. Keys live only in `server/.env`, entered by

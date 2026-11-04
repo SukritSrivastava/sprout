@@ -70,6 +70,10 @@ sprout/
 │     │  ├─ Landing.jsx       "/"   the home page (hero, how it works, mentor, trust, coming soon)
 │     │  ├─ Demo.jsx          "/app" the demo, built from the sections below
 │     │  └─ NotFound.jsx      any other address
+│     ├─ previews/             the nine Coming-soon walkthroughs (/soon/...)
+│     │  ├─ index.js          the list of previews; add one here to get a page automatically
+│     │  ├─ Walkthrough.jsx   shared frame: banner, steps, Back/Next, "when it's live"
+│     │  └─ Donate.jsx …      one file per preview (More.jsx holds three small ones)
 │     ├─ components/
 │     │  ├─ Layout.jsx        header, footer, floating tour button
 │     │  ├─ Mascot.jsx        Sprout the mascot (moods: happy, think, cheer)
@@ -82,7 +86,8 @@ sprout/
 │        ├─ motion.jsx        shared animation pieces (Reveal, Stagger, reduced-motion flag)
 │        ├─ scroll.js         Lenis smooth scrolling + "scroll to section" helpers
 │        ├─ hooks.js          useCountUp: numbers that roll to their new value
-│        └─ mentorApi.js      sends a question to the server and reads the streamed reply
+│        ├─ mentorApi.js      sends a question to the server and reads the streamed reply
+│        └─ ledger.js         real SHA-256 + Merkle-tree maths for the impact-ledger preview
 ├─ server/                    the API
 │  ├─ src/
 │  │  ├─ index.ts             starts the server
@@ -140,7 +145,10 @@ Read these in order. Each step says what to look for.
     `server/src/routes/mentor.ts` (checks the request, picks AI or backup answer, streams it) →
     `server/src/mentor/model.ts` (the only file that talks to Gemini). Read `mentor/prompt.ts` to
     see the mentor's rules.
-13. **`e2e/demo.spec.js`**: a real browser clicks buttons and checks what appears. Expected
+13. **A preview**: `previews/Walkthrough.jsx` then `previews/Payout.jsx`. Each step is
+    `{ title, render }`; state lives in the preview so it survives moving between steps.
+    Then `lib/ledger.js` + `ledger.test.js` for how "verify a receipt" really works.
+14. **`e2e/demo.spec.js`**: a real browser clicks buttons and checks what appears. Expected
     numbers are imported from `model.js`, so the test checks the page against the maths.
 
 ---

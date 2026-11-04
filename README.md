@@ -39,6 +39,10 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 - **`/app` demo**: a sample kid's Sprout. Earn ₹200, split it into four jars, pick a savings goal,
   chat with **Paisa Mentor, a live AI (Google Gemini)** in English or Hindi, and step through a
   simulated withdrawal. All money is sample data; the mentor knows the sample jars and goal.
+- **`/soon` previews**: nine clickable walkthroughs of what's coming (PayPal donations, payouts
+  to guardians, NGO dashboard, public impact ledger with real receipt checking, Seedlings mode for
+  ages 8–11, guardian consent and safety, Hindi everywhere, classroom mode, certificates). Sample
+  data only, clearly labelled.
 - **Sprout the mascot** guides a 75-second tour across both pages (captions always on, voice
   optional, pause/skip/replay, Escape to close).
 - **Motion**: smooth scrolling (Lenis) and purposeful animation (Motion). Turn it off with the

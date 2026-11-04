@@ -62,7 +62,11 @@ demo `/app` via React Router; Lucide icons; tour kept and restyled.
   chat UI in `/app#mentor`. Server tests use a fake model; Playwright mocks the API, plus an
   opt-in `LIVE_AI=1` test. Still open from Phase 2: a larger safety eval set
   (`npm run eval:mentor`) for the user to review.
-- Next: Phase 3 (Coming-soon clickable previews).
+- **Phase 3 (Coming-soon previews): done (2026-11-05).** `/soon` hub + nine walkthroughs:
+  donate, payout (2-of-3), NGO dashboard, impact ledger (real SHA-256/Merkle verify on sample
+  data), Seedlings, safety/consent, Hindi, classroom (PIN, offline), certificates. Header
+  "Coming soon" opens the hub; home page rows open previews.
+- Next: Phase 4 (tour rewrite, demo hardening, deploy, demo script).
 
 ### Open decisions (ask at the start of the phase named)
 - Phase 1: router: React Router (recommended) or keep a single page with hash sections?

@@ -1,5 +1,25 @@
 # Verification
 
+## Phase 3: Coming-soon previews (2026-11-05)
+
+- `npm test`: 27 passed (9 client incl. 4 new ledger tests: SHA-256 known value, every receipt
+  verifies including an odd-count tree, any edited field fails, editing one receipt changes the
+  root; 18 server).
+- `npx playwright test e2e/soon.spec.js --repeat-each=2`: 88 passed. Covers the hub (9 links,
+  banner), header and home-page links, all nine walkthroughs end to end (every step, the
+  "when it's live" ending, Start again), step dots, unknown preview 404, and the interactive
+  parts: ledger verify passes untouched and fails when an amount is edited, donation amount carried
+  to the receipt, payout blocked until 2 of 3 adults approve, NGO approve/send back totals,
+  Seedlings sorting score and garden growth, consent needs all three boxes and delete request,
+  Hindi/English switch, classroom wrong PIN then sample PIN, certificate code valid/invalid.
+- Full suite after the phase: `npm test` 27 passed; `npx playwright test` 143 passed, 9 skipped by design, 0 failed.
+- Screenshots of the hub and every preview at desktop and phone size reviewed (git-ignored
+  `qa/soon-*.png`).
+- Fixed during review: after Next on a long step, the page stayed scrolled down; the walkthrough
+  now glides back to the top of its card.
+
+---
+
 ## Misuse hardening (2026-11-05)
 
 Probed the live mentor with misuse attempts, found six gaps, fixed all of them.

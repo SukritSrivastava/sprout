@@ -59,15 +59,15 @@ test.describe('impact ledger: real verification', () => {
     await expect(page.getByTestId('batch-root')).toHaveText(/^[0-9a-f]{6}…[0-9a-f]{4}$/);
     await next(page).click();
 
-    await page.getByRole('button', { name: 'Verify' }).click();
+    await page.getByRole('button', { name: 'Verify', exact: true }).click();
     await expect(page.locator('.verify-result')).toContainText('hasn’t been changed');
 
-    await page.getByLabel('Amount (₹)').fill('2000');
-    await page.getByRole('button', { name: 'Verify' }).click();
+    await page.getByRole('spinbutton', { name: 'Amount (₹)' }).fill('2000');
+    await page.getByRole('button', { name: 'Verify', exact: true }).click();
     await expect(page.locator('.verify-result')).toContainText('was changed after it was published');
 
-    await page.getByLabel('Receipt').selectOption({ label: 'DON-2611-0043' });
-    await page.getByRole('button', { name: 'Verify' }).click();
+    await page.getByRole('combobox', { name: 'Receipt' }).selectOption({ label: 'DON-2611-0043' });
+    await page.getByRole('button', { name: 'Verify', exact: true }).click();
     await expect(page.locator('.verify-result')).toContainText('hasn’t been changed');
   });
 });
@@ -156,9 +156,9 @@ test('classroom: pick a profile, wrong PIN, then the sample PIN', async ({ page 
 test('certificates: the sample code checks out, a changed one does not', async ({ page }) => {
   await page.goto('/soon/certificates');
   await next(page).click();
-  await page.getByRole('button', { name: 'Check' }).click();
+  await page.getByRole('button', { name: 'Check', exact: true }).click();
   await expect(page.locator('.verify-result')).toContainText('Real certificate');
-  await page.getByLabel('Code').fill('SPR-MB1-7Q4X');
-  await page.getByRole('button', { name: 'Check' }).click();
+  await page.getByRole('textbox', { name: 'Code' }).fill('SPR-MB1-7Q4X');
+  await page.getByRole('button', { name: 'Check', exact: true }).click();
   await expect(page.locator('.verify-result')).toContainText('No certificate with this code');
 });

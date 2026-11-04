@@ -8,11 +8,8 @@ import {
   BookOpen,
   HandCoins,
   Landmark,
-  Languages,
-  LayoutDashboard,
   Receipt,
   ShieldCheck,
-  Sprout as SproutIcon,
   Users,
 } from 'lucide-react';
 import Mascot from '../components/Mascot.jsx';
