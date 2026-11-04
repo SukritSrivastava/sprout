@@ -8,6 +8,7 @@ import Tour from './components/Tour.jsx';
 import Landing from './pages/Landing.jsx';
 import Demo from './pages/Demo.jsx';
 import NotFound from './pages/NotFound.jsx';
+import { SoonHub, SoonPreview } from './pages/Soon.jsx';
 import { ReducedMotion, ease } from './lib/motion.jsx';
 import { scrollToId, scrollToTop, startSmoothScroll, stopSmoothScroll, waitForId } from './lib/scroll.js';
 
@@ -68,6 +69,8 @@ function Pages({ startTour, location }) {
     <Routes location={location}>
       <Route path="/" element={<Landing onTour={startTour} />} />
       <Route path="/app" element={<Demo />} />
+      <Route path="/soon" element={<SoonHub />} />
+      <Route path="/soon/:id" element={<SoonPreview />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

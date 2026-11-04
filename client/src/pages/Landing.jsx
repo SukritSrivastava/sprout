@@ -19,6 +19,7 @@ import Mascot from '../components/Mascot.jsx';
 import { Reveal, Stagger, ease, liftOnHover, useReduced } from '../lib/motion.jsx';
 import { jars } from '../lib/content.js';
 import { money, splitReward } from '../lib/model.js';
+import { previewById, previews } from '../previews/index.js';
 
 const icon = { size: 22, strokeWidth: 2.5, 'aria-hidden': true };
 
@@ -276,13 +277,8 @@ function Trust() {
   );
 }
 
-const upcoming = [
-  [HandCoins, 'PayPal donations', 'Anyone can fund an NGO’s reward pool in a few taps.', 'var(--green)'],
-  [LayoutDashboard, 'NGO dashboard', 'Mentors approve activities and payouts in one place.', 'var(--purple)'],
-  [Receipt, 'Public impact ledger', 'Receipts on a public blockchain that anyone can check. No kid data on it.', 'var(--peach)'],
-  [SproutIcon, 'Seedlings mode', 'Picture-first lessons for ages 8 to 11, with seeds instead of rupees.', 'var(--yellow)'],
-  [Languages, 'Hindi everywhere', 'The whole app in Hindi, not just the mentor.', 'var(--mint)'],
-];
+// The five highlights shown on the home page; the hub at /soon lists all of them.
+const highlights = ['donate', 'ngo', 'impact', 'seedlings', 'hindi'].map((id) => previewById[id]);
 
 function ComingSoon() {
   return (
@@ -294,25 +290,32 @@ function ComingSoon() {
             <h2>What we’re building next.</h2>
           </div>
           <p>
-            These are planned, not live. The demo shows clickable previews of each one as we build
-            them.
+            These are planned, not live. Each one has a clickable preview with sample data, so you
+            can see how it will work.
           </p>
         </Reveal>
         <Stagger as="ul" className="soon-list" gap={0.07}>
-          {upcoming.map(([Icon, title, text, color], i) => (
-            <Stagger.Item as="li" key={title} className="soon-row" style={{ '--row': color }}>
-              <span className="soon-number">{String(i + 1).padStart(2, '0')}</span>
-              <span className="soon-icon">
-                <Icon {...icon} />
-              </span>
-              <div>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </div>
-              <span className="stamp">Coming soon</span>
+          {highlights.map(({ id, title, line, icon: Icon, color }, i) => (
+            <Stagger.Item as="li" key={id} style={{ '--row': color }}>
+              <Link to={`/soon/${id}`} className="soon-row soon-link">
+                <span className="soon-number">{String(i + 1).padStart(2, '0')}</span>
+                <span className="soon-icon">
+                  <Icon {...icon} />
+                </span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{line}</p>
+                </div>
+                <span className="stamp">Try the preview</span>
+              </Link>
             </Stagger.Item>
           ))}
         </Stagger>
+        <Reveal className="soon-more">
+          <Link className="btn btn-white" to="/soon">
+            See all {previews.length} previews <ArrowRight {...icon} />
+          </Link>
+        </Reveal>
       </div>
     </section>
   );

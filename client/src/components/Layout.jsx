@@ -42,7 +42,7 @@ export function SiteHeader({ menuOpen, setMenuOpen, reduced, setReduced }) {
           <Link to="/#meet-mentor" onClick={close}>
             Mentor
           </Link>
-          <Link to="/#soon" onClick={close}>
+          <Link to="/soon" onClick={close}>
             Coming soon
           </Link>
         </nav>
@@ -89,7 +89,7 @@ export function SiteFooter({ onTour }) {
         </div>
         <div className="footer-links">
           <Link to="/app">Open the demo</Link>
-          <Link to="/#soon">Coming soon</Link>
+          <Link to="/soon">Coming soon</Link>
           <button className="link-btn" onClick={onTour}>
             Tour with Sprout
           </button>

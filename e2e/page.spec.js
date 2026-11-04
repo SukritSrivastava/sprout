@@ -107,7 +107,6 @@ test('header links glide to their sections on the home page', async ({ page }, t
   for (const [name, id] of [
     ['How it works', 'how'],
     ['Mentor', 'meet-mentor'],
-    ['Coming soon', 'soon'],
   ]) {
     await nav.getByRole('link', { name }).click();
     await expect(page).toHaveURL(new RegExp(`#${id}$`));
@@ -118,9 +117,9 @@ test('header links glide to their sections on the home page', async ({ page }, t
 test('header links from the demo page go back to home sections', async ({ page }, testInfo) => {
   test.skip(isPhone(testInfo), 'phone navigation is covered in phone.spec.js');
   await page.goto('/app');
-  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Coming soon' }).click();
-  await expect(page).toHaveURL(/\/#soon$/);
-  await expect(page.locator('#soon h2')).toBeInViewport();
+  await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'How it works' }).click();
+  await expect(page).toHaveURL(/\/#how$/);
+  await expect(page.locator('#how h2')).toBeInViewport();
 });
 
 test('motion toggle switches animations and smooth scrolling off and on', async ({ page }, testInfo) => {
