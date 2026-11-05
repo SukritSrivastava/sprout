@@ -1,10 +1,14 @@
 // Earn: complete the sample activity to add ₹200. A small burst celebrates it.
+// Words: src/content/demo.js → demo.earn.
 import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowRight, BookOpen, Check, RotateCcw } from 'lucide-react';
 import { Reveal, ease, useReduced } from '../../lib/motion.jsx';
 import { money } from '../../lib/model.js';
 import { scrollToId } from '../../lib/scroll.js';
+import { demo } from '../../content/demo.js';
+
+const text = demo.earn;
 
 const icon = { size: 20, strokeWidth: 2.75, 'aria-hidden': true };
 
@@ -36,12 +40,9 @@ export default function Earn({ earned, burstId, onEarn, onReset, reward }) {
     <section id="earn" className="section">
       <div className="container earn-grid">
         <Reveal className="earn-copy">
-          <span className="tag tag-mint">Step 1 · Earn</span>
-          <h2>Do something useful. Earn a little.</h2>
-          <p>
-            In the real app, a mentor at your NGO checks the activity first. Here, tap the button
-            and we’ll pretend they said yes.
-          </p>
+          <span className="tag tag-mint">{text.tag}</span>
+          <h2>{text.title}</h2>
+          <p>{text.text}</p>
         </Reveal>
         <Reveal delay={0.1}>
           <div className={`card activity ${earned ? 'activity-done' : ''}`}>
@@ -49,18 +50,18 @@ export default function Earn({ earned, burstId, onEarn, onReset, reward }) {
               <span className="activity-icon">
                 <BookOpen {...icon} />
               </span>
-              <span className="tag tag-white">Community · 30 min</span>
+              <span className="tag tag-white">{text.activityTag}</span>
               <span className="tag tag-yellow">+ {money(reward)}</span>
             </div>
-            <h3>Run a reading hour at the learning centre</h3>
-            <p>Read a story with younger kids and help them sound out new words.</p>
+            <h3>{text.activityTitle}</h3>
+            <p>{text.activityText}</p>
             <div className="activity-action">
               <button
                 className={`btn btn-lg ${earned ? 'btn-white' : 'btn-green'}`}
                 disabled={earned}
                 onClick={onEarn}
               >
-                {earned ? 'Reward added' : 'Complete the activity'}
+                {earned ? text.buttonDone : text.button}
                 {earned ? <Check {...icon} /> : <ArrowRight {...icon} />}
               </button>
               {burstId > 0 && <Burst id={burstId} />}
@@ -75,17 +76,17 @@ export default function Earn({ earned, burstId, onEarn, onReset, reward }) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
                   >
-                    <span>Approved (pretend). Your jars now hold {money(400)}.</span>
+                    <span>{text.done(money(400))}</span>
                     <button className="link-btn" onClick={() => scrollToId('jars')}>
-                      See your jars
+                      {text.seeJars}
                     </button>
                     <button className="link-btn quiet" onClick={onReset}>
-                      <RotateCcw size={16} strokeWidth={2.75} aria-hidden="true" /> Reset
+                      <RotateCcw size={16} strokeWidth={2.75} aria-hidden="true" /> {text.reset}
                     </button>
                   </motion.div>
                 ) : (
                   <motion.span key="todo" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    Sample activity. Approval is simulated in this demo.
+                    {text.notDone}
                   </motion.span>
                 )}
               </AnimatePresence>

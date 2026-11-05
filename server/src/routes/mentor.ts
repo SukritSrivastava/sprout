@@ -13,6 +13,7 @@ import { buildSystemPrompt } from '../mentor/prompt.js';
 import { preparedAnswer, suggestionsFor } from '../mentor/prepared.js';
 import type { MentorModel } from '../mentor/model.js';
 import { createRateLimiter } from '../rate-limit.js';
+import { mentorSettings } from '../mentor/settings.js';
 
 type Options = {
   model: MentorModel | null;
@@ -31,9 +32,12 @@ function* words(text: string) {
 
 export async function mentorRoutes(app: FastifyInstance, options: Options) {
   // Two limits: one per address, and one shared by everyone to protect the Gemini quota.
-  const perAddress = createRateLimiter(options.rateLimit ?? { limit: 20, windowMs: 5 * 60_000 });
+  const perAddress = createRateLimiter(options.rateLimit ?? {
+      limit: mentorSettings.perDevice.questions,
+      windowMs: mentorSettings.perDevice.minutes * 60_000,
+    });
   const everyone = createRateLimiter({ limit: options.hourlyLimit, windowMs: 60 * 60_000 });
-  const timeoutMs = options.timeoutMs ?? 15_000;
+  const timeoutMs = options.timeoutMs ?? mentorSettings.timeoutSeconds * 1000;
 
   // Browsers send an Origin header. Only our own website may use the mentor from a browser;
   // other websites are refused. Allowed origins also get the header that lets them read replies.

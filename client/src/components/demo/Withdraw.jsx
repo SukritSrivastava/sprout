@@ -1,11 +1,13 @@
 // Withdraw: a simulated request → approval → payout → receipt trail. No money moves.
+// Words: src/content/demo.js → demo.withdraw.
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Check, Receipt } from 'lucide-react';
 import { Reveal } from '../../lib/motion.jsx';
+import { demo } from '../../content/demo.js';
 
-const stages = ['Withdrawal requested', 'Approved by a mentor', 'Payout simulated', 'Receipt ready'];
-const actions = ['Simulate mentor approval', 'Simulate payout', 'Show receipt', 'Start again'];
+const text = demo.withdraw;
+const { stages, buttons: actions } = text;
 
 export default function Withdraw() {
   const [stage, setStage] = useState(0);
@@ -14,22 +16,19 @@ export default function Withdraw() {
     <section id="withdraw" className="section band band-ink">
       <div className="container withdraw-grid">
         <Reveal>
-          <span className="tag tag-green">Step 4 · Use it</span>
-          <h2>Every step leaves a trail.</h2>
-          <p className="muted-on-ink">
-            Ask for money for your goal. A grown-up approves it, the NGO pays it to your guardian,
-            and you get a receipt. In this demo nothing is really paid.
-          </p>
+          <span className="tag tag-green">{text.tag}</span>
+          <h2>{text.title}</h2>
+          <p className="muted-on-ink">{text.text}</p>
         </Reveal>
         <Reveal delay={0.1} className="card receipt">
           <div className="receipt-head">
             <Receipt size={22} strokeWidth={2.75} aria-hidden="true" />
-            <span>Accountability trail</span>
-            <span className="tag tag-yellow">Demo</span>
+            <span>{text.cardTitle}</span>
+            <span className="tag tag-yellow">{text.cardTag}</span>
           </div>
           <div className="receipt-total">
-            <span>Sample withdrawal for school shoes</span>
-            <strong>₹100.00</strong>
+            <span>{text.what}</span>
+            <strong>{text.amount}</strong>
           </div>
           <ol className="timeline">
             {stages.map((label, i) => (
@@ -46,7 +45,7 @@ export default function Withdraw() {
             ))}
           </ol>
           <div className="receipt-status" role="status">
-            {finished ? 'Preview only · no real transaction' : stages[stage]}
+            {finished ? text.finished : stages[stage]}
           </div>
           <button
             className="btn btn-ink receipt-action"

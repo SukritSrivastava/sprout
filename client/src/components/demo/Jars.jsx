@@ -1,11 +1,14 @@
 // Jars: split the balance between Save, Spend, Give and Invest. Every rupee is always accounted for.
+// Words and jar names: src/content/demo.js → demo.jars and jars.
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Check } from 'lucide-react';
 import { Reveal, Stagger, useReduced } from '../../lib/motion.jsx';
 import { useCountUp } from '../../lib/hooks.js';
 import { money, splitReward } from '../../lib/model.js';
-import { jars } from '../../lib/content.js';
+import { demo, jars } from '../../content/demo.js';
+
+const text = demo.jars;
 
 function JarAmount({ value }) {
   return money(useCountUp(value));
@@ -21,10 +24,10 @@ export default function Jars({ balance, save, setSave }) {
       <div className="container">
         <Reveal className="section-head split-head">
           <div>
-            <span className="tag tag-white">Step 2 · Plan</span>
-            <h2>Four jars. Your split.</h2>
+            <span className="tag tag-white">{text.tag}</span>
+            <h2>{text.title}</h2>
           </div>
-          <p>There’s no perfect split, just one that fits you. Tap a jar to see what it’s for.</p>
+          <p>{text.text}</p>
         </Reveal>
         <Stagger className="jar-grid">
           {jars.map((jar, i) => {
@@ -61,12 +64,12 @@ export default function Jars({ balance, save, setSave }) {
         </Stagger>
         <Reveal className="card allocation">
           <div aria-live="polite">
-            <h3>{jars[selected].name}, your way.</h3>
+            <h3>{text.selected(jars[selected].name)}</h3>
             <p>{jars[selected].detail}</p>
           </div>
           <div className="slider-block">
             <div className="slider-label">
-              <label htmlFor="save-split">How much do you save?</label>
+              <label htmlFor="save-split">{text.slider}</label>
               <output htmlFor="save-split">{save}%</output>
             </div>
             <input
@@ -78,9 +81,7 @@ export default function Jars({ balance, save, setSave }) {
               value={save}
               onChange={(event) => setSave(Number(event.target.value))}
             />
-            <p className="hint">
-              Sample balance {money(balance)}. The rest splits 60% Spend, 20% Give, 20% Invest.
-            </p>
+            <p className="hint">{text.hint(money(balance))}</p>
           </div>
         </Reveal>
       </div>

@@ -1,5 +1,6 @@
 // The exact shape of a chat request (see docs/mentor-api.md). Anything else is rejected with 400.
 import { z } from 'zod';
+import { mentorSettings } from './settings.js';
 
 const rupees = (max: number) => z.number().int().min(0).max(max);
 
@@ -14,12 +15,12 @@ export const chatRequestSchema = z
         z
           .object({
             role: z.enum(['user', 'mentor']),
-            text: z.string().trim().min(1).max(600),
+            text: z.string().trim().min(1).max(mentorSettings.maxQuestionLength),
           })
           .strict(),
       )
       .min(1)
-      .max(12)
+      .max(mentorSettings.maxMessages)
       // `at(-1)?.` so an empty list fails politely here instead of crashing (it used to cause a 500).
       .refine((list) => list.at(-1)?.role === 'user', 'The last message must be from the user'),
     context: z

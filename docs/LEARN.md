@@ -1,6 +1,7 @@
-# Learn the Sprout codebase
+# Learn the sprout.io codebase
 
-A guided path through the code, in the order that makes it click. Budget about an hour.
+A guided path through the code, in the order that makes it click. Only want to change words
+or the AI mentor's behaviour? Read `EDITING.md` instead. Budget about an hour.
 Keep this file next to the code in VS Code and open each file as you reach it.
 
 ---
@@ -70,6 +71,11 @@ sprout/
 │     │  ├─ Landing.jsx       "/"   the home page: just lists its sections, in order
 │     │  ├─ Demo.jsx          "/app" the demo, built from the sections below
 │     │  └─ NotFound.jsx      any other address
+│     ├─ content/              ✏️ all the words on the site (see EDITING.md)
+│     │  ├─ site.js           header, footer, tour button, 404
+│     │  ├─ home.js           the home page
+│     │  ├─ demo.js           the demo page, jars, sample kid, mentor chat words
+│     │  └─ tour.js           the guided tour, English and Hindi
 │     ├─ previews/             the nine Coming-soon walkthroughs (/soon/...)
 │     │  ├─ index.js          the list of previews; add one here to get a page automatically
 │     │  ├─ Walkthrough.jsx   shared frame: banner, steps, Back/Next, "when it's live"
@@ -77,7 +83,7 @@ sprout/
 │     ├─ components/
 │     │  ├─ Layout.jsx        header, footer, floating tour button
 │     │  ├─ Mascot.jsx        Sprout the mascot (moods: happy, think, cheer)
-│     │  ├─ Tour.jsx          the guided tour panel (its steps and words are in lib/tour.js)
+│     │  ├─ Tour.jsx          the guided tour panel (its steps and words are in content/tour.js)
 │     │  ├─ landing/          Hero, HowItWorks, MeetMentor, Trust, ComingSoon, Closing
 │     │  └─ demo/             Earn, Jars, Growth, Mentor (+ ChatBubble), Withdraw sections of /app
 │     └─ lib/
@@ -86,7 +92,6 @@ sprout/
 │        ├─ useMentorChat.js  the mentor chat logic (send, stream, errors, offline answers)
 │        ├─ icons.js          one shared size/stroke for every icon
 │        ├─ model.test.js     unit tests for that maths
-│        ├─ content.js        words and sample data (jars, mentor answers, sample kid)
 │        ├─ motion.jsx        shared animation pieces (Reveal, Stagger, reduced-motion flag)
 │        ├─ scroll.js         Lenis smooth scrolling + "scroll to section" helpers
 │        ├─ hooks.js          useCountUp: numbers that roll to their new value

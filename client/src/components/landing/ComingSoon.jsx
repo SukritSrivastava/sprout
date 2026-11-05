@@ -1,14 +1,16 @@
-// Home page, section 5: five planned features as a ledger-style list. Each row opens its
-// clickable preview; the button opens the hub with all of them (/soon).
+// Home page, section 5: planned features as a ledger-style list. Each row opens its clickable
+// preview; the button opens the hub with all of them (/soon).
+// Words: src/content/home.js → home.comingSoon. Row titles come from src/previews/index.js.
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Reveal, Stagger } from '../../lib/motion.jsx';
 import { icon } from '../../lib/icons.js';
+import { home } from '../../content/home.js';
 import { previewById, previews } from '../../previews/index.js';
 
-// Which previews to show here, in this order. Their titles and icons come from previews/index.js.
-const highlights = ['donate', 'ngo', 'impact', 'seedlings', 'hindi'].map((id) => previewById[id]);
+const text = home.comingSoon;
+const highlights = text.show.map((id) => previewById[id]).filter(Boolean);
 
 export default function ComingSoon() {
   return (
@@ -16,13 +18,10 @@ export default function ComingSoon() {
       <div className="container">
         <Reveal className="section-head split-head">
           <div>
-            <span className="tag tag-purple">Coming soon</span>
-            <h2>What we’re building next.</h2>
+            <span className="tag tag-purple">{text.tag}</span>
+            <h2>{text.title}</h2>
           </div>
-          <p>
-            These are planned, not live. Each one has a clickable preview with sample data, so you
-            can see how it will work.
-          </p>
+          <p>{text.text}</p>
         </Reveal>
         <Stagger as="ul" className="soon-list" gap={0.07}>
           {highlights.map(({ id, title, line, icon: Icon, color }, i) => (
@@ -36,14 +35,14 @@ export default function ComingSoon() {
                   <h3>{title}</h3>
                   <p>{line}</p>
                 </div>
-                <span className="stamp">Try the preview</span>
+                <span className="stamp">{text.rowStamp}</span>
               </Link>
             </Stagger.Item>
           ))}
         </Stagger>
         <Reveal className="soon-more">
           <Link className="btn btn-white" to="/soon">
-            See all {previews.length} previews <ArrowRight {...icon} />
+            {text.seeAll} {previews.length} previews <ArrowRight {...icon} />
           </Link>
         </Reveal>
       </div>

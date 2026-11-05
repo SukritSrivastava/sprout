@@ -1,5 +1,5 @@
 // Home page, section 1: the big headline, and a sample jars card with Sprout peeking over it.
-// Each headline line rises in a little after the one before (the `delay` values).
+// Words: src/content/home.js → home.hero. Each headline line rises in a little after the one before.
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
@@ -7,8 +7,11 @@ import { ArrowRight } from 'lucide-react';
 import Mascot from '../Mascot.jsx';
 import { ease, useReduced } from '../../lib/motion.jsx';
 import { icon } from '../../lib/icons.js';
-import { jars } from '../../lib/content.js';
+import { home } from '../../content/home.js';
+import { jars } from '../../content/demo.js';
 import { money, splitReward } from '../../lib/model.js';
+
+const text = home.hero;
 
 // A picture made of real UI: what a kid's jars look like after earning ₹200 (sample numbers).
 function HeroCard() {
@@ -23,11 +26,14 @@ function HeroCard() {
     >
       <div className="card hero-card">
         <div className="hero-card-top">
-          <span>Aanya’s jars</span>
-          <span className="tag tag-white">Sample</span>
+          <span>{text.card.title}</span>
+          <span className="tag tag-white">{text.card.sample}</span>
         </div>
         <div className="hero-total">
-          {money(400)} <span className="tag tag-yellow">+{money(200)} earned</span>
+          {money(400)}{' '}
+          <span className="tag tag-yellow">
+            +{money(200)} {text.card.earned}
+          </span>
         </div>
         <div className="mini-jars">
           {jars.map((jar, i) => (
@@ -38,9 +44,9 @@ function HeroCard() {
           ))}
         </div>
         <div className="goal-row">
-          <span>Bicycle goal</span>
+          <span>{text.card.goal}</span>
           <span>
-            {money(2100)} of {money(6000)}
+            {money(2100)} {text.card.of} {money(6000)}
           </span>
         </div>
         <div className="meter">
@@ -52,7 +58,7 @@ function HeroCard() {
           />
         </div>
       </div>
-      <Mascot size={92} className="hero-mascot" label="Sprout, the mascot, waving hello" />
+      <Mascot size={92} className="hero-mascot" label={text.mascotLabel} />
     </motion.div>
   );
 }
@@ -70,29 +76,27 @@ export default function Hero({ onTour }) {
       <div className="container hero-grid">
         <div className="hero-copy">
           <motion.span className="tag tag-yellow tilt" {...riseIn(0)}>
-            For kids 8 to 17 · run with NGOs
+            {text.tag}
           </motion.span>
           <h1>
-            <motion.span className="block" {...riseIn(0.05)}>
-              Money skills
-            </motion.span>
-            <motion.span className="block" {...riseIn(0.12)}>
-              for every kid.
-            </motion.span>
+            {text.headline.map((line, i) => (
+              <motion.span key={line} className="block" {...riseIn(0.05 + i * 0.07)}>
+                {line}
+              </motion.span>
+            ))}
             <motion.span className="highlight" {...riseIn(0.2)}>
-              Whatever they start with.
+              {text.highlight}
             </motion.span>
           </h1>
           <motion.p className="lead" {...riseIn(0.3)}>
-            Do a small activity, earn a little, split it into four jars, and ask a mentor the money
-            questions you were scared to ask.
+            {text.intro}
           </motion.p>
           <motion.div className="hero-actions" {...riseIn(0.38)}>
             <Link className="btn btn-green btn-lg" to="/app">
-              Open the demo <ArrowRight {...icon} />
+              {text.openDemo} <ArrowRight {...icon} />
             </Link>
             <button className="link-btn" onClick={onTour}>
-              Take the 1½-minute tour
+              {text.tour}
             </button>
           </motion.div>
         </div>

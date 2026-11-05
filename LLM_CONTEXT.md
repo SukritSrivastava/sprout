@@ -77,7 +77,8 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 | `client/src/main.jsx` | BrowserRouter, font (Bricolage opsz), Lenis CSS, styles |
 | `client/src/App.jsx` | shell: reduced-motion setting (OS + toggle, starts/stops Lenis), `useHashScrolling` (glide to `#section`, wait for fonts on first load, jump after page change), page transitions with `AnimatePresence` (instant swap when motion is off), routes, header/footer, tour |
 | `client/src/components/landing/*.jsx` | home page sections: `Hero` (with `HeroCard`), `HowItWorks`, `MeetMentor`, `Trust`, `ComingSoon`, `Closing` |
-| `client/src/lib/tour.js` | tour steps `{path, id, seconds, en:{title,text}, hi:{title,text}}`, `tourLanguages`, `tourDuration`, `tourStart`, `tourIndex` (~84s, 8 steps) |
+| `client/src/content/` (✏️ edit-me) | all site words, so the user can edit by hand: `site.js` (nav, footer, tour button, 404), `home.js` (every home section), `demo.js` (`sampleKid`, `jars`, `demo.*` section words incl. small template functions, `mentorText` en/hi, `offlineAnswers`), `tour.js` (`tourSteps` `{path, id, seconds, en:{title,text}, hi:{title,text}}`, `tourDone`, `tourLanguages`). Components import from here; keep wording changes here, not in JSX |
+| `client/src/lib/tour.js` | tour timing only: re-exports the content and adds `tourDuration`, `tourStart`, `tourIndex` (~84s, 8 steps) |
 | `client/src/lib/useMentorChat.js` | mentor chat logic hook; `ChatBubble.jsx` draws one message |
 | `client/src/lib/icons.js` | shared Lucide props `icon`, `iconSized(size, stroke)` |
 | `DEMO_SCRIPT.md` | 3-minute judge script, pre-flight checklist, failure plan, likely questions |
@@ -92,7 +93,6 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 | `client/src/components/Tour.jsx` | tour panel: clock, EN/हिंदी caption switch, each step navigates to `path#id` (replace) and adds `.tour-target`; no voice |
 | `client/src/components/demo/*.jsx` | `Earn` (ids `earn`), `Jars` (`jars`), `Growth` (`grow`), `Mentor` (`mentor`), `Withdraw` (`withdraw`) |
 | `client/src/lib/model.js` | `money`, `splitReward`, `projectSavings`, `savingsGoals`, `monthlyOptions`, `monthsToGoal`, `describeMonths`, `tourSteps` (with `path`), `tourDuration`, `tourStart`, `tourIndex` |
-| `client/src/lib/content.js` | `jars` (name, colour var, note, detail), six prepared `answers`, `sampleKid` (Aanya, ₹200 base, ₹200 reward) |
 | `client/src/lib/motion.jsx` | `ReducedMotion` context + `useReduced`, `ease`, `Reveal`, `Stagger`/`Stagger.Item`, `liftOnHover` |
 | `client/src/lib/scroll.js` | Lenis start/stop, `scrollToId` (96px header offset), `scrollToTop`, `waitForId` |
 | `client/src/lib/hooks.js` | `useCountUp` (instant when `data-reduced=true`) |
@@ -133,7 +133,7 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 `amount` (invest absorbs rounding). `projectSavings(monthly, years, rate = 0.08)` month-end
 deposits, monthly compounding → `{ balance, contributed, points }` (₹100 × 5y = ₹7,348).
 `monthsToGoal(monthly, goal, rate = 0.08, max = 240)` → months or `null`. `describeMonths(n)` →
-"2 years 2 months". `tourIndex(tourDuration)` = -1 (Tour handles completion); tour schedule lives in `lib/tour.js`.
+"2 years 2 months". `tourIndex(tourDuration)` = -1 (Tour handles completion); tour steps live in `content/tour.js`, timing in `lib/tour.js`.
 
 ## Verification
 
@@ -160,6 +160,15 @@ checks the step counter, URL and highlighted section rather than animated captio
 - Phase 3 (Coming-soon previews): **done** 2026-11-05. Nine walkthroughs at `/soon/*`, all
   frontend-only sample data with a "Nothing here is real" banner; the ledger preview does real
   hashing in the browser. Header "Coming soon" → `/soon`; home rows link to previews.
+- Simplified for hand editing (2026-11-05): `client/src/content/` holds all site words;
+  mentor behaviour is in `server/src/mentor/prompt.ts` (`MENTOR_RULES`, `LANGUAGE_RULES`,
+  `SENSITIVE_TOPIC_RULE`), `settings.ts` (`mentorSettings`: default model, temperature, reply
+  tokens, timeout, question length, history size, per-device limit), `safety.ts`, `prepared.ts`.
+  `EDITING.md` is the user's guide; keep it accurate when files move.
+- Phase 5 (blockchain) is written up for judges in `PHASE_5_BLOCKCHAIN.md`: why it's needed, how
+  the receipt → fingerprint → Merkle root → public chain flow works, what's real (the preview's
+  maths) vs planned, the user's 4 wallet setup steps, and the publish-once plan. Not started;
+  only worth doing if judging rewards an on-chain transaction.
 - Phase 4: tour/demo hardening, deploy (client Vercel; server
   host to choose; add CORS for `ALLOWED_ORIGIN` then), docs.
 

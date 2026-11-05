@@ -1,4 +1,5 @@
 // Growth: pick a goal and a monthly amount, see when you could reach it and how saving grows.
+// Words: src/content/demo.js → demo.grow. Goals and amounts: src/lib/model.js.
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Reveal, ease, useReduced } from '../../lib/motion.jsx';
@@ -11,6 +12,9 @@ import {
   projectSavings,
   savingsGoals,
 } from '../../lib/model.js';
+import { demo } from '../../content/demo.js';
+
+const text = demo.grow;
 
 function Chips({ label, options, value, onChange }) {
   return (
@@ -52,23 +56,20 @@ export default function Growth({ goalId, setGoalId, monthly, setMonthly }) {
     <section id="grow" className="section">
       <div className="container grow-grid">
         <Reveal className="grow-copy">
-          <span className="tag tag-yellow">Step 3 · Grow</span>
-          <h2>When can I get it?</h2>
-          <p>
-            Pick something you want and how much you could put aside each month. Small amounts add
-            up faster than you’d think.
-          </p>
+          <span className="tag tag-yellow">{text.tag}</span>
+          <h2>{text.title}</h2>
+          <p>{text.text}</p>
         </Reveal>
         <Reveal delay={0.1} className="card calculator">
           <div className="calc-pickers">
             <Chips
-              label="Saving for"
+              label={text.goalLabel}
               options={savingsGoals.map((item) => ({ id: item.id, label: item.label }))}
               value={goalId}
               onChange={setGoalId}
             />
             <Chips
-              label="Each month"
+              label={text.monthlyLabel}
               options={monthlyOptions.map((amount) => ({ id: amount, label: money(amount) }))}
               value={monthly}
               onChange={setMonthly}
@@ -76,20 +77,17 @@ export default function Growth({ goalId, setGoalId, monthly, setMonthly }) {
           </div>
           <p className="goal-eta" aria-live="polite">
             {months === null ? (
-              <>
-                A {money(goal.cost)} {goal.label.toLowerCase()} needs a bigger monthly amount or
-                more time.
-              </>
+              text.tooFar(money(goal.cost), goal.label.toLowerCase())
             ) : (
               <>
-                Your {money(goal.cost)} {goal.label.toLowerCase()} in{' '}
+                {text.reachable} {money(goal.cost)} {goal.label.toLowerCase()} in{' '}
                 <strong>{describeMonths(months)}</strong>
               </>
             )}
           </p>
           <div className="growth-value">
             {money(balance)}
-            <span>after {years} years</span>
+            <span>{text.after(years)}</span>
           </div>
           <svg
             className="growth-chart"
@@ -118,12 +116,12 @@ export default function Growth({ goalId, setGoalId, monthly, setMonthly }) {
             <circle cx="384" cy="20" r="7" className="chart-dot" />
           </svg>
           <div className="chart-labels">
-            <span>Today</span>
-            <span>{years} years from now</span>
+            <span>{text.today}</span>
+            <span>{text.later(years)}</span>
           </div>
           <div className="slider-label">
-            <label htmlFor="years">Give it time</label>
-            <output htmlFor="years">{years} years</output>
+            <label htmlFor="years">{text.slider}</label>
+            <output htmlFor="years">{text.sliderValue(years)}</output>
           </div>
           <input
             id="years"
@@ -133,10 +131,7 @@ export default function Growth({ goalId, setGoalId, monthly, setMonthly }) {
             value={years}
             onChange={(event) => setYears(Number(event.target.value))}
           />
-          <p className="hint calculator-note">
-            You put in {money(result.contributed)} over {years} years. Assumes 8% a year, added
-            monthly. A pretend example, not a promise. No real investing happens here.
-          </p>
+          <p className="hint calculator-note">{text.note(money(result.contributed), years)}</p>
         </Reveal>
       </div>
     </section>

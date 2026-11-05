@@ -70,6 +70,10 @@ demo `/app` via React Router; Lucide icons; tour kept and restyled.
   (`lib/tour.js`), robotic browser voice removed, `DEMO_SCRIPT.md`, readability pass (every file
   has a plain-English header; home page split into `components/landing/`; mentor logic moved to
   `lib/useMentorChat.js`; shared `lib/icons.js`; dead CSS removed).
+- **Simplified for hand editing (2026-11-05):** site words in `client/src/content/`, mentor
+  behaviour in `server/src/mentor/prompt.ts` + `settings.ts`; guide in `EDITING.md`.
+- **Phase 5 (blockchain): planned, see `PHASE_5_BLOCKCHAIN.md`.** Written for judges; build
+  only if the hackathon rewards an on-chain transaction.
 - **Parked by the user:** human voiceover. `npm run make:voice` (Gemini TTS
   `gemini-3.1-flash-tts-preview`, voice Achird, MP3) works; free tier allows ~3 clips/minute
   and ~10/day per model. 6 English clips are in git-ignored `qa/voice-parked/`. Lip-sync for

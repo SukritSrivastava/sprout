@@ -1,6 +1,7 @@
 // Paisa Mentor: the live AI chat section of the demo (Gemini, through our server).
 // This file is only the layout. The chat logic (sending, streaming, errors, offline answers)
 // lives in lib/useMentorChat.js, and each message is drawn by ChatBubble.jsx.
+// Words: src/content/demo.js → demo.mentor and mentorText.
 import React, { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ArrowUp, RotateCcw } from 'lucide-react';
@@ -8,15 +9,16 @@ import Mascot from '../Mascot.jsx';
 import ChatBubble from './ChatBubble.jsx';
 import { Reveal } from '../../lib/motion.jsx';
 import { iconSized } from '../../lib/icons.js';
-import { mentorText } from '../../lib/content.js';
+import { demo, mentorText } from '../../content/demo.js';
 import { MAX_QUESTION_LENGTH, useMentorChat } from '../../lib/useMentorChat.js';
 
 // What the little status tag says, and its colour.
+const text = demo.mentor;
 const statusLabel = {
-  checking: ['Connecting…', 'tag-white'],
-  live: ['Live AI', 'tag-green'],
-  offline: ['Offline mode', 'tag-yellow'],
-  unreachable: ['Offline mode', 'tag-yellow'],
+  checking: [text.status.checking, 'tag-white'],
+  live: [text.status.live, 'tag-green'],
+  offline: [text.status.offline, 'tag-yellow'],
+  unreachable: [text.status.offline, 'tag-yellow'],
 };
 const languages = [
   ['en', 'English'],
@@ -49,12 +51,9 @@ export default function Mentor({ context }) {
     <section id="mentor" className="section band band-yellow">
       <div className="container mentor-grid">
         <Reveal className="mentor-copy">
-          <span className="tag tag-white">Ask anything</span>
-          <h2>Paisa Mentor.</h2>
-          <p>
-            A real AI mentor that answers money questions in plain words, in English or Hindi. It
-            knows your sample jars and goal, and it will never ask for personal details.
-          </p>
+          <span className="tag tag-white">{text.tag}</span>
+          <h2>{text.title}</h2>
+          <p>{text.text}</p>
           <Mascot mood={mood} size={110} label="Sprout listening" />
         </Reveal>
 
@@ -62,7 +61,7 @@ export default function Mentor({ context }) {
           <div className="chat-head">
             <Mascot size={40} mood={mood} />
             <div>
-              <strong>Paisa Mentor</strong>
+              <strong>{text.name}</strong>
               <span className={`tag ${statusTone} status-tag`}>{statusText}</span>
             </div>
             <div className="chat-tools">
@@ -153,7 +152,9 @@ export default function Mentor({ context }) {
               </button>
             </div>
           </form>
-          <p className="chat-note">AI · can make mistakes. {words.privacy}</p>
+          <p className="chat-note">
+            {text.note} {words.privacy}
+          </p>
         </Reveal>
       </div>
     </section>

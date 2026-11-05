@@ -7,15 +7,11 @@ import { AnimatePresence, motion } from 'motion/react';
 import { ArrowLeft, ArrowRight, Pause, Play, RotateCcw, X } from 'lucide-react';
 import Mascot from './Mascot.jsx';
 import { ease } from '../lib/motion.jsx';
-import { tourDuration, tourIndex, tourLanguages, tourStart, tourSteps } from '../lib/tour.js';
+import { tourDone, tourDuration, tourIndex, tourLanguages, tourStart, tourSteps } from '../lib/tour.js';
 import { waitForId } from '../lib/scroll.js';
 
 const icon = { size: 18, strokeWidth: 2.75, 'aria-hidden': true };
 
-const doneText = {
-  en: { title: 'That’s sprout.io!', text: 'Explore at your own pace, or play the tour again.' },
-  hi: { title: 'यह था sprout.io!', text: 'अपनी रफ़्तार से देखो, या टूर फिर से चलाओ।' },
-};
 
 export default function Tour({ open, onClose, returnFocusRef }) {
   const navigate = useNavigate();
@@ -28,7 +24,7 @@ export default function Tour({ open, onClose, returnFocusRef }) {
   const index = tourIndex(elapsed); // -1 once the tour is over
   const complete = elapsed >= tourDuration;
   const step = tourSteps[Math.max(0, index)];
-  const words = complete ? doneText[lang] : step[lang];
+  const words = complete ? tourDone[lang] : step[lang];
 
   // Opening: start from the beginning, focus Close, listen for Escape and tab switches.
   // Closing (the cleanup) removes the listeners and puts focus back.

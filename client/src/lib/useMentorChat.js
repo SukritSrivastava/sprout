@@ -5,9 +5,16 @@
 // questions, a bad message) or answers from the prepared set so the demo never gets stuck.
 import { useEffect, useRef, useState } from 'react';
 import { askMentor, mentorStatus, MentorError } from './mentorApi.js';
-import { mentorText, offlineAnswer } from './content.js';
+import { mentorText, offlineAnswers } from '../content/demo.js';
 
 export const MAX_QUESTION_LENGTH = 600;
+
+// Last resort when the server can't be reached: the closest backup answer from content/demo.js.
+function offlineAnswer(question, language) {
+  if (language === 'hi') return offlineAnswers.hiDefault;
+  const match = offlineAnswers.en.find(({ words }) => words.test(question.toLowerCase()));
+  return match ? match.answer : offlineAnswers.enDefault;
+}
 const HISTORY = 12; // the server accepts at most 12 messages
 
 // `context` is the demo's sample jars and goal, sent with every question.

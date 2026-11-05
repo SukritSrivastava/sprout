@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ease } from '../lib/motion.jsx';
+import { site } from '../content/site.js';
 import { ArrowUpRight, Menu, Sprout as SproutIcon, X } from 'lucide-react';
 import Mascot from './Mascot.jsx';
 
@@ -37,13 +38,13 @@ export function SiteHeader({ menuOpen, setMenuOpen, reduced, setReduced }) {
         <Brand />
         <nav aria-label="Main navigation" className={menuOpen ? 'nav nav-open' : 'nav'}>
           <Link to="/#how" onClick={close}>
-            How it works
+            {site.nav.howItWorks}
           </Link>
           <Link to="/#meet-mentor" onClick={close}>
-            Mentor
+            {site.nav.mentor}
           </Link>
           <Link to="/soon" onClick={close}>
-            Coming soon
+            {site.nav.comingSoon}
           </Link>
         </nav>
         <div className="header-actions">
@@ -54,15 +55,15 @@ export function SiteHeader({ menuOpen, setMenuOpen, reduced, setReduced }) {
             title="Turn animations on or off"
           >
             <span className={reduced ? 'motion-dot' : 'motion-dot on'} aria-hidden="true" />
-            {reduced ? 'Motion off' : 'Motion on'}
+            {reduced ? site.nav.motionOff : site.nav.motionOn}
           </button>
           {pathname === '/app' ? (
             <Link className="btn btn-sm btn-white" to="/">
-              Home
+              {site.nav.home}
             </Link>
           ) : (
             <Link className="btn btn-sm btn-ink" to="/app">
-              Open the demo <ArrowUpRight size={18} strokeWidth={2.75} aria-hidden="true" />
+              {site.nav.openDemo} <ArrowUpRight size={18} strokeWidth={2.75} aria-hidden="true" />
             </Link>
           )}
           <button
@@ -85,18 +86,17 @@ export function SiteFooter({ onTour }) {
       <div className="container footer-inner">
         <div>
           <Brand />
-          <p>Money skills for every kid, whatever they start with.</p>
+          <p>{site.footer.tagline}</p>
         </div>
         <div className="footer-links">
-          <Link to="/app">Open the demo</Link>
-          <Link to="/soon">Coming soon</Link>
+          <Link to="/app">{site.footer.openDemo}</Link>
+          <Link to="/soon">{site.footer.comingSoon}</Link>
           <button className="link-btn" onClick={onTour}>
-            Tour with Sprout
+            {site.footer.tour}
           </button>
         </div>
         <p className="footer-note">
-          sprout.io © {new Date().getFullYear()} · A demo for the PayPal AI hackathon. Every amount on
-          this site is sample money.
+          sprout.io © {new Date().getFullYear()} · {site.footer.note}
         </p>
       </div>
     </footer>
@@ -140,7 +140,8 @@ export function TourLauncher({ hidden, onTour }) {
             exit={{ opacity: 0, x: 16, scale: 0.9 }}
             transition={{ duration: 0.25, ease }}
           >
-            Take the tour<small>About 1½ minutes with Sprout</small>
+            {site.tourButton.label}
+            <small>{site.tourButton.small}</small>
           </motion.span>
         )}
       </AnimatePresence>

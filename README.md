@@ -53,7 +53,9 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 ## Files
 
 - `LLM_CONTEXT.md`: full project briefing for an AI assistant.
+- `EDITING.md`: **start here to change words or the AI mentor's behaviour by hand.**
 - `PHASES.md`: agreed decisions and the phase-by-phase plan.
+- `PHASE_5_BLOCKCHAIN.md`: the public impact ledger explained for judges (why, how, what's real).
 - `DEMO_SCRIPT.md`: a 3-minute script for presenting to judges, with backup plans.
 - `DESIGN.md`: colours, fonts, components and motion rules. `docs/REDESIGN.md`: the agreed look.
 - `docs/LEARN.md`: guided tour of the codebase. `docs/mentor-api.md`: the API contract.

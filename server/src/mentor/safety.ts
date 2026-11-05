@@ -1,6 +1,9 @@
-// Spots messages about risky topics (scams, debt, family trouble, bullying, self-harm).
-// A flagged chat shows a "Talk to a trusted adult" card and the prompt tells the AI to be extra careful.
-// This is a simple word list, not a guarantee: it adds a safety net on top of the AI's own rules.
+// ✏️ EDIT ME: words that mark a message as a sensitive topic (scams, debt, theft, bullying,
+// self-harm), in English, Hinglish and Hindi. A flagged chat shows a "Talk to a trusted adult"
+// card, and the AI gets the extra careful instruction from prompt.ts (SENSITIVE_TOPIC_RULE).
+// To add words: add them inside a line's (...) separated by |, or add a new /.../ line.
+// A backslash-b at the start means "start of a word"; `i` at the end means "ignore capitals".
+// This is a safety net on top of the AI's own rules, not a guarantee.
 const patterns: RegExp[] = [
   // English
   /\bscam|fraud|otp\b|password|pin number|lottery|prize money|double (my|your) money|guaranteed return/i,

@@ -11,7 +11,7 @@ import Withdraw from '../components/demo/Withdraw.jsx';
 import { ease, useReduced } from '../lib/motion.jsx';
 import { useCountUp } from '../lib/hooks.js';
 import { money, savingsGoals, splitReward } from '../lib/model.js';
-import { sampleKid } from '../lib/content.js';
+import { demo, sampleKid } from '../content/demo.js';
 
 export default function Demo() {
   const reduced = useReduced();
@@ -54,14 +54,14 @@ export default function Demo() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
             >
-              Hi {sampleKid.name}. This is your sprout.io.
+              {demo.hello.title(sampleKid.name)}
             </motion.h1>
-            <p>Everything here is sample money. Tap things, move sliders, break nothing.</p>
+            <p>{demo.hello.text}</p>
           </div>
           <div className="card balance-card" aria-live="polite">
-            <span>Total balance</span>
+            <span>{demo.hello.balance}</span>
             <strong>{money(shown)}</strong>
-            <span className="tag tag-white">Sample</span>
+            <span className="tag tag-white">{demo.hello.sample}</span>
           </div>
         </div>
       </section>

@@ -1,5 +1,7 @@
-// Built-in answers used when the AI can't be reached (no key, no internet, quota, error).
-// The closest topic wins; if nothing matches, a friendly "I'm offline" reply is used.
+// ✏️ EDIT ME: the mentor's backup answers (used when there's no AI key, no internet, or the AI
+// fails) and the follow-up questions suggested under each reply.
+// Each topic: `match` = words that pick it, then the answer in English (`en`) and Hindi (`hi`).
+// Safe to change any answer text or suggestion; topics are checked from the top down.
 import type { Language } from './schema.js';
 
 type Topic = { match: RegExp; en: string; hi: string };
