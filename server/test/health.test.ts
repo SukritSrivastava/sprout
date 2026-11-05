@@ -16,6 +16,7 @@ test('health reports ok and that AI is not configured without a key', async () =
     ok: true,
     service: 'sprout-server',
     mentor: { aiConfigured: false },
+    paypal: { sandboxConfigured: false },
   });
 });
 
@@ -24,6 +25,13 @@ test('health says AI is configured when a key exists, and never leaks the key', 
   const response = await app.inject({ method: 'GET', url: '/api/health' });
   assert.equal(response.json().mentor.aiConfigured, true);
   assert.ok(!response.body.includes('test-key-123'));
+});
+
+test('health says PayPal is configured with both sandbox keys, and never leaks the secret', async () => {
+  const app = buildApp(loadConfig({ ...baseEnv, PAYPAL_CLIENT_ID: 'client-abc', PAYPAL_CLIENT_SECRET: 'secret-xyz' }));
+  const response = await app.inject({ method: 'GET', url: '/api/health' });
+  assert.equal(response.json().paypal.sandboxConfigured, true);
+  assert.ok(!response.body.includes('secret-xyz'));
 });
 
 test('unknown routes return a JSON 404', async () => {

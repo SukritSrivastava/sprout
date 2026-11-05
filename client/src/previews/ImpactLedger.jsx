@@ -3,11 +3,13 @@
 // - "Publish" sends a real transaction to the local Hardhat chain that `npm run dev` starts; the
 //   server computes the batch code itself and stores it in the ImpactLedger contract.
 // - "Verify" checks a receipt against the code read back from the chain.
-// Only the receipts are sample data, and the "wallet" is Hardhat's built-in test account.
+// - The last step shows the REAL receipts from PayPal sandbox donations and payouts and seals them.
+// The first steps use sample receipts, and the "wallet" is Hardhat's built-in test account.
 import React, { useEffect, useState } from 'react';
 import { CircleCheck, CircleX, Link2, Loader2, ShieldQuestion, UploadCloud } from 'lucide-react';
 import Walkthrough from './Walkthrough.jsx';
 import ChainExplorer from './ChainExplorer.jsx';
+import LivePayPalReceipts from './LivePayPalReceipts.jsx';
 import { money } from '../lib/model.js';
 import { buildTree, proofFor, short, verifyReceipt } from '../lib/ledger.js';
 import { publishBatch, readBatch } from '../lib/ledgerApi.js';
@@ -208,6 +210,10 @@ export default function ImpactLedger() {
       ),
     },
     {
+      title: 'Now with real PayPal receipts',
+      render: () => <LivePayPalReceipts network={NETWORK} />,
+    },
+    {
       title: 'What this proves, and what it doesn’t',
       render: () => (
         <div className="walk-grid">
@@ -234,11 +240,18 @@ export default function ImpactLedger() {
       intro="Anyone can check that donated money went where sprout.io says it did, without seeing any kid’s details."
       color="var(--peach)"
       steps={steps}
+      realNote={
+        <>
+          <strong>Working on a local test blockchain.</strong> Real contract and transactions, fake ETH; step 4 uses your PayPal sandbox payments.
+        </>
+      }
       live={[
-        'Real receipts from real donations, rewards and payouts, sealed into a batch every day.',
-        'The same contract on a public network (Base Sepolia first), so anyone in the world can check, not just this computer.',
+        'Real: the SHA-256 and Merkle maths, the ImpactLedger contract, and publishing to a local Hardhat chain.',
+        'Real: PayPal sandbox donations and payouts become receipts and are sealed in their own batches (step 4).',
+        'Next: rewards from a real database, sealed into a batch every day.',
+        'Next: the same contract on a public network (Base Sepolia first), so anyone in the world can check, not just this computer.',
         'Kid references are salted codes kept on the server, so nobody can trace a kid from the chain.',
-        'Donors get a link to check their own receipt, exactly like the check above.',
+        'Next: donors get a link to check their own receipt, exactly like the check above.',
         'Two adults still approve payouts; the chain records, it doesn’t decide.',
       ]}
     />

@@ -7,6 +7,9 @@ import { mentorRoutes } from './routes/mentor.js';
 import { createGeminiModel, type MentorModel } from './mentor/model.js';
 import { ledgerRoutes } from './routes/ledger.js';
 import { createLedgerChain, type LedgerChain } from './ledger/chain.js';
+import { paypalRoutes } from './routes/paypal.js';
+import { createPayPal, type PayPal } from './paypal/client.js';
+import { createPayPalStore } from './paypal/store.js';
 
 type AppOptions = {
   logger?: boolean;
@@ -15,6 +18,8 @@ type AppOptions = {
   rateLimit?: { limit: number; windowMs: number };
   // Tests pass a fake chain; `undefined` means "use the chain at CHAIN_RPC_URL".
   chain?: LedgerChain | null;
+  // Tests pass a fake PayPal; `undefined` means "use the sandbox keys from server/.env".
+  paypal?: PayPal | null;
 };
 
 export function buildApp(config: Config, options: AppOptions = {}) {
@@ -30,8 +35,12 @@ export function buildApp(config: Config, options: AppOptions = {}) {
 
   const chain = options.chain === undefined ? createLedgerChain(config) : options.chain;
 
+  const paypal = options.paypal === undefined ? createPayPal(config) : options.paypal;
+  const store = createPayPalStore(); // the live receipts and reward pool, in memory
+
   app.register(healthRoutes, { config });
-  app.register(ledgerRoutes, { chain, allowedOrigins: config.ALLOWED_ORIGIN });
+  app.register(ledgerRoutes, { chain, allowedOrigins: config.ALLOWED_ORIGIN, store });
+  app.register(paypalRoutes, { paypal, store, model, allowedOrigins: config.ALLOWED_ORIGIN });
   app.register(mentorRoutes, {
     model,
     allowedOrigins: config.ALLOWED_ORIGIN,

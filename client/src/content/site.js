@@ -20,7 +20,7 @@ export const site = {
     comingSoon: 'Coming soon',
     tour: 'Tour with Sprout',
     // The year is added automatically in front of this.
-    note: 'A demo for the PayPal AI hackathon. Every amount on this site is sample money.',
+    note: 'A demo for the PayPal AI hackathon. Amounts are sample money or PayPal sandbox test money; nothing real is ever charged.',
   },
 
   // The floating button with the mascot (bottom right)

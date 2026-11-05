@@ -77,6 +77,14 @@ demo `/app` via React Router; Lucide icons; tour kept and restyled.
   explorer + verify-against-chain in `/soon/impact`. Pretend wallet (Hardhat test account), no
   real money. Public network = set `CHAIN_RPC_URL` + `PUBLISHER_PRIVATE_KEY`. See
   `PHASE_5_BLOCKCHAIN.md`.
+- **Phase 6 (PayPal at the centre, for the hackathon rules): done (2026-11-05).** Real PayPal
+  **sandbox** (USD, test money): donations via the JS SDK button + Orders v2 create/capture on
+  the server (`server/src/paypal/`, `routes/paypal.ts`), guardian payouts via Payouts v1 after 2
+  of 3 approvals and only from the donated pool, status refresh. Gemini writes a donor thank-you
+  from the captured amount (`paypal/impactNote.ts`). PayPal receipts (salted codes, no emails)
+  are published to the chain by the server (`POST /api/ledger/publish-live`, batches 101+) and
+  shown in `/soon/impact` step 4. Donate, Payout and Impact are stamped "Live". Judges run it
+  locally with their own free sandbox keys (README); no deploy. Receipts live in memory.
 - **Parked by the user:** human voiceover. `npm run make:voice` (Gemini TTS
   `gemini-3.1-flash-tts-preview`, voice Achird, MP3) works; free tier allows ~3 clips/minute
   and ~10/day per model. 6 English clips are in git-ignored `qa/voice-parked/`. Lip-sync for

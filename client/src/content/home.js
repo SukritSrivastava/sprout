@@ -73,7 +73,7 @@ export const home = {
   trust: {
     tag: 'Built on trust',
     title: ['Kids learn.', 'Adults hold the money.'],
-    text: 'Payouts through PayPal and public receipts are planned. In today’s demo they are simulated, and it says so.',
+    text: 'Donations and payouts run on real PayPal (sandbox, test money), and every one gets a receipt sealed on a blockchain. The kids’ jars are still sample data, and the site says so.',
     points: [
       { title: 'The NGO keeps the money.', text: 'Kids see their balance in sprout.io. The real funds stay with the NGO.' },
       { title: 'Two adults approve every payout.', text: 'A mentor and an NGO admin both say yes before anything is paid.' },
@@ -83,11 +83,11 @@ export const home = {
 
   // Section 5: coming soon (titles and one-liners come from src/previews/index.js)
   comingSoon: {
-    tag: 'Coming soon',
-    title: 'What we’re building next.',
-    text: 'These are planned, not live. Each one has a clickable preview with sample data, so you can see how it will work.',
+    tag: 'Live and coming soon',
+    title: 'Real PayPal money flow, and what’s next.',
+    text: 'The rows stamped Live work today on the PayPal sandbox (test money) and a local blockchain. The others are clickable previews with sample data.',
     // Which previews to show here, in order (ids from src/previews/index.js).
-    show: ['donate', 'ngo', 'impact', 'seedlings', 'hindi'],
+    show: ['donate', 'payout', 'impact', 'ngo', 'seedlings'],
     rowStamp: 'Try the preview',
     seeAll: 'See all', // followed by "9 previews"
   },

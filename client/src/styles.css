@@ -630,3 +630,19 @@ html[data-reduced='true'] *, html[data-reduced='true'] *::before, html[data-redu
   .mini-jars { grid-template-columns: 1fr 1fr; }
   .hero-total { font-size: 36px; }
 }
+
+/* ---------- PayPal sandbox pages (Donate, Payout) and live stamps ---------- */
+.real-banner { background: var(--green); }
+.stamp-live { background: var(--green); border-style: solid; }
+.paypal-holder { width: 100%; max-width: 380px; margin-inline: auto; display: grid; gap: 8px; }
+.paypal-holder .hint { display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+.ai-note { display: grid; gap: 12px; align-content: start; background: var(--lavender); }
+.ai-note .tag { justify-self: start; display: inline-flex; align-items: center; gap: 6px; }
+.ai-note p { margin: 0; font-size: 18px; line-height: 1.5; }
+.receipt-inline { display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; text-align: left; }
+.receipt-inline dt { color: var(--muted); }
+.receipt-inline dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.field { display: grid; gap: 6px; font-weight: 700; }
+.field input { min-height: 48px; padding: 10px 14px; font: inherit; font-weight: 500; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--white); }
+.ledger-table td.mono { overflow-wrap: anywhere; }
+.soon-live { display: inline-block; margin-top: 10px; font-size: 14px; }

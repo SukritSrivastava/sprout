@@ -1,5 +1,31 @@
 # Verification
 
+## Phase 6: PayPal sandbox at the centre (2026-11-05)
+
+Done to meet the PayPal AI Hackathon rules ("PayPal integration is central"): real PayPal sandbox
+donations (Orders v2 + JS SDK button) and guardian payouts (Payouts v1), a Gemini thank-you note
+after each captured donation, and PayPal receipts sealed on the local blockchain.
+
+- `npm test`: 62 passed: 11 client, 45 server (18 new: PayPal client only calls the sandbox and
+  reuses its token; reads captures/payouts the way PayPal returns them; PayPal errors keep their
+  issue name; config shares the client id never the secret; 503 with fix-it message without keys;
+  only listed amounts; donation → coded receipt + pool + AI note from checked facts with no donor
+  data; prepared note without AI; double capture = same receipt; no receipt unless COMPLETED, full
+  amount, our own order; payouts need 2 different approvals and enough pool, email not echoed;
+  bad payout input; status refresh; failed payout leaves pool untouched; live receipts published
+  by the server into batches 101, 102…; other websites 403), 6 Solidity contract tests.
+- `npx playwright test`: 162 passed, 9 skipped by design. New `e2e/paypal.spec.js` (18 runs)
+  replaces PayPal's script with a stand-in button and fakes `/api/paypal` answers: amount → order
+  → receipt + AI note, prepared-note label, server refusal shown with no receipt, setup notice
+  without keys, 2-of-3 approval → payout → status refresh, empty pool → donate link, live
+  receipts → publish → explorer + browser-checked code, and the real server never exposing a secret.
+- Known flake: on a busy laptop, one older animation-heavy test per full run (a different one
+  each time: tour entry points, Withdraw, #section landing) can time out while a smooth-scroll
+  animation is still moving. Each passes on its own (`page` + `tour` specs ×3: 123/123).
+- **Still to check by hand with real sandbox keys** (needs a person to log in to PayPal): donate
+  $25 with the sandbox personal account → receipt shows a PayPal capture id; payout to that
+  account's email → status moves from PENDING; publish → explorer.
+
 ## Phase 5: impact ledger on a local blockchain (2026-11-05)
 
 - `npm test`: 44 passed: 11 client, 27 server (9 new ledger tests: server and browser compute the

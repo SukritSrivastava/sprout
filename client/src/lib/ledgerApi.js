@@ -1,27 +1,16 @@
 // Talks to the server's public impact ledger (server/src/routes/ledger.ts), which talks to the
 // blockchain. Every function returns { ok: true, ...data } or { ok: false, message }.
 
-async function call(path, options) {
-  try {
-    const response = await fetch(path, options);
-    const body = await response.json().catch(() => ({}));
-    if (response.ok) return { ok: true, ...body };
-    return { ok: false, status: response.status, message: body.message ?? 'Something went wrong.' };
-  } catch {
-    return { ok: false, status: 0, message: 'Can’t reach the server. Is `npm run dev` running?' };
-  }
-}
+import { call, post } from './api.js';
 
 export const ledgerStatus = () => call('/api/ledger/status');
 
 export const readBatch = (batchId) => call(`/api/ledger/batches/${batchId}`);
 
-export const publishBatch = (batchId, receipts) =>
-  call('/api/ledger/publish', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ batchId, receipts }),
-  });
+export const publishBatch = (batchId, receipts) => post('/api/ledger/publish', { batchId, receipts });
+
+// Seals the server's own real PayPal sandbox receipts (the browser sends nothing).
+export const publishLiveReceipts = () => post('/api/ledger/publish-live');
 
 // Shortens long codes for display: 0x5fbd…0aa3
 export const shortHex = (value, start = 6, end = 4) =>

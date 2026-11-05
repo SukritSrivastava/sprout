@@ -100,12 +100,12 @@ export const tourSteps = [
     id: 'soon-hub',
     seconds: 10,
     en: {
-      title: 'And there’s more coming',
-      text: 'PayPal donations, payouts to guardians, a mode for younger kids, and more. Try any preview here. Thanks for growing with us!',
+      title: 'Real PayPal, and more coming',
+      text: 'PayPal donations and payouts to guardians really work here, on the PayPal sandbox with test money. A mode for younger kids and more are coming. Thanks for growing with us!',
     },
     hi: {
-      title: 'और भी बहुत कुछ आ रहा है',
-      text: 'PayPal से दान, अभिभावकों को भुगतान, छोटे बच्चों के लिए खास मोड, और बहुत कुछ। कोई भी झलक आज़माओ। साथ बढ़ने के लिए शुक्रिया!',
+      title: 'असली PayPal, और बहुत कुछ आ रहा है',
+      text: 'PayPal से दान और अभिभावकों को भुगतान यहाँ सच में चलते हैं, PayPal सैंडबॉक्स पर टेस्ट पैसों से। छोटे बच्चों का मोड और बहुत कुछ जल्द आ रहा है। साथ बढ़ने के लिए शुक्रिया!',
     },
   },
 ];

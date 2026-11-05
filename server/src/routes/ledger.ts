@@ -3,6 +3,7 @@
 //   GET  /api/ledger/status        Is the blockchain reachable? Which contract and wallet?
 //   POST /api/ledger/publish       Seal a batch of receipts and publish its code on the chain.
 //   GET  /api/ledger/batches/:id   Read a batch back from the chain ({ batch: null } if not yet).
+//   POST /api/ledger/publish-live  Seal the real PayPal sandbox receipts not yet published.
 //
 // The server computes the batch code from the receipts itself (ledger/merkle.ts); it never
 // trusts a code sent by the browser. Receipts only ever contain coded kid references.
@@ -12,8 +13,9 @@ import { batchRoot, batchTotals } from '../ledger/merkle.js';
 import type { LedgerChain } from '../ledger/chain.js';
 import { createRateLimiter } from '../rate-limit.js';
 import { onlyOurWebsite } from '../origin.js';
+import type { PayPalStore } from '../paypal/store.js';
 
-type Options = { chain: LedgerChain | null; allowedOrigins: string[] };
+type Options = { chain: LedgerChain | null; allowedOrigins: string[]; store: PayPalStore };
 
 const receiptSchema = z
   .object({
@@ -39,7 +41,7 @@ const chainDown = {
 };
 
 export async function ledgerRoutes(app: FastifyInstance, options: Options) {
-  onlyOurWebsite(app, options.allowedOrigins, ['/api/ledger/publish']);
+  onlyOurWebsite(app, options.allowedOrigins, ['/api/ledger/publish', '/api/ledger/publish-live']);
   // Publishing writes to the chain, so keep it to a few per device.
   const publishLimit = createRateLimiter({ limit: 10, windowMs: 5 * 60_000 });
 
@@ -80,5 +82,28 @@ export async function ledgerRoutes(app: FastifyInstance, options: Options) {
     return withChain(async (chain) =>
       chain.publish({ batchId, root: batchRoot(receipts), ...batchTotals(receipts) }),
     )(request, reply);
+  });
+
+  // The real PayPal receipts: the server publishes its OWN records, so the browser sends nothing.
+  app.post('/api/ledger/publish-live', async (request, reply) => {
+    const wait = publishLimit.check(request.ip);
+    if (wait) {
+      reply.header('retry-after', String(wait));
+      return reply.code(429).send({ error: 'rate_limited', message: `Try again in ${wait} seconds.` });
+    }
+    const pending = options.store.unpublished().slice(0, 64);
+    if (pending.length === 0) {
+      return reply.code(409).send({ error: 'nothing_to_publish', message: 'No new PayPal receipts to publish yet.' });
+    }
+    // Only the five receipt fields go into the code (no PayPal ids, no statuses).
+    const receipts = pending.map(({ id, type, amount, date, ref }) => ({ id, type, amount, date, ref }));
+    return withChain(async (chain) => {
+      // Skip batch numbers already used on this chain (e.g. the server restarted, the chain didn't).
+      let batchId = options.store.nextBatchId();
+      while (await chain.readBatch(batchId)) batchId += 1;
+      const result = await chain.publish({ batchId, root: batchRoot(receipts), ...batchTotals(receipts) });
+      options.store.markPublished(receipts.map((r) => r.id), batchId);
+      return { ...result, receipts };
+    })(request, reply);
   });
 }

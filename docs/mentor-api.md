@@ -1,4 +1,4 @@
-# API contract (mentor and impact ledger)
+# API contract (mentor, PayPal and impact ledger)
 
 The agreement between the website (`client/`) and the server (`server/`). Change this file
 first, then the code on both sides. Server code: `server/src/routes/mentor.ts` and
@@ -12,7 +12,7 @@ the Fastify server on `http://127.0.0.1:8787`.
 ## `GET /api/health`
 
 ```json
-{ "ok": true, "service": "sprout-server", "mentor": { "aiConfigured": true } }
+{ "ok": true, "service": "sprout-server", "mentor": { "aiConfigured": true }, "paypal": { "sandboxConfigured": true } }
 ```
 
 `aiConfigured: false` means no `GEMINI_API_KEY` is set: the chat shows "Offline mode" and the
@@ -120,6 +120,7 @@ Same "only our website" origin rule as the mentor.
 | --- | --- | --- |
 | `GET /api/ledger/status` | Checks the chain | `{ ok, chainId, blockNumber, contract, publisher, local }` |
 | `POST /api/ledger/publish` | Body `{ batchId: 1–1,000,000, receipts: [{ id: "RWD-2611-0108", type: "donation" \| "reward" \| "payout", amount: 0–10,000,000, date: "YYYY-MM-DD", ref: "kid-a12" }] }` (1–64 receipts, codes only). The server computes the batch code and totals itself; a browser can't send a code. Max 10 per device per 5 minutes. | `{ batch, alreadyPublished }`. Publishing a batch number twice returns the original. |
+| `POST /api/ledger/publish-live` | Seals the server's own PayPal receipts not yet published, in a new batch (101, 102…). No body. | `{ batch, alreadyPublished, receipts }`; `409 nothing_to_publish` if none |
 | `GET /api/ledger/batches/:id` | Reads a batch from the contract | `{ batch }`, or `{ batch: null }` if not published yet |
 
 `batch` = `{ batchId, root (64 hex), publishedAt, donated, rewarded, paidOut, receipts, tx }`, where
@@ -127,3 +128,29 @@ Same "only our website" origin rule as the mentor.
 
 Errors: `400 invalid_request`, `403 forbidden_origin`, `429 rate_limited`, `503 chain_unreachable`
 ("The local blockchain isn’t running. Start everything with `npm run dev`.").
+
+---
+
+## PayPal (sandbox)
+
+Server code: `server/src/routes/paypal.ts`, `server/src/paypal/`. Client: `client/src/lib/paypalApi.js`,
+`client/src/previews/PayPalButton.jsx`. Talks only to `https://api-m.sandbox.paypal.com` (test money).
+Same "only our website" origin rule; orders and captures 20 per device per 5 minutes, payouts 10.
+
+| Route | Does | Replies |
+| --- | --- | --- |
+| `GET /api/paypal/config` | Is PayPal set up? | `{ configured, clientId (public), currency: "USD", mode: "sandbox", amounts, rewardDollars, maxPayoutDollars, ngoName, poolDollars }` |
+| `POST /api/paypal/orders` | Body `{ amount }`, one of `amounts`. Creates an Orders v2 order. | `{ id }` |
+| `POST /api/paypal/orders/:id/capture` | Captures an order this server created, after the donor approved it. Checks status `COMPLETED`, USD and the exact amount. Capturing twice returns the same receipt. | `{ receipt, note: { text, source: "ai" \| "prepared" }, poolDollars }` |
+| `POST /api/paypal/payouts` | Body `{ email, amount: 1–maxPayoutDollars, approvals: ["mentor" \| "admin" \| "guardian"] }`. Needs 2 different approvals and enough pool. Sends a Payouts v1 payment. | `{ receipt, poolDollars }` |
+| `GET /api/paypal/payouts/:batchId` | Refreshes a payout's status from PayPal. | `{ receipt, poolDollars }` |
+| `GET /api/paypal/receipts` | All live receipts. | `{ receipts, poolDollars }` |
+
+`receipt` = `{ id: "DON-2611-0001" | "PAY-…", type: "donation" | "payout", amount (whole USD), date,
+ref: "donor-3fa9c1" | "guardian-81bd02", currency, paypalId (capture id or payout batch id), status, batchId }`.
+`ref` is a salted fingerprint of PayPal's payer id or the guardian's email; the email itself is never stored.
+
+Errors: `400 invalid_request`, `403 forbidden_origin` / `needs_approval`, `404 unknown_order` /
+`unknown_payout`, `409 payment_not_completed` / `pool_too_small`, `429 rate_limited`,
+`502 paypal_error` (with PayPal's `issue`, e.g. `ORDER_NOT_APPROVED`, `INSUFFICIENT_FUNDS`),
+`503 paypal_not_configured`.

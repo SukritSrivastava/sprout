@@ -1,14 +1,18 @@
-// Coming-soon previews: the /soon hub, every walkthrough, and the interactive bits inside them.
+// The /soon hub, every walkthrough, and the interactive bits inside them. Donate, Payout and the
+// impact ledger are live (PayPal sandbox / local blockchain); the rest are Coming-soon previews.
+// The PayPal pages have their own file: paypal.spec.js.
 import { test, expect } from './fixtures.js';
 
 const ids = ['donate', 'payout', 'ngo', 'impact', 'seedlings', 'safety', 'hindi', 'classroom', 'certificates'];
+const live = ['donate', 'payout', 'impact']; // these work for real and say so
 const next = (page) => page.getByRole('button', { name: /^Next/ });
 const stepTitle = (page) => page.locator('.walk-title');
 
-test('the hub lists all nine previews, each marked as not real', async ({ page }) => {
+test('the hub lists all nine, with the three live ones stamped', async ({ page }) => {
   await page.goto('/soon');
-  await expect(page.getByRole('note')).toContainText('Nothing here is real');
   await expect(page.locator('.soon-list a')).toHaveCount(9);
+  await expect(page.locator('.soon-list .stamp-live')).toHaveCount(3);
+  for (const id of live) await expect(page.locator(`a[href="/soon/${id}"] .stamp-live`)).toContainText('Live');
   for (const id of ids) await expect(page.locator(`a[href="/soon/${id}"]`)).toHaveCount(1);
 });
 
@@ -24,15 +28,16 @@ test('header "Coming soon" opens the hub; home rows open their preview', async (
 });
 
 for (const id of ids) {
-  test(`${id}: walks every step to "what this will do when it's live" and back to the start`, async ({ page }) => {
+  const isLive = live.includes(id);
+  test(`${id}: walks every step to the last one and back to the start`, async ({ page }) => {
     await page.goto(`/soon/${id}`);
-    await expect(page.getByRole('note')).toContainText('Nothing here is real');
+    await expect(page.getByRole('note')).toContainText(isLive ? /Live on the PayPal sandbox|Working on a local test blockchain/ : 'Nothing here is real');
     const total = Number((await page.locator('.walk-count').textContent()).match(/of (\d+)/)[1]);
     for (let step = 1; step < total; step++) {
       await expect(page.locator('.walk-count')).toHaveText(`Step ${step} of ${total}`);
       await next(page).click();
     }
-    await expect(stepTitle(page)).toHaveText('What this will do when it’s live');
+    await expect(stepTitle(page)).toHaveText(isLive ? 'What’s real here' : 'What this will do when it’s live');
     await expect(page.locator('.live-panel li').first()).toBeVisible();
     await page.getByRole('button', { name: 'Start again' }).click();
     await expect(page.locator('.walk-count')).toHaveText(`Step 1 of ${total}`);
@@ -41,7 +46,7 @@ for (const id of ids) {
 
 test('step dots jump straight to a step', async ({ page }) => {
   await page.goto('/soon/impact');
-  await page.getByRole('button', { name: /Go to step 4/ }).click();
+  await page.getByRole('button', { name: /Go to step 5/ }).click();
   await expect(stepTitle(page)).toHaveText('What this proves, and what it doesn’t');
 });
 
@@ -115,32 +120,6 @@ test.describe('impact ledger: local blockchain', () => {
     expect(status.contract).toMatch(/^0x[0-9a-fA-F]{40}$/);
     expect(status.publisher.toLowerCase()).toBe('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
   });
-});
-
-test('donate: amount carries through to PayPal step and receipt', async ({ page }) => {
-  await page.goto('/soon/donate');
-  await page.getByRole('button', { name: '₹1,000' }).click();
-  await expect(page.locator('.big-number')).toHaveText('5');
-  await next(page).click();
-  await page.getByRole('button', { name: /Pay ₹1,000 with PayPal/ }).click();
-  await expect(stepTitle(page)).toHaveText('Payment confirmed');
-  await next(page).click();
-  await expect(page.locator('.receipt-mini')).toContainText('₹1,000');
-});
-
-test('payout: needs two of three adults before paying', async ({ page }) => {
-  await page.goto('/soon/payout');
-  await next(page).click();
-  const status = page.locator('.approval-status');
-  await page.getByRole('button', { name: /Mentor/ }).click();
-  await expect(status).toHaveText('1 of 3 approved. Needs 2.');
-  await next(page).click();
-  await expect(page.locator('.walk-step')).toContainText('Without two approvals, nothing is paid');
-  await page.getByRole('button', { name: 'Back' }).click();
-  await page.getByRole('button', { name: /Guardian/ }).click();
-  await expect(status).toHaveText('2 of 3 approved. The payout can go ahead.');
-  await next(page).click();
-  await expect(page.locator('.walk-step')).toContainText('verified PayPal account');
 });
 
 test('NGO dashboard: approving and sending back activities', async ({ page }) => {

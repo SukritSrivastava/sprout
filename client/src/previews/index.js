@@ -1,5 +1,6 @@
-// Every Coming-soon preview: its address (/soon/<id>), how it's listed, and which component shows it.
+// Every preview: its address (/soon/<id>), how it's listed, and which component shows it.
 // Add a preview here and it appears on the hub page and gets its own route automatically.
+// `live` marks the ones that really work today; its words are shown as a green stamp.
 import {
   HandCoins,
   Languages,
@@ -20,10 +21,10 @@ import Safety from './Safety.jsx';
 import { Certificates, Classroom, Hindi } from './More.jsx';
 
 export const previews = [
-  { id: 'donate', title: 'PayPal donations', line: 'Anyone can fund an NGO’s reward pool in a few taps.', icon: HandCoins, color: 'var(--green)', component: Donate },
-  { id: 'payout', title: 'Payouts to guardians', line: 'Two adults approve, then PayPal pays a verified guardian.', icon: Send, color: 'var(--purple)', component: Payout },
+  { id: 'donate', title: 'PayPal donations', live: 'Live · PayPal sandbox', line: 'Fund an NGO’s reward pool with real PayPal Checkout (test money), and get an AI thank-you.', icon: HandCoins, color: 'var(--green)', component: Donate },
+  { id: 'payout', title: 'Payouts to guardians', live: 'Live · PayPal sandbox', line: 'Two adults approve, then PayPal Payouts pays a guardian (test money).', icon: Send, color: 'var(--purple)', component: Payout },
   { id: 'ngo', title: 'NGO & mentor dashboard', line: 'Check activities, track money in and out, report to donors.', icon: LayoutDashboard, color: 'var(--yellow)', component: NgoDashboard },
-  { id: 'impact', title: 'Public impact ledger', line: 'Check any receipt yourself. Real maths, sample data, no kid data.', icon: Receipt, color: 'var(--peach)', component: ImpactLedger },
+  { id: 'impact', title: 'Public impact ledger', live: 'Live · local blockchain', line: 'PayPal receipts sealed on a blockchain. Check any receipt yourself; no kid data.', icon: Receipt, color: 'var(--peach)', component: ImpactLedger },
   { id: 'seedlings', title: 'Seedlings mode', line: 'Picture-first lessons for ages 8 to 11, with seeds instead of rupees.', icon: SproutIcon, color: 'var(--mint)', component: Seedlings },
   { id: 'safety', title: 'Guardian consent & safety', line: 'A guardian agrees first; very little data; delete any time.', icon: ShieldCheck, color: 'var(--lavender)', component: Safety },
   { id: 'hindi', title: 'Hindi everywhere', line: 'The whole app in Hindi, not just the mentor.', icon: Languages, color: 'var(--mint)', component: Hindi },

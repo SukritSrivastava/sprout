@@ -86,10 +86,10 @@ English or Hindi.
 
 ## Questions judges may ask
 
-- **Is the money real?** No. Every amount is sample data. Donations and payouts are previews of
-  PayPal sandbox flows we've designed.
-- **What's real today?** The website, the AI mentor (Gemini), its safety rules, and the receipt
-  maths in the ledger preview.
+- **Is the money real?** It's PayPal **sandbox** test money: real PayPal API calls (Orders v2 for
+  donations, Payouts v1 for guardians), nothing real charged. The kids' jars on `/app` are sample data.
+- **What's real today?** PayPal sandbox donations and payouts, the AI mentor and the AI donor
+  thank-you (Gemini), and PayPal receipts sealed on a local blockchain.
 - **How do you keep kids safe?** No personal data asked or stored; messages aren't logged;
   risky topics are flagged; guardians consent first (preview); two adults approve payouts.
 - **Why blockchain?** Only to prove records weren't edited. No kid data ever goes on chain.

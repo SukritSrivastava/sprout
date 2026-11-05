@@ -13,8 +13,9 @@ You are continuing Sprout, a financial-literacy demo for kids aged 8–17, run t
 in a PayPal AI hackathon workspace. Preserve working interactions, the bold neo-brutalist look,
 accessibility and motion behaviour, and honest labels ("Sample", "simulated", "AI, can make
 mistakes"). Inspect source before editing. Distinguish implemented behaviour from planned
-features: the Gemini mentor and the impact ledger on a local test blockchain are real; payments,
-authentication, a database and a public blockchain are **not** implemented.
+features: the Gemini mentor, PayPal **sandbox** donations/payouts with a Gemini donor note, and
+the impact ledger on a local test blockchain are real; real money, authentication, a database
+and a public blockchain are **not** implemented.
 
 The user requires: **ask before any major change** and **before any tech decision** not already
 recorded in `PHASES.md`; grill them with questions when direction is unclear; build frontend and
@@ -29,11 +30,15 @@ Kids do small useful activities at an NGO, a mentor approves, the reward lands i
 jars (Save, Spend, Give, Invest), they plan goals, and ask Paisa Mentor money questions in
 English or Hindi. The NGO holds real money; adults approve payouts to guardians. Rupees (₹).
 
-**Current deliverable:** a two-page website with a sample demo, plus a small API server running
-the **live Gemini AI mentor**, and the **impact ledger publishing to a local Hardhat blockchain**
-(Phase 5, pretend wallet, fake ETH). All money is sample data in browser memory; a refresh resets
-it. Everything else (PayPal donations/payouts, NGO dashboard, Seedlings mode for 8–11, full Hindi
-UI) is a clickable "Coming soon" preview with no real behaviour. Full plans for making them real
+**Current deliverable (PayPal AI Hackathon; PayPal must be central):** a two-page website with a
+sample demo, plus an API server running the **live Gemini AI mentor**, **PayPal sandbox donations
+(JS SDK button + Orders v2) and guardian payouts (Payouts v1)** in USD test money, a **Gemini
+thank-you note** after each captured donation, and the **impact ledger publishing PayPal receipts
+to a local Hardhat blockchain** (pretend wallet, fake ETH). PayPal receipts and the reward pool
+live in server memory (restart resets). The `/app` jars are sample rupees in browser memory.
+Everything else (NGO dashboard, Seedlings mode for 8–11, full Hindi UI, classroom, certificates)
+is a clickable "Coming soon" preview with no real behaviour. The user said no demo video work and
+no deploy; judges run it locally with their own free sandbox keys (README). Full plans for making them real
 are kept in the "Later" section of `PHASES.md`.
 
 ## Repository and setup
@@ -100,6 +105,9 @@ Dev: vite 6, typescript 7, tsx, @types/node, concurrently, @playwright/test.
 | `client/src/styles.css` | the design system (tokens → base → components → pages → tour → reduced motion → tablet/phone) |
 | `server/src/*` | `config.ts`, `app.ts` (`buildApp(config, { model, rateLimit })`, 16KB body limit, JSON 404), `routes/health.ts`, `routes/mentor.ts` (NDJSON stream, AI-or-prepared, abort on disconnect/15s), `mentor/schema.ts`, `mentor/prompt.ts` (system rules), `mentor/model.ts` (only Gemini caller; `MentorModel` interface for fakes), `mentor/safety.ts`, `mentor/prepared.ts` (en+hi backups, suggestions), `rate-limit.ts` (per-key window, sweeps quiet keys), `index.ts`; `scripts/eval-mentor.ts` (`npm run eval:mentor`, 12 misuse cases vs real Gemini) |
 | `client/src/lib/mentorApi.js` | `askMentor` (fetch + stream reader with onStart/onDelta/onDone), `mentorStatus`, `MentorError` |
+| `server/src/paypal/` | `client.ts` (only PayPal caller; sandbox URL hard-coded; OAuth token cache; `createOrder`, `captureOrder`, `sendPayout`, `getPayout`; `PayPal` interface for fakes; `PayPalError.issue`), `store.ts` (in-memory receipts `DON-/PAY-yymm-nnnn`, salted `donor-`/`guardian-` codes, pool = donations − non-failed payouts, live batches from 101), `impactNote.ts` (Gemini donor note via `MentorModel`, prepared fallback), ✏️ `settings.ts` (amounts 5/10/25/50, $2 per reward, $50 max payout, approvers) |
+| `server/src/routes/paypal.ts` | `/api/paypal/config|orders|orders/:id/capture|payouts|payouts/:batchId|receipts`; checks capture status/currency/exact amount vs the order it created; 2 different approvals + pool check for payouts; origin rule; rate limits. `routes/ledger.ts` adds `POST /api/ledger/publish-live` |
+| `client/src/previews/` PayPal | `PayPalButton.jsx` (loads SDK via `lib/paypalSdk.js`, `PayPalSetupNotice`), `Donate.jsx`, `Payout.jsx`, `LivePayPalReceipts.jsx` (impact step 4). `Walkthrough` takes `realNote` (green banner, last step "What’s real here"); `index.js` entries take `live` (green stamp). `lib/api.js` shared fetch helper; `lib/paypalApi.js` |
 | `e2e/*.spec.js` | `api`, `page`, `demo`, `tour`, `phone`; `fixtures.js` fails tests on console errors and has `goToSection` |
 | `docs/` | `LEARN.md`, `REDESIGN.md`, `mentor-api.md` (contract for Phase 1) |
 
@@ -138,8 +146,8 @@ deposits, monthly compounding → `{ balance, contributed, points }` (₹100 × 
 
 ## Verification
 
-See `VERIFICATION.md` for dated evidence. As of Phase 5: 44 unit/server/contract tests and 149 Playwright
-tests per run (desktop + phone, 9 skipped by design), plus an opt-in `LIVE_AI=1` real-Gemini test; two consecutive full runs green. A
+See `VERIFICATION.md` for dated evidence. As of Phase 6: 62 unit/server/contract tests and 162 Playwright
+tests per run (one older animation-heavy test can time out under load; see VERIFICATION) (desktop + phone, 9 skipped by design), plus an opt-in `LIVE_AI=1` real-Gemini test; two consecutive full runs green. A
 Playwright test enforces that no visible text on either page is under 14px.
 
 Testing notes: the in-app preview pane freezes animations when hidden, so judge motion bugs with
@@ -181,6 +189,12 @@ checks the step counter, URL and highlighted section rather than animated captio
   `previews/ImpactLedger.jsx` (publish button, explorer, verify against the on-chain root,
   mismatch warning). `npm run dev` starts web, api and chain; Playwright starts the chain too.
   Docs: `PHASE_5_BLOCKCHAIN.md`, `docs/mentor-api.md`.
+- **Phase 6 (PayPal at the centre): done** 2026-11-05, to meet the hackathon rules. User chose:
+  Donate + Payout on the real sandbox, Gemini donation impact note, PayPal receipts linked to the
+  ledger, local run instructions (no deploy, no video). Config `PAYPAL_CLIENT_ID`,
+  `PAYPAL_CLIENT_SECRET` (user types them into `server/.env`; never in chat or code). USD because
+  INR only works for Indian PayPal accounts. Payouts need "Payouts" enabled on the sandbox app.
+  Manual sandbox check still pending until the user adds keys (see VERIFICATION).
 - Phase 4: tour/demo hardening, deploy (client Vercel; server
   host to choose; add CORS for `ALLOWED_ORIGIN` then), docs.
 

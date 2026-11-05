@@ -27,6 +27,9 @@ at the top.
 | The guided tour's steps, captions (English and Hindi) and how long each step lasts | `client/src/content/tour.js` |
 | A Coming-soon preview's words | that preview's own file in `client/src/previews/` (e.g. `Donate.jsx`) |
 | A preview's title and one-liner on the hub | `client/src/previews/index.js` |
+| PayPal donation amounts, what one reward is worth, the largest payout, the NGO's name | `server/src/paypal/settings.ts` |
+| The AI thank-you note's rules | `server/src/paypal/impactNote.ts` → `NOTE_RULES` |
+| Words on the PayPal pages | `client/src/previews/Donate.jsx`, `Payout.jsx` |
 | The sample receipts in the impact-ledger preview | `client/src/previews/ImpactLedger.jsx` → `receipts` (keep ids like `RWD-2611-0108` and refs like `kid-a12`; the server rejects anything else) |
 
 ## The AI mentor's behaviour
@@ -39,7 +42,7 @@ at the top.
 | Which words count as a risky topic | `server/src/mentor/safety.ts` |
 | The backup answers (no AI key, no internet) and follow-up suggestions | `server/src/mentor/prepared.ts` |
 | Reply length, creativity, timeout, question length, per-device limit, default model | `server/src/mentor/settings.ts` |
-| The Gemini key, the model, or the hourly limit for everyone | `server/.env` (see `server/.env.example`) |
+| The Gemini key, the PayPal sandbox keys, the model, or the hourly limit for everyone | `server/.env` (see `server/.env.example`) |
 
 The server restarts by itself when you save a server file.
 

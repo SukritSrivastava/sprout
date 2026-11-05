@@ -1,15 +1,31 @@
-// Preview: a donor funds an NGO's reward pool with PayPal. Nothing is charged.
-import React, { useState } from 'react';
+// Donate with PayPal: LIVE on the PayPal sandbox (test money, nothing real is charged).
+//   Step 1: pick an amount.  Step 2: the real PayPal button (Orders v2).
+//   Step 3: the server-checked receipt, plus a thank-you note written by the AI (Gemini) from
+//           the amount PayPal actually captured.
+// The receipt then goes into the public impact ledger (/soon/impact, last step).
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HeartHandshake, Loader2, ReceiptText } from 'lucide-react';
+import { HeartHandshake, Loader2, ReceiptText, Sparkles } from 'lucide-react';
 import Walkthrough from './Walkthrough.jsx';
-import { money } from '../lib/model.js';
+import PayPalButton, { PayPalSetupNotice } from './PayPalButton.jsx';
+import { dollars, paypalConfig } from '../lib/paypalApi.js';
 
-const amounts = [100, 500, 1000, 2500];
+// Used until the server answers (the server's list in server/src/paypal/settings.ts wins).
+const fallback = { amounts: [5, 10, 25, 50], rewardDollars: 2, ngoName: 'Asha Learning Trust (sample NGO)', currency: 'USD' };
 
 export default function Donate() {
-  const [amount, setAmount] = useState(500);
-  const lessons = Math.floor(amount / 200); // one ₹200 reward per completed activity
+  const [config, setConfig] = useState(null); // null while loading
+  const [amount, setAmount] = useState(10);
+  const [paid, setPaid] = useState(null); // { receipt, note, poolDollars } after a real capture
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState('');
+
+  useEffect(() => {
+    paypalConfig().then((reply) => setConfig(reply.ok ? reply : { ...fallback, configured: false, message: reply.message }));
+  }, []);
+
+  const settings = config ?? fallback;
+  const rewards = Math.floor(amount / settings.rewardDollars);
 
   const steps = [
     {
@@ -17,20 +33,20 @@ export default function Donate() {
       render: () => (
         <div className="walk-grid">
           <div className="stack">
-            <p>Your money goes into Asha Learning Trust’s reward pool (a sample NGO).</p>
+            <p>Your money goes into {settings.ngoName}’s reward pool. This runs on PayPal’s sandbox, so it’s test money.</p>
             <div className="chips" role="group" aria-label="Donation amount">
-              {amounts.map((value) => (
-                <button key={value} className="chip" aria-pressed={amount === value} onClick={() => setAmount(value)}>
-                  {money(value)}
+              {settings.amounts.map((value) => (
+                <button key={value} className="chip" aria-pressed={amount === value} onClick={() => setAmount(value)} disabled={Boolean(paid)}>
+                  {dollars(value)}
                 </button>
               ))}
             </div>
           </div>
           <div className="card mini-card">
             <HeartHandshake size={28} strokeWidth={2.5} aria-hidden="true" />
-            <strong className="big-number">{lessons}</strong>
+            <strong className="big-number">{rewards}</strong>
             <span>
-              activity reward{lessons === 1 ? '' : 's'} for kids, at {money(200)} each
+              activity reward{rewards === 1 ? '' : 's'} for kids, at {dollars(settings.rewardDollars)} each
             </span>
           </div>
         </div>
@@ -40,50 +56,86 @@ export default function Donate() {
       title: 'Pay with PayPal',
       render: ({ next }) => (
         <div className="stack center-block">
-          <p>
-            You’d pay {money(amount)} with your PayPal account or a card. In this preview nothing is
-            charged.
-          </p>
-          <button className="paypal-btn" onClick={next}>
-            Pay {money(amount)} with <strong>PayPal</strong>
-          </button>
-          <span className="hint">Sample button · PayPal sandbox when live</span>
-        </div>
-      ),
-    },
-    {
-      title: 'Payment confirmed',
-      render: () => (
-        <div className="stack center-block">
-          <Loader2 className="spin" size={36} strokeWidth={2.5} aria-hidden="true" />
-          <p>
-            PayPal confirms the payment, sprout.io’s server double-checks the amount, and the NGO pool
-            goes up by {money(amount)}.
-          </p>
+          {paid ? (
+            <p>
+              Paid {dollars(paid.receipt.amount)}. <button className="link-btn" onClick={next}>See your receipt →</button>
+            </p>
+          ) : !config ? (
+            <p className="hint">Checking PayPal…</p>
+          ) : !config.configured ? (
+            <PayPalSetupNotice />
+          ) : (
+            <>
+              <p>
+                Donate <strong>{dollars(amount)}</strong>. PayPal opens its own window: log in with a{' '}
+                <strong>sandbox buyer account</strong>, or choose the card option with a test card.
+              </p>
+              <PayPalButton
+                clientId={config.clientId}
+                currency={config.currency}
+                amount={amount}
+                onBusy={setBusy}
+                onError={setProblem}
+                onPaid={(reply) => {
+                  setPaid(reply);
+                  next();
+                }}
+              />
+              {busy && (
+                <p className="hint" role="status">
+                  <Loader2 className="spin" size={18} strokeWidth={2.75} aria-hidden="true" /> PayPal approved it. Our server is
+                  confirming the payment…
+                </p>
+              )}
+            </>
+          )}
+          {problem && (
+            <p className="chat-notice" role="alert">
+              {problem}
+            </p>
+          )}
         </div>
       ),
     },
     {
       title: 'Thank you! Here’s your receipt',
-      render: () => (
-        <div className="card receipt-mini">
-          <div className="receipt-mini-head">
-            <ReceiptText size={22} strokeWidth={2.5} aria-hidden="true" /> Donation receipt
-            <span className="tag tag-yellow">Sample</span>
+      render: () =>
+        !paid ? (
+          <p className="hint">Pay in step 2 first. Your real sandbox receipt appears here.</p>
+        ) : (
+          <div className="walk-grid">
+            <div className="card receipt-mini" data-testid="donation-receipt">
+              <div className="receipt-mini-head">
+                <ReceiptText size={22} strokeWidth={2.5} aria-hidden="true" /> Donation receipt
+                <span className="tag tag-green">PayPal sandbox</span>
+              </div>
+              <dl>
+                <dt>Amount</dt>
+                <dd>{dollars(paid.receipt.amount)} (test money)</dd>
+                <dt>To</dt>
+                <dd>{settings.ngoName} · reward pool</dd>
+                <dt>Receipt</dt>
+                <dd className="mono">{paid.receipt.id}</dd>
+                <dt>PayPal capture</dt>
+                <dd className="mono">{paid.receipt.paypalId}</dd>
+                <dt>Donor code</dt>
+                <dd className="mono">{paid.receipt.ref}</dd>
+              </dl>
+              <p className="hint">
+                Pool now {dollars(paid.poolDollars)}. <Link to="/soon/impact">Seal it on the blockchain →</Link>
+              </p>
+            </div>
+            {paid.note && (
+              <div className="card ai-note" data-testid="impact-note">
+                <span className="tag tag-purple">
+                  <Sparkles size={16} strokeWidth={2.75} aria-hidden="true" />{' '}
+                  {paid.note.source === 'ai' ? 'Written by AI (Gemini)' : 'Prepared note (AI offline)'}
+                </span>
+                <p>{paid.note.text}</p>
+              </div>
+            )}
           </div>
-          <dl>
-            <dt>Amount</dt>
-            <dd>{money(amount)}</dd>
-            <dt>To</dt>
-            <dd>Asha Learning Trust · reward pool</dd>
-            <dt>Receipt</dt>
-            <dd className="mono">DON-2611-0042</dd>
-          </dl>
-          <p className="hint">
-            Its fingerprint goes into the next public batch. <Link to="/soon/impact">See how anyone can check it →</Link>
-          </p>
-        </div>
-      ),
+        ),
     },
   ];
 
@@ -91,14 +143,20 @@ export default function Donate() {
     <Walkthrough
       id="donate"
       title="Donate with PayPal"
-      intro="Anyone can fund an NGO’s reward pool in a few taps, and see where the money goes."
+      intro="Fund an NGO’s reward pool with PayPal, get a receipt, and see what your money does."
       color="var(--green)"
       steps={steps}
+      realNote={
+        <>
+          <strong>Live on the PayPal sandbox.</strong> Real PayPal API calls with test money: nothing real is charged.
+        </>
+      }
       live={[
-        'Real PayPal Checkout (sandbox first) into the NGO’s pool.',
-        'The server checks the paid amount itself; it never trusts the browser’s number.',
-        'Every donation gets a receipt that is included in the public impact ledger.',
-        'Donors see totals and impact, never anything about individual kids.',
+        'Real PayPal Checkout (Orders v2, sandbox): our server creates the order and captures it after you approve.',
+        'The server checks PayPal’s answer itself (status, currency, exact amount) and never trusts the browser’s number.',
+        'AI (Google Gemini) writes your thank-you from the checked amount only; it never sees who you are.',
+        'Your receipt uses a code instead of your name, and can be sealed on the blockchain in the impact ledger.',
+        'Still to come: an NGO’s own PayPal business account, and receipts kept in a database (today they reset when the server restarts).',
       ]}
     />
   );

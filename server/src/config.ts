@@ -33,6 +33,11 @@ const schema = z.object({
     .regex(/^0x[0-9a-fA-F]{64}$/, 'must be 0x followed by 64 hex characters')
     .optional()
     .or(z.literal('').transform(() => undefined)),
+  // PayPal SANDBOX app keys (developer.paypal.com → Apps & Credentials → Sandbox). The client id
+  // is public (the browser needs it for the PayPal button); the secret never leaves the server.
+  // Leave both empty and the PayPal pages show "add sandbox keys" instead of the button.
+  PAYPAL_CLIENT_ID: z.string().trim().optional(),
+  PAYPAL_CLIENT_SECRET: z.string().trim().optional(),
   // Secret. Lives only on the server; never sent to the browser or written to logs.
   GEMINI_API_KEY: z.string().trim().optional(),
   GEMINI_MODEL: z.string().trim().optional(),

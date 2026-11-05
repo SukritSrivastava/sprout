@@ -1,8 +1,7 @@
-// "/soon": the hub listing every Coming-soon preview, and "/soon/:id": one preview.
+// "/soon": the hub listing every preview (live ones are stamped), and "/soon/:id": one preview.
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { PreviewBanner } from '../previews/Walkthrough.jsx';
 import { previewById, previews } from '../previews/index.js';
 import { Reveal, Stagger } from '../lib/motion.jsx';
 import NotFound from './NotFound.jsx';
@@ -11,19 +10,18 @@ export function SoonHub() {
   return (
     <section id="soon-hub" className="section">
       <div className="container">
-        <PreviewBanner />
         <Reveal className="section-head split-head">
           <div>
-            <span className="tag tag-purple">Coming soon</span>
-            <h1 className="hub-title">Try what we’re building next.</h1>
+            <span className="tag tag-green">Live and coming soon</span>
+            <h1 className="hub-title">Try what works today, and what’s next.</h1>
           </div>
           <p>
-            Each preview is a short walkthrough you can click through, with sample data. Only Paisa
-            Mentor is live today.
+            Stamped <strong>Live</strong>: real PayPal sandbox calls (test money) and a local test
+            blockchain. The rest are clickable previews with sample data.
           </p>
         </Reveal>
         <Stagger as="ul" className="soon-list" gap={0.05}>
-          {previews.map(({ id, title, line, icon: Icon, color }, i) => (
+          {previews.map(({ id, title, line, icon: Icon, color, live }, i) => (
             <Stagger.Item as="li" key={id} style={{ '--row': color }}>
               <Link to={`/soon/${id}`} className="soon-row soon-link">
                 <span className="soon-number">{String(i + 1).padStart(2, '0')}</span>
@@ -33,6 +31,7 @@ export function SoonHub() {
                 <div>
                   <h3>{title}</h3>
                   <p>{line}</p>
+                  {live && <span className="stamp stamp-live soon-live">{live}</span>}
                 </div>
                 <span className="soon-go">
                   Try it <ArrowRight size={18} strokeWidth={2.75} aria-hidden="true" />

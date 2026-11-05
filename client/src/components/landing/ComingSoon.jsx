@@ -1,4 +1,4 @@
-// Home page, section 5: planned features as a ledger-style list. Each row opens its clickable
+// Home page, section 5: live and planned features as a ledger-style list. Each row opens its clickable
 // preview; the button opens the hub with all of them (/soon).
 // Words: src/content/home.js → home.comingSoon. Row titles come from src/previews/index.js.
 import React from 'react';
@@ -24,7 +24,7 @@ export default function ComingSoon() {
           <p>{text.text}</p>
         </Reveal>
         <Stagger as="ul" className="soon-list" gap={0.07}>
-          {highlights.map(({ id, title, line, icon: Icon, color }, i) => (
+          {highlights.map(({ id, title, line, icon: Icon, color, live }, i) => (
             <Stagger.Item as="li" key={id} style={{ '--row': color }}>
               <Link to={`/soon/${id}`} className="soon-row soon-link">
                 <span className="soon-number">{String(i + 1).padStart(2, '0')}</span>
@@ -35,7 +35,7 @@ export default function ComingSoon() {
                   <h3>{title}</h3>
                   <p>{line}</p>
                 </div>
-                <span className="stamp">{text.rowStamp}</span>
+                <span className={live ? 'stamp stamp-live' : 'stamp'}>{live ?? text.rowStamp}</span>
               </Link>
             </Stagger.Item>
           ))}

@@ -2,17 +2,28 @@
 // step-by-step walkthrough, and a last step explaining what the feature will do when it's live.
 //
 // Each preview passes `steps`: [{ title, render: ({ next }) => JSX }] and `live`: [bullet strings].
+// Pages that really work (PayPal sandbox, local blockchain) also pass `realNote`: a sentence for a
+// green "this is real" banner instead of the yellow "Coming soon" one. Their last step is then
+// "What's real here" instead of "What this will do when it's live".
 // A step can call `next()` itself (e.g. after "Pay with PayPal"); Back/Next are always there too.
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { ArrowLeft, ArrowRight, Construction, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BadgeCheck, Construction, RotateCcw } from 'lucide-react';
 import Mascot from '../components/Mascot.jsx';
 import { ease, useReduced } from '../lib/motion.jsx';
 
 const icon = { size: 18, strokeWidth: 2.75, 'aria-hidden': true };
 
-export function PreviewBanner() {
+export function PreviewBanner({ realNote }) {
+  if (realNote) {
+    return (
+      <div className="preview-banner real-banner" role="note">
+        <BadgeCheck size={20} strokeWidth={2.75} aria-hidden="true" />
+        <span>{realNote}</span>
+      </div>
+    );
+  }
   return (
     <div className="preview-banner" role="note">
       <Construction size={20} strokeWidth={2.75} aria-hidden="true" />
@@ -23,7 +34,7 @@ export function PreviewBanner() {
   );
 }
 
-export default function Walkthrough({ id, title, intro, color, steps, live }) {
+export default function Walkthrough({ id, title, intro, color, steps, live, realNote }) {
   const reduced = useReduced();
   const [index, setIndex] = useState(0);
   const cardRef = useRef(null);
@@ -44,7 +55,7 @@ export default function Walkthrough({ id, title, intro, color, steps, live }) {
   const all = [
     ...steps,
     {
-      title: 'What this will do when it’s live',
+      title: realNote ? 'What’s real here' : 'What this will do when it’s live',
       render: () => (
         <div className="live-panel">
           <Mascot size={84} mood="cheer" />
@@ -64,7 +75,7 @@ export default function Walkthrough({ id, title, intro, color, steps, live }) {
   return (
     <section id="preview" className="section preview" style={{ '--accent': color }} data-preview={id}>
       <div className="container">
-        <PreviewBanner />
+        <PreviewBanner realNote={realNote} />
         <div className="preview-head">
           <Link to="/soon" className="link-btn quiet">
             <ArrowLeft {...icon} /> All previews

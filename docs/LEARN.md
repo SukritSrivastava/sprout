@@ -108,7 +108,10 @@ sprout/
 │  │  │                       model (talks to Gemini), safety (risky-topic word list),
 │  │  │                       prepared (backup answers)
 │  │  ├─ rate-limit.ts        max 20 questions per 5 minutes per address
-│  │  ├─ routes/ledger.ts     publish and read impact-ledger batches
+│  │  ├─ routes/ledger.ts     publish and read impact-ledger batches (incl. real PayPal receipts)
+│  │  ├─ routes/paypal.ts     PayPal sandbox: donations, payouts, receipts
+│  │  ├─ paypal/              client.ts (talks to PayPal), store.ts (receipts + reward pool),
+│  │  │                       impactNote.ts (AI thank-you), settings.ts (✏️ amounts)
 │  │  └─ ledger/              merkle.ts (receipt maths), chain.ts (talks to the blockchain)
 │  ├─ test/                  route tests with a fake Gemini (no real network needed)
 │  ├─ scripts/eval-mentor.ts `npm run eval:mentor`: misuse attempts against the real AI
