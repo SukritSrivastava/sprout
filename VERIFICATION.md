@@ -22,9 +22,16 @@ after each captured donation, and PayPal receipts sealed on the local blockchain
 - Known flake: on a busy laptop, one older animation-heavy test per full run (a different one
   each time: tour entry points, Withdraw, #section landing) can time out while a smooth-scroll
   animation is still moving. Each passes on its own (`page` + `tour` specs ×3: 123/123).
-- **Still to check by hand with real sandbox keys** (needs a person to log in to PayPal): donate
-  $25 with the sandbox personal account → receipt shows a PayPal capture id; payout to that
-  account's email → status moves from PENDING; publish → explorer.
+- **Live sandbox check (done with the user's keys):** the user approved a $25 donation in
+  Chrome with the sandbox personal account → captured (receipt DON-2611-0001, PayPal capture id,
+  pool $25). $8 payout via `/api/paypal/payouts` with two approvals → PayPal batch accepted,
+  PENDING, pool $17. `/soon/impact` step 4 → "Publish 2 PayPal receipts" → batch #101 in block #3,
+  success, and the browser-rebuilt code matches the chain. `npm run check:paypal -w server`:
+  order + $1 payout OK.
+- Problems found on the way (now in the README): the user's default sandbox business account was
+  Indian → checkout `UNSUPPORTED_PAYEE_CURRENCY` and payouts `PAYOUT_NOT_AVAILABLE`; fixed by a
+  US sandbox business account and a new app. The app's built-in browser blocks PayPal's pop-up;
+  Chrome works, and the page now says so if pop-ups are blocked.
 
 ## Phase 5: impact ledger on a local blockchain (2026-11-05)
 

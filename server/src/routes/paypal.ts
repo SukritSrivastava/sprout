@@ -62,6 +62,7 @@ export async function paypalRoutes(app: FastifyInstance, options: Options) {
       ORDER_NOT_APPROVED: 'The donor hasn’t approved this payment in PayPal yet.',
       INSUFFICIENT_FUNDS: 'The NGO’s PayPal sandbox account doesn’t have enough test money for this payout.',
       AUTHORIZATION_ERROR: 'This PayPal sandbox app isn’t allowed to send Payouts. Turn on Payouts for the app in the PayPal developer dashboard.',
+      PAYOUT_NOT_AVAILABLE: 'Payouts aren’t switched on for this PayPal sandbox app. In developer.paypal.com → Apps & Credentials → your app → Features, tick Payouts and save.',
       AUTH_FAILED: 'PayPal rejected the sandbox keys. Check PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in server/.env.',
       invalid_client: 'PayPal rejected the sandbox keys. Check PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in server/.env.',
     };

@@ -194,7 +194,9 @@ checks the step counter, URL and highlighted section rather than animated captio
   ledger, local run instructions (no deploy, no video). Config `PAYPAL_CLIENT_ID`,
   `PAYPAL_CLIENT_SECRET` (user types them into `server/.env`; never in chat or code). USD because
   INR only works for Indian PayPal accounts. Payouts need "Payouts" enabled on the sandbox app.
-  Manual sandbox check still pending until the user adds keys (see VERIFICATION).
+  Live sandbox check passed (donation, payout, publish; see VERIFICATION). The sandbox app must
+  use a **US** sandbox business account (Indian ones can't take USD or do Payouts).
+  `npm run check:paypal -w server` tests the keys.
 - Phase 4: tour/demo hardening, deploy (client Vercel; server
   host to choose; add CORS for `ALLOWED_ORIGIN` then), docs.
 

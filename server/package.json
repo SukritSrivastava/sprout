@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
     "eval:mentor": "tsx scripts/eval-mentor.ts",
-    "make:voice": "tsx scripts/make-voice.ts"
+    "make:voice": "tsx scripts/make-voice.ts",
+    "check:paypal": "tsx scripts/check-paypal.ts"
   },
   "devDependencies": {
     "@breezystack/lamejs": "^1.2.7",

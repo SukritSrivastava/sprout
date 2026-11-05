@@ -57,7 +57,13 @@ export default function PayPalButton({ clientId, currency, amount, onPaid, onErr
             else callbacks.current.onError(reply.message);
           },
           onCancel: () => callbacks.current.onError('Payment cancelled. Nothing was charged.'),
-          onError: () => callbacks.current.onError(problem || 'PayPal couldn’t finish the payment. Try again.'),
+          onError: (error) =>
+            callbacks.current.onError(
+              problem ||
+                (/popup/i.test(String(error?.message ?? error))
+                  ? 'This browser blocked PayPal’s window. Allow pop-ups for this site, or open the page in Chrome or Edge.'
+                  : 'PayPal couldn’t finish the payment. Try again.'),
+            ),
         });
         return buttons.render(holder.current).then(() => !gone && setReady(true));
       })

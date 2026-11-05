@@ -51,24 +51,30 @@ the PayPal pages explain how to add keys.
 
 **2. PayPal sandbox keys (free)**
 
-1. Log in at [developer.paypal.com](https://developer.paypal.com) → **Apps & Credentials** →
-   make sure **Sandbox** is selected → **Create App** (type: Merchant).
-2. In the app's settings, make sure **Payouts** is ticked under features.
-3. Copy the **Client ID** and **Secret** into `server/.env`:
+1. Log in at [developer.paypal.com](https://developer.paypal.com). Under **Testing Tools →
+   Sandbox Accounts → Create account**, make a **Business** account with country **United
+   States**. (PayPal makes your default test business account in your own country; an Indian one
+   can't take USD or send Payouts, and checkout shows "Things don't appear to be working".)
+2. **Apps & Credentials** → make sure **Sandbox** is selected → **Create App** (type: Merchant),
+   and pick that US business account as the app's sandbox account.
+3. In the app's settings, make sure **Payouts** is ticked under features.
+4. Copy the **Client ID** and **Secret** into `server/.env`:
 
    ```sh
    PAYPAL_CLIENT_ID=...
    PAYPAL_CLIENT_SECRET=...
    ```
 
-4. Under **Testing Tools → Sandbox Accounts** you'll find a **personal** (buyer) account and its
+5. Under **Testing Tools → Sandbox Accounts** you'll find a **personal** (buyer) account and its
    password (click "…" → View/Edit). Use it to approve donations, and use its email as the
    guardian's email for payouts.
 
 **3. Gemini key (optional, free)**: get one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 and set `GEMINI_API_KEY=` in `server/.env`.
 
-Restart `npm run dev` after editing `server/.env`.
+Restart `npm run dev` after editing `server/.env`. Check your keys without a browser:
+`npm run check:paypal -w server` (add `-- <email>` to also send a $1 test payout). Approve
+payments in Chrome or Edge with pop-ups allowed; some built-in app browsers block PayPal's window.
 
 **4. Try the whole flow**
 
