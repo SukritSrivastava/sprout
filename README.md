@@ -123,6 +123,6 @@ blockchain runs locally. Kids' jars on `/app` are sample data. The plan for each
 - `chain/`: the `ImpactLedger` Solidity contract and tests.
 - `docs/mentor-api.md`: the API contract. `PHASE_5_BLOCKCHAIN.md`: the ledger explained.
 - `DEMO_SCRIPT.md`: a short live-presentation script. `EDITING.md`: change words by hand.
-- `LLM_CONTEXT.md`: full briefing for an AI assistant. `docs/LEARN.md`: codebase tour.
+- `LLM_CONTEXT.md`: full briefing for any AI assistant (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md` point to it). `docs/LEARN.md`: codebase tour.
 
 All illustrations (the Sprout mascot) are drawn in code in this repository.
