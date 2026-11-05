@@ -5,12 +5,16 @@ import type { Config } from './config.js';
 import { healthRoutes } from './routes/health.js';
 import { mentorRoutes } from './routes/mentor.js';
 import { createGeminiModel, type MentorModel } from './mentor/model.js';
+import { ledgerRoutes } from './routes/ledger.js';
+import { createLedgerChain, type LedgerChain } from './ledger/chain.js';
 
 type AppOptions = {
   logger?: boolean;
   // Tests pass a fake model; `undefined` means "use Gemini if a key is set".
   model?: MentorModel | null;
   rateLimit?: { limit: number; windowMs: number };
+  // Tests pass a fake chain; `undefined` means "use the chain at CHAIN_RPC_URL".
+  chain?: LedgerChain | null;
 };
 
 export function buildApp(config: Config, options: AppOptions = {}) {
@@ -24,7 +28,10 @@ export function buildApp(config: Config, options: AppOptions = {}) {
 
   const model = options.model === undefined ? createGeminiModel(config) : options.model;
 
+  const chain = options.chain === undefined ? createLedgerChain(config) : options.chain;
+
   app.register(healthRoutes, { config });
+  app.register(ledgerRoutes, { chain, allowedOrigins: config.ALLOWED_ORIGIN });
   app.register(mentorRoutes, {
     model,
     allowedOrigins: config.ALLOWED_ORIGIN,

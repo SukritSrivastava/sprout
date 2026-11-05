@@ -7,7 +7,7 @@ click. Everything runs on one laptop with `npm run dev`.
 
 ## Before you go on stage (5 minutes)
 
-1. `cd sprout` then `npm run dev`. Wait for both `[web]` and `[api]` to say they're ready.
+1. `cd sprout` then `npm run dev`. Wait for `[web]`, `[api]` and `[chain]` to say they're ready.
 2. Open http://127.0.0.1:5173 in Chrome. Zoom 100%, full screen (F11).
 3. Open http://127.0.0.1:5173/api/health and check `"aiConfigured": true`.
 4. Go to `/app#mentor`, ask one question, and check the status tag says **Live AI**.
@@ -56,10 +56,13 @@ Scroll slowly so the three steps animate in.
 
 ### 2:20 – 2:50 · Trust and what's next (header → "Coming soon")
 
-1. Open **Public impact ledger**, click Next twice, then **Verify** (it matches).
-2. Change the amount to 2000 and click **Verify** again (it fails).
-   **"Real cryptography on sample data: donors can check that records were never changed,
-   without seeing any kid's details. This is a preview; the blockchain part is next."**
+1. Open **Public impact ledger**, click **Next**, then **Publish to the blockchain**. Point at the
+   block explorer: **"That's a real transaction on a real Ethereum chain running on this laptop:
+   block number, transaction code, the NGO's wallet, the fee. No real money."**
+2. Click **Next**, then **Verify** (it matches the code stored in that block).
+3. Change the amount to 2000 and click **Verify** again (it fails).
+   **"Donors can check that records were never changed, without seeing any kid's details.
+   Moving to a public network is a settings change."**
 
 ### 2:50 – 3:00 · Close
 
@@ -75,6 +78,7 @@ English or Hindi.
 | Problem | What happens | What to do |
 | --- | --- | --- |
 | No Wi-Fi / Gemini down / daily limit used | Mentor shows **Offline mode** and answers from prepared replies, tagged "Prepared answer" | Keep going. Say: "Without internet it falls back to prepared answers, so it never breaks in a classroom." |
+| "The local blockchain isn't running" | `[chain]` stopped | Restart `npm run dev` (the chain starts empty; publish again) |
 | Server (`[api]`) crashed | Same offline answers | Restart with `npm run dev` if you have 20 seconds; otherwise carry on |
 | "Let's take a short break" | Rate limit (20 questions in 5 min) | Skip to the impact ledger part |
 | Animations feel slow on the projector | — | Click **Motion on** in the header to turn motion off |

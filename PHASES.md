@@ -72,8 +72,11 @@ demo `/app` via React Router; Lucide icons; tour kept and restyled.
   `lib/useMentorChat.js`; shared `lib/icons.js`; dead CSS removed).
 - **Simplified for hand editing (2026-11-05):** site words in `client/src/content/`, mentor
   behaviour in `server/src/mentor/prompt.ts` + `settings.ts`; guide in `EDITING.md`.
-- **Phase 5 (blockchain): planned, see `PHASE_5_BLOCKCHAIN.md`.** Written for judges; build
-  only if the hackathon rewards an on-chain transaction.
+- **Phase 5 (blockchain): working on a local test chain (2026-11-05).** Hardhat chain in
+  `chain/`, `ImpactLedger` contract, server publishes/reads via viem, publish button + block
+  explorer + verify-against-chain in `/soon/impact`. Pretend wallet (Hardhat test account), no
+  real money. Public network = set `CHAIN_RPC_URL` + `PUBLISHER_PRIVATE_KEY`. See
+  `PHASE_5_BLOCKCHAIN.md`.
 - **Parked by the user:** human voiceover. `npm run make:voice` (Gemini TTS
   `gemini-3.1-flash-tts-preview`, voice Achird, MP3) works; free tier allows ~3 clips/minute
   and ~10/day per model. 6 English clips are in git-ignored `qa/voice-parked/`. Lip-sync for

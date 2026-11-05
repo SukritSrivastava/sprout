@@ -72,6 +72,51 @@ test.describe('impact ledger: real verification', () => {
   });
 });
 
+// These use the REAL local test blockchain (Hardhat) that Playwright starts. The sample batch can
+// only be published once per chain, so the tests accept "already published" too.
+test.describe('impact ledger: local blockchain', () => {
+  // Only one browser at a time publishes, so the two screen sizes don't race to publish.
+  test.describe.configure({ mode: 'serial' });
+
+  async function publishedBatch(page) {
+    await page.goto('/soon/impact');
+    await next(page).click();
+    const publishButton = page.getByRole('button', { name: 'Publish to the blockchain' });
+    const explorer = page.getByTestId('chain-explorer');
+    await expect(publishButton.or(explorer)).toBeVisible();
+    if (await publishButton.isVisible()) await publishButton.click();
+    await expect(explorer).toBeVisible({ timeout: 20_000 });
+    return explorer;
+  }
+
+  test('publishing seals the batch in a real block and shows it in the explorer', async ({ page }) => {
+    const explorer = await publishedBatch(page);
+    await expect(explorer).toContainText('Success');
+    await expect(explorer).toContainText(/Block\s*#\d+/);
+    await expect(explorer).toContainText(/0x[0-9a-f]{8}…[0-9a-f]{8}/); // transaction code
+    await expect(explorer).toContainText('test ETH');
+    // The code stored on the chain matches the receipts on screen.
+    await expect(page.getByText('these receipts were changed after publishing')).toHaveCount(0);
+  });
+
+  test('verify checks receipts against the code read back from the blockchain', async ({ page }) => {
+    await publishedBatch(page);
+    await next(page).click();
+    await page.getByRole('button', { name: 'Verify', exact: true }).click();
+    await expect(page.locator('.verify-result')).toContainText(/stored on the blockchain in block #\d+/);
+    await page.getByRole('spinbutton', { name: 'Amount (₹)' }).fill('2000');
+    await page.getByRole('button', { name: 'Verify', exact: true }).click();
+    await expect(page.locator('.verify-result')).toContainText('was changed after it was published');
+  });
+
+  test('the server reports the contract and the test wallet', async ({ request }) => {
+    const status = await (await request.get('/api/ledger/status')).json();
+    expect(status).toMatchObject({ ok: true, chainId: 31337, local: true });
+    expect(status.contract).toMatch(/^0x[0-9a-fA-F]{40}$/);
+    expect(status.publisher.toLowerCase()).toBe('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
+  });
+});
+
 test('donate: amount carries through to PayPal step and receipt', async ({ page }) => {
   await page.goto('/soon/donate');
   await page.getByRole('button', { name: '₹1,000' }).click();

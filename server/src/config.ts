@@ -24,6 +24,15 @@ const schema = z.object({
   TRUST_PROXY: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
   // Most mentor questions per hour from everyone together, to protect the Gemini quota.
   MENTOR_HOURLY_LIMIT: z.coerce.number().int().min(1).default(300),
+  // The blockchain for the public impact ledger. Default: the local test chain `npm run dev` starts.
+  CHAIN_RPC_URL: z.url().default('http://127.0.0.1:8545'),
+  // The NGO publisher wallet's key. Leave empty for the local test chain (it uses Hardhat's
+  // built-in test account). Only needed, and only safe to set, for a real public chain.
+  PUBLISHER_PRIVATE_KEY: z
+    .string()
+    .regex(/^0x[0-9a-fA-F]{64}$/, 'must be 0x followed by 64 hex characters')
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
   // Secret. Lives only on the server; never sent to the browser or written to logs.
   GEMINI_API_KEY: z.string().trim().optional(),
   GEMINI_MODEL: z.string().trim().optional(),

@@ -1,0 +1,15 @@
+{
+  "name": "@sprout/chain",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "hardhat": "^3.21.2"
+  },
+  "scripts": {
+    "node": "hardhat node",
+    "build": "hardhat build && node scripts/export-contract.js",
+    "test": "hardhat test solidity"
+  },
+  "description": "Local test blockchain (Hardhat) and the ImpactLedger contract"
+}

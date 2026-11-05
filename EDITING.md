@@ -27,6 +27,7 @@ at the top.
 | The guided tour's steps, captions (English and Hindi) and how long each step lasts | `client/src/content/tour.js` |
 | A Coming-soon preview's words | that preview's own file in `client/src/previews/` (e.g. `Donate.jsx`) |
 | A preview's title and one-liner on the hub | `client/src/previews/index.js` |
+| The sample receipts in the impact-ledger preview | `client/src/previews/ImpactLedger.jsx` → `receipts` (keep ids like `RWD-2611-0108` and refs like `kid-a12`; the server rejects anything else) |
 
 ## The AI mentor's behaviour
 

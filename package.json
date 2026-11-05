@@ -4,19 +4,21 @@
   "private": true,
   "workspaces": [
     "client",
-    "server"
+    "server",
+    "chain"
   ],
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail --names web,api --prefix-colors green,magenta \"npm run dev -w client\" \"npm run dev -w server\"",
+    "dev": "concurrently --kill-others-on-fail --names web,api,chain --prefix-colors green,magenta,yellow \"npm run dev -w client\" \"npm run dev -w server\" \"npm run node -w chain\"",
     "dev:web": "npm run dev -w client",
     "dev:api": "npm run dev -w server",
     "build": "npm run build -w client && npm run build -w server",
     "preview": "concurrently --names web,api --prefix-colors green,magenta \"npm run preview -w client\" \"npm run start -w server\"",
-    "test": "npm test -w client && npm test -w server",
+    "test": "npm test -w client && npm test -w server && npm test -w chain",
     "test:e2e": "playwright test",
     "test:all": "npm test && npm run test:e2e",
     "eval:mentor": "npm run eval:mentor -w server",
-    "make:voice": "npm run make:voice -w server --"
+    "make:voice": "npm run make:voice -w server --",
+    "dev:chain": "npm run node -w chain"
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",

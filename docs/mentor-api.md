@@ -1,4 +1,4 @@
-# Mentor API contract
+# API contract (mentor and impact ledger)
 
 The agreement between the website (`client/`) and the server (`server/`). Change this file
 first, then the code on both sides. Server code: `server/src/routes/mentor.ts` and
@@ -108,3 +108,22 @@ Errors are plain JSON (not streamed): `{ "error": "<code>", "message": "<human r
 - Nothing is stored. Chat history lives only in the browser tab and is sent with each question
   (last 12 messages).
 - The UI reminds kids not to share real names, phone numbers, addresses or passwords.
+
+---
+
+## Public impact ledger (Phase 5)
+
+Server code: `server/src/routes/ledger.ts`, `server/src/ledger/`. Client: `client/src/lib/ledgerApi.js`.
+Same "only our website" origin rule as the mentor.
+
+| Route | Does | Replies |
+| --- | --- | --- |
+| `GET /api/ledger/status` | Checks the chain | `{ ok, chainId, blockNumber, contract, publisher, local }` |
+| `POST /api/ledger/publish` | Body `{ batchId: 1–1,000,000, receipts: [{ id: "RWD-2611-0108", type: "donation" \| "reward" \| "payout", amount: 0–10,000,000, date: "YYYY-MM-DD", ref: "kid-a12" }] }` (1–64 receipts, codes only). The server computes the batch code and totals itself; a browser can't send a code. Max 10 per device per 5 minutes. | `{ batch, alreadyPublished }`. Publishing a batch number twice returns the original. |
+| `GET /api/ledger/batches/:id` | Reads a batch from the contract | `{ batch }`, or `{ batch: null }` if not published yet |
+
+`batch` = `{ batchId, root (64 hex), publishedAt, donated, rewarded, paidOut, receipts, tx }`, where
+`tx` = `{ hash, blockNumber, blockHash, timestamp, from, to, gasUsed, feeEth, status }`.
+
+Errors: `400 invalid_request`, `403 forbidden_origin`, `429 rate_limited`, `503 chain_unreachable`
+("The local blockchain isn’t running. Start everything with `npm run dev`.").

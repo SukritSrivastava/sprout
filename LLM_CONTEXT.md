@@ -13,7 +13,8 @@ You are continuing Sprout, a financial-literacy demo for kids aged 8–17, run t
 in a PayPal AI hackathon workspace. Preserve working interactions, the bold neo-brutalist look,
 accessibility and motion behaviour, and honest labels ("Sample", "simulated", "AI, can make
 mistakes"). Inspect source before editing. Distinguish implemented behaviour from planned
-features: payments, live AI, authentication, database and blockchain are **not** implemented.
+features: the Gemini mentor and the impact ledger on a local test blockchain are real; payments,
+authentication, a database and a public blockchain are **not** implemented.
 
 The user requires: **ask before any major change** and **before any tech decision** not already
 recorded in `PHASES.md`; grill them with questions when direction is unclear; build frontend and
@@ -29,11 +30,11 @@ jars (Save, Spend, Give, Invest), they plan goals, and ask Paisa Mentor money qu
 English or Hindi. The NGO holds real money; adults approve payouts to guardians. Rupees (₹).
 
 **Current deliverable:** a two-page website with a sample demo, plus a small API server running
-the **live Gemini AI mentor** (the only real feature). All money is sample data in browser memory;
-a refresh resets it. Everything else (PayPal donations/payouts, NGO dashboard,
-public impact ledger on Base Sepolia, Seedlings mode for 8–11, full Hindi UI) will be clickable
-"Coming soon" previews with no real behaviour (Phase 3). Full plans for making them real are kept
-in the "Later" section of `PHASES.md`.
+the **live Gemini AI mentor**, and the **impact ledger publishing to a local Hardhat blockchain**
+(Phase 5, pretend wallet, fake ETH). All money is sample data in browser memory; a refresh resets
+it. Everything else (PayPal donations/payouts, NGO dashboard, Seedlings mode for 8–11, full Hindi
+UI) is a clickable "Coming soon" preview with no real behaviour. Full plans for making them real
+are kept in the "Later" section of `PHASES.md`.
 
 ## Repository and setup
 
@@ -137,7 +138,7 @@ deposits, monthly compounding → `{ balance, contributed, points }` (₹100 × 
 
 ## Verification
 
-See `VERIFICATION.md` for dated evidence. As of Phase 3: 27 unit/server tests and 143 Playwright
+See `VERIFICATION.md` for dated evidence. As of Phase 5: 44 unit/server/contract tests and 149 Playwright
 tests per run (desktop + phone, 9 skipped by design), plus an opt-in `LIVE_AI=1` real-Gemini test; two consecutive full runs green. A
 Playwright test enforces that no visible text on either page is under 14px.
 
@@ -165,10 +166,21 @@ checks the step counter, URL and highlighted section rather than animated captio
   `SENSITIVE_TOPIC_RULE`), `settings.ts` (`mentorSettings`: default model, temperature, reply
   tokens, timeout, question length, history size, per-device limit), `safety.ts`, `prepared.ts`.
   `EDITING.md` is the user's guide; keep it accurate when files move.
-- Phase 5 (blockchain) is written up for judges in `PHASE_5_BLOCKCHAIN.md`: why it's needed, how
-  the receipt → fingerprint → Merkle root → public chain flow works, what's real (the preview's
-  maths) vs planned, the user's 4 wallet setup steps, and the publish-once plan. Not started;
-  only worth doing if judging rewards an on-chain transaction.
+- **Phase 5 (blockchain) works on a local test chain** (the user asked for no real wallet).
+  `chain/` workspace: Hardhat 3.21, `contracts/ImpactLedger.sol` (publisher-only
+  `publishBatch(batchId, root, donated, rewarded, paidOut, receipts)`, write-once, event
+  `BatchPublished`) + Solidity tests; `npm run build -w chain` exports `chain/build/ImpactLedger.json`
+  (committed). Server: `server/src/ledger/merkle.ts` (same maths as client `lib/ledger.js`,
+  parity-tested), `ledger/chain.ts` (viem 2.57; deploys on first use, remembers the address in
+  git-ignored `chain/deployments/<chainId>.json`, one-at-a-time write queue, explorer details),
+  `routes/ledger.ts` (`GET /api/ledger/status`, `POST /api/ledger/publish` with receipts only,
+  `GET /api/ledger/batches/:id` returns `{batch}` or `{batch: null}`; 503 `chain_unreachable`),
+  shared `origin.ts`. Config: `CHAIN_RPC_URL` (default http://127.0.0.1:8545),
+  `PUBLISHER_PRIVATE_KEY` (optional; local default is Hardhat test account #0, refused on
+  non-local RPCs). Client: `lib/ledgerApi.js`, `previews/ChainExplorer.jsx`,
+  `previews/ImpactLedger.jsx` (publish button, explorer, verify against the on-chain root,
+  mismatch warning). `npm run dev` starts web, api and chain; Playwright starts the chain too.
+  Docs: `PHASE_5_BLOCKCHAIN.md`, `docs/mentor-api.md`.
 - Phase 4: tour/demo hardening, deploy (client Vercel; server
   host to choose; add CORS for `ALLOWED_ORIGIN` then), docs.
 

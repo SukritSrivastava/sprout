@@ -79,54 +79,55 @@ here. We don't use tokens, coins, NFTs or crypto payments: kids and donors never
 - A family can ask to delete a kid's data; the public batch codes reveal nothing about them.
 - Certificates of learning are kept *off* chain on purpose, so they can be removed.
 
-## What is real today
+## What is real today (working on a local test blockchain)
+
+Phase 5 runs end to end on **a real Ethereum blockchain that lives only on the demo laptop**
+(Hardhat). Nothing uses real money or a real wallet.
 
 | Part | Status |
 | --- | --- |
-| Receipt fingerprints, batch root, proofs, "Verify a receipt" | **Real.** The preview at `/soon/impact` runs the actual SHA-256 and Merkle maths in your browser on six sample receipts. Edit an amount and verification fails. |
-| Publishing the root to a blockchain | **Planned.** The preview is labelled "Testnet preview · not actually published". |
+| Receipt fingerprints, batch root, proofs, "Verify a receipt" | **Real.** SHA-256 and Merkle maths in the browser (`client/src/lib/ledger.js`) and on the server (`server/src/ledger/merkle.ts`); a test proves both give the same code. |
+| Smart contract `ImpactLedger` | **Real.** Solidity, compiled and tested with Hardhat (`chain/contracts/`). Only the publisher can publish; a published batch can never be changed. 6 contract tests. |
+| Publishing a batch | **Real, on the local chain.** "Publish to the blockchain" in `/soon/impact` sends a real transaction. The server computes the batch code from the receipts itself and stores it with the totals. |
+| Block explorer | **Real data.** Shows the transaction's block, code, time, sender, contract, gas and fee, read from the chain. |
+| Verify against the chain | **Real.** Step 3 checks a receipt against the code read back from the contract; editing an amount fails. If the chain's code ever differs from the receipts, the page says so. |
+| The wallet | **Pretend, by design.** Hardhat's built-in test account #0, loaded with fake ETH. Its key is public and only allowed on a local chain; the server refuses to use it anywhere else. |
 | Real receipts from real donations and rewards | **Planned.** Needs the real backend (PayPal donations and payouts, database). |
 
-Code: `client/src/lib/ledger.js` (the maths, with unit tests in `ledger.test.js`) and
-`client/src/previews/ImpactLedger.jsx` (the walkthrough).
+### How the pieces fit
 
-## Making it live
+```
+Browser (/soon/impact)                      Server (Fastify)                     Local chain (Hardhat, :8545)
+"Publish" ── POST /api/ledger/publish ──▶  checks receipts (codes only)
+                                            computes batch code + totals  ──▶  ImpactLedger.publishBatch(...)
+                                                                                   new block, event BatchPublished
+Explorer  ◀── transaction details ──────── reads receipt + block           ◀──
+"Verify"  ── GET /api/ledger/batches/1 ──▶  ImpactLedger.batches(1)        ──▶  stored code + totals
+          compares the receipt's proof with the stored code, in the browser
+```
 
-### Step 1: publish once, before a demo (about half a day of work)
+### Run it
 
-The preview's sample batch root is published **once** to **Base Sepolia**, a free public test
-network. The impact page then gets a "View on the blockchain" link to the real transaction on
-basescan.org, and "Verify" also checks against the code read from the chain. Nothing touches the
-chain during a live demo, so it can't fail on stage.
+`npm run dev` starts three things: the website, the server and the local blockchain. Open
+`/soon/impact`, press **Next**, then **Publish to the blockchain**. Restarting `npm run dev` starts
+a fresh, empty chain (the contract is deployed again automatically).
 
-What the project owner sets up (about 15 minutes):
+| Command | What it does |
+| --- | --- |
+| `npm run dev:chain` | Just the local blockchain (prints its 20 test accounts) |
+| `npm run build -w chain` | Recompile the contract and export it to `chain/build/ImpactLedger.json` (committed; the server deploys from it) |
+| `npm run test -w chain` | The contract's own tests, written in Solidity |
+| `GET /api/ledger/status` | Chain id, current block, contract address and the publisher wallet |
 
-1. Install a wallet browser extension (MetaMask or Rabby) and create a **new, test-only wallet**.
-   Never put real money in it.
-2. Add the **Base Sepolia** network in the wallet.
-3. Get free test ETH from a Base Sepolia faucet (a tiny amount covers hundreds of batches).
-4. Put that test wallet's private key in `server/.env` as `PUBLISHER_PRIVATE_KEY=` (by hand,
-   never in chat or in code).
+### Going from the laptop to a public chain later
 
-What gets built:
-
-- `contracts/ImpactLedger.sol`: a tiny contract that only stores
-  `publishBatch(root, batchId, donated, rewarded, paidOut, receiptCount)`, callable only by the
-  NGO's publisher address. No payments, no tokens, no personal data. Tested with Foundry.
-- `npm run ledger:deploy` and `npm run ledger:publish`: one command each.
-- The impact page: a "View on the blockchain" link and a read-only check against the chain (no
-  wallet needed to read). If the network is unreachable, the local check still works.
-
-### Step 2: the full ledger (after the real backend exists)
-
-- Every real donation (PayPal Checkout), reward (mentor approval) and payout (PayPal Payouts)
-  writes a receipt into sprout.io's own append-only ledger.
-- A daily job seals the day's receipts into a batch and publishes its root and totals.
-- Donors get a link to check their own receipt; NGOs get a public impact page.
-- Moves from the test network to a low-cost public network once the NGO is ready.
+Set two lines in `server/.env`: `CHAIN_RPC_URL` (for example Base Sepolia's address) and
+`PUBLISHER_PRIVATE_KEY` (a dedicated wallet's key, entered by hand). No code changes. The server
+refuses the public test key on any non-local chain.
 
 ## Is it needed for the hackathon?
 
-Not to show the idea: the preview already proves the maths works and explains it honestly.
-Step 1 is worth doing only if the judging rewards a real on-chain transaction. Step 2 belongs
-after the hackathon, together with the real PayPal backend.
+For the demo, the local chain shows the whole flow working: a real contract, a real
+transaction and a real check, with no wallet or money involved. Moving to a public network is a
+settings change for when the hackathon rewards it; the full ledger of real receipts belongs after
+the hackathon, together with the real PayPal backend.

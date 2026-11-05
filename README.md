@@ -13,7 +13,8 @@ npm install
 npm run dev
 ```
 
-This starts the website on http://127.0.0.1:5173 and the API on http://127.0.0.1:8787 in one
+This starts the website on http://127.0.0.1:5173, the API on http://127.0.0.1:8787 and a local
+test blockchain on 127.0.0.1:8545 (Hardhat, fake money) in one
 terminal. The website forwards `/api/*` to the API, so you only ever open port 5173.
 
 **AI mentor:** copy `server/.env.example` to `server/.env` and paste your own Google AI Studio
@@ -40,7 +41,7 @@ Installation needs internet; the installed app and bundled fonts run locally wit
   chat with **Paisa Mentor, a live AI (Google Gemini)** in English or Hindi, and step through a
   simulated withdrawal. All money is sample data; the mentor knows the sample jars and goal.
 - **`/soon` previews**: nine clickable walkthroughs of what's coming (PayPal donations, payouts
-  to guardians, NGO dashboard, public impact ledger with real receipt checking, Seedlings mode for
+  to guardians, NGO dashboard, public impact ledger that publishes to a real local blockchain, Seedlings mode for
   ages 8–11, guardian consent and safety, Hindi everywhere, classroom mode, certificates). Sample
   data only, clearly labelled.
 - **Guided tour**: about 1½ minutes across the home page, demo, live mentor and previews, with
@@ -72,6 +73,8 @@ This is a demo, not a complete financial application. The API server runs the li
 - React + React DOM, React Router: pages and state.
 - Motion and Lenis: animation and smooth scrolling. Lucide: icons.
 - @fontsource-variable/bricolage-grotesque: self-hosted font, no font requests at runtime.
+- Hardhat (dev): the local test blockchain and Solidity compiler/tests. viem: the server's
+  blockchain client.
 - Fastify + zod: the API server and its input checks. @google/genai: the Gemini AI mentor.
 - Vite, TypeScript, tsx, concurrently, Playwright: build, dev and test tools.
 

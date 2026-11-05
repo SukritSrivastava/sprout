@@ -1,5 +1,24 @@
 # Verification
 
+## Phase 5: impact ledger on a local blockchain (2026-11-05)
+
+- `npm test`: 44 passed: 11 client, 27 server (9 new ledger tests: server and browser compute the
+  same batch code for 1, 2, 3 and 5 receipts; totals; publish sends the server-computed code;
+  publishing twice changes nothing; 8 kinds of bad body incl. real names and a browser-chosen code
+  rejected; read back / null / 400; chain down gives 503 not a crash; other website 403; publish
+  rate limit; the public test key refused for a non-local chain), 6 Solidity contract tests
+  (publisher only, stored values, never editable, empty code rejected, unpublished empty).
+- Manual live checks on the Hardhat chain: deploy, publish (block #2, ~116k gas), duplicate
+  publish returns the original, read back, unknown batch; four concurrent publishes all succeed
+  in order after adding a one-at-a-time write queue (before it, simultaneous publishes from the
+  same wallet collided on the transaction number and one failed).
+- `npx playwright test`: 149 passed, 9 skipped by design, 0 failed, with Playwright starting the
+  chain. New: publish shows a real block in the explorer; verify passes against the code read
+  from the chain and fails after editing an amount; status reports chain 31337 and the test wallet.
+- Note: `npm audit` flags an old `zod` copy bundled inside Hardhat (dev-only, local tool).
+
+---
+
 ## Phase 4: tour, readability, demo script (2026-11-05)
 
 - `npm test`: 29 passed (11 client incl. 3 tour tests for length, both languages, clock

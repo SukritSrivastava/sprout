@@ -18,8 +18,15 @@ export default defineConfig({
     // A phone-sized screen with touch, using Chromium.
     { name: 'phone', use: { ...devices['Pixel 7'] } },
   ],
-  // Starts the API and website if they are not already running (reuses them if they are).
+  // Starts the blockchain, API and website if they are not already running (reuses them if they are).
   webServer: [
+    {
+      // The local test blockchain for the impact-ledger preview (Hardhat, port 8545).
+      command: 'npm run dev:chain',
+      port: 8545,
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
     {
       command: 'npm run dev:api',
       url: 'http://127.0.0.1:8787/api/health',

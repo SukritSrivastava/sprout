@@ -1,11 +1,19 @@
-// Preview: the public impact ledger. The fingerprints and checks here are REAL (SHA-256 and a
-// Merkle proof, computed in your browser); only the receipts are sample data and nothing is on a
-// blockchain yet. See src/lib/ledger.js for the maths.
+// Preview: the public impact ledger, working end to end on a LOCAL TEST BLOCKCHAIN.
+// - The fingerprints and checks are real (SHA-256 + Merkle proof, src/lib/ledger.js).
+// - "Publish" sends a real transaction to the local Hardhat chain that `npm run dev` starts; the
+//   server computes the batch code itself and stores it in the ImpactLedger contract.
+// - "Verify" checks a receipt against the code read back from the chain.
+// Only the receipts are sample data, and the "wallet" is Hardhat's built-in test account.
 import React, { useEffect, useState } from 'react';
-import { CircleCheck, CircleX, Link2, ShieldQuestion } from 'lucide-react';
+import { CircleCheck, CircleX, Link2, Loader2, ShieldQuestion, UploadCloud } from 'lucide-react';
 import Walkthrough from './Walkthrough.jsx';
+import ChainExplorer from './ChainExplorer.jsx';
 import { money } from '../lib/model.js';
 import { buildTree, proofFor, short, verifyReceipt } from '../lib/ledger.js';
+import { publishBatch, readBatch } from '../lib/ledgerApi.js';
+
+const BATCH_ID = 1; // the sample batch's number on the chain
+const NETWORK = 'Local test chain · fake ETH';
 
 const receipts = [
   { id: 'DON-2611-0042', type: 'donation', amount: 500, date: '2026-11-03', ref: 'donor-7f2' },
@@ -21,18 +29,37 @@ export default function ImpactLedger() {
   const [pick, setPick] = useState(1);
   const [amount, setAmount] = useState(receipts[1].amount);
   const [result, setResult] = useState(null); // null | true | false
+  const [onChain, setOnChain] = useState(null); // the batch as stored on the blockchain
+  const [publishing, setPublishing] = useState(false);
+  const [chainNote, setChainNote] = useState(''); // e.g. "the local blockchain isn't running"
 
   useEffect(() => {
     buildTree(receipts).then(setTree);
+    // Already published earlier? Then show it straight away.
+    readBatch(BATCH_ID).then((reply) => {
+      if (reply.ok) setOnChain(reply.batch); // null if not published yet
+      else setChainNote(reply.message);
+    });
   }, []);
+
+  const publish = async () => {
+    setPublishing(true);
+    setChainNote('');
+    const reply = await publishBatch(BATCH_ID, receipts);
+    setPublishing(false);
+    if (reply.ok) setOnChain(reply.batch);
+    else setChainNote(reply.message);
+  };
   useEffect(() => {
     setAmount(receipts[pick].amount);
     setResult(null);
   }, [pick]);
 
+  // Checks against the code stored on the blockchain if published, else the local batch code.
   const check = async () => {
     const edited = { ...receipts[pick], amount: Number(amount) };
-    setResult(await verifyReceipt(edited, proofFor(tree.levels, pick), tree.root));
+    const root = onChain ? onChain.root : tree.root;
+    setResult(await verifyReceipt(edited, proofFor(tree.levels, pick), root));
   };
   const totals = receipts.reduce((sum, r) => ({ ...sum, [r.type]: (sum[r.type] ?? 0) + r.amount }), {});
 
@@ -71,27 +98,57 @@ export default function ImpactLedger() {
       ),
     },
     {
-      title: 'One code for the whole batch',
+      title: 'One code for the whole batch, sealed on a blockchain',
       render: () => (
-        <div className="walk-grid">
-          <div className="stack">
-            <p>
-              Fingerprints are paired up and fingerprinted again, until one code is left: the batch
-              root. Only this root and the totals go on a public blockchain (Base Sepolia, a test
-              network).
-            </p>
-            <p className="root-box">
-              <Link2 size={20} strokeWidth={2.75} aria-hidden="true" />
-              <span className="mono" data-testid="batch-root">{tree ? short(tree.root) : '…'}</span>
-            </p>
-            <span className="tag tag-yellow">Testnet preview · not actually published</span>
+        <div className="stack">
+          <div className="walk-grid">
+            <div className="stack">
+              <p>
+                Fingerprints are paired up and fingerprinted again, until one code is left: the
+                batch root. Only this code and the totals are published to the blockchain, where
+                nobody can change them.
+              </p>
+              <p className="root-box">
+                <Link2 size={20} strokeWidth={2.75} aria-hidden="true" />
+                <span className="mono" data-testid="batch-root">{tree ? short(tree.root) : '…'}</span>
+              </p>
+            </div>
+            <div className="card mini-card">
+              <span>Batch totals</span>
+              <span>Donated {money(totals.donation)}</span>
+              <span>Rewarded {money(totals.reward)}</span>
+              <span>Paid out {money(totals.payout)}</span>
+            </div>
           </div>
-          <div className="card mini-card">
-            <span>Batch totals</span>
-            <span>Donated {money(totals.donation)}</span>
-            <span>Rewarded {money(totals.reward)}</span>
-            <span>Paid out {money(totals.payout)}</span>
-          </div>
+          {onChain ? (
+            <ChainExplorer batch={onChain} network={NETWORK} />
+          ) : (
+            <div className="publish-row">
+              <button className="btn btn-green" onClick={publish} disabled={publishing || !tree}>
+                {publishing ? (
+                  <Loader2 className="spin" size={20} strokeWidth={2.75} aria-hidden="true" />
+                ) : (
+                  <UploadCloud size={20} strokeWidth={2.75} aria-hidden="true" />
+                )}
+                {publishing ? 'Publishing…' : 'Publish to the blockchain'}
+              </button>
+              <span className="hint">
+                Runs on a local test blockchain on this computer. The wallet is a built-in test
+                account with fake ETH.
+              </span>
+            </div>
+          )}
+          {onChain && tree && onChain.root !== tree.root && (
+            <p className="verify-result bad" role="status">
+              <CircleX size={22} strokeWidth={2.75} aria-hidden="true" /> The blockchain holds a
+              different code for batch {BATCH_ID}: these receipts were changed after publishing.
+            </p>
+          )}
+          {chainNote && (
+            <p className="chat-notice" role="status">
+              {chainNote}
+            </p>
+          )}
         </div>
       ),
     },
@@ -134,8 +191,10 @@ export default function ImpactLedger() {
             <p className={result ? 'verify-result ok' : 'verify-result bad'} role="status">
               {result ? (
                 <>
-                  <CircleCheck size={22} strokeWidth={2.75} aria-hidden="true" /> Matches the published
-                  root. This receipt hasn’t been changed.
+                  <CircleCheck size={22} strokeWidth={2.75} aria-hidden="true" />
+                  {onChain && onChain.tx
+                    ? `Matches the code stored on the blockchain in block #${onChain.tx.blockNumber}. This receipt hasn’t been changed.`
+                    : 'Matches the batch code. This receipt hasn’t been changed. (Publish it in step 2 to check against the blockchain too.)'}
                 </>
               ) : (
                 <>
@@ -176,7 +235,8 @@ export default function ImpactLedger() {
       color="var(--peach)"
       steps={steps}
       live={[
-        'Receipts are grouped into batches; each batch root and its totals go on Base Sepolia, then a main network.',
+        'Real receipts from real donations, rewards and payouts, sealed into a batch every day.',
+        'The same contract on a public network (Base Sepolia first), so anyone in the world can check, not just this computer.',
         'Kid references are salted codes kept on the server, so nobody can trace a kid from the chain.',
         'Donors get a link to check their own receipt, exactly like the check above.',
         'Two adults still approve payouts; the chain records, it doesn’t decide.',

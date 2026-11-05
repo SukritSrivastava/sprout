@@ -107,10 +107,16 @@ sprout/
 │  │  ├─ mentor/              schema (what a request may contain), prompt (the mentor's rules),
 │  │  │                       model (talks to Gemini), safety (risky-topic word list),
 │  │  │                       prepared (backup answers)
-│  │  └─ rate-limit.ts        max 20 questions per 5 minutes per address
+│  │  ├─ rate-limit.ts        max 20 questions per 5 minutes per address
+│  │  ├─ routes/ledger.ts     publish and read impact-ledger batches
+│  │  └─ ledger/              merkle.ts (receipt maths), chain.ts (talks to the blockchain)
 │  ├─ test/                  route tests with a fake Gemini (no real network needed)
 │  ├─ scripts/eval-mentor.ts `npm run eval:mentor`: misuse attempts against the real AI
 │  └─ .env.example            the settings you can set; copy to .env
+├─ chain/                     the local test blockchain (Hardhat)
+│  ├─ contracts/ImpactLedger.sol      the smart contract (stores batch codes, can't be edited)
+│  ├─ contracts/ImpactLedger.t.sol    its tests, written in Solidity
+│  └─ build/ImpactLedger.json         the compiled contract the server deploys
 ├─ e2e/                       Playwright browser tests
 ├─ docs/
 │  ├─ LEARN.md                you are here
