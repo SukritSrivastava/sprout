@@ -15,7 +15,7 @@ export default function Closing() {
             Start with <span className="highlight">₹0.</span>
           </h2>
           <p className="lead">
-            Sprout is for kids who have never had pocket money. That’s the whole point.
+            sprout.io is for kids who have never had pocket money. That’s the whole point.
           </p>
           <Link className="btn btn-ink btn-lg" to="/app">
             Open the demo <ArrowRight {...icon} />

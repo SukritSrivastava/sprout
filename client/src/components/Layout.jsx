@@ -8,12 +8,12 @@ import Mascot from './Mascot.jsx';
 
 export function Brand() {
   return (
-    <Link to="/" className="brand" aria-label="Sprout home">
+    <Link to="/" className="brand" aria-label="sprout.io home">
       <span className="brand-mark">
         <SproutIcon size={22} strokeWidth={2.75} aria-hidden="true" />
       </span>
       <span>
-        sprout<span className="brand-dot">.</span>
+        sprout<span className="brand-dot">.io</span>
       </span>
     </Link>
   );
@@ -95,7 +95,7 @@ export function SiteFooter({ onTour }) {
           </button>
         </div>
         <p className="footer-note">
-          Sprout © {new Date().getFullYear()} · A demo for the PayPal AI hackathon. Every amount on
+          sprout.io © {new Date().getFullYear()} · A demo for the PayPal AI hackathon. Every amount on
           this site is sample money.
         </p>
       </div>

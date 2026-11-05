@@ -57,7 +57,7 @@ export default function Donate() {
         <div className="stack center-block">
           <Loader2 className="spin" size={36} strokeWidth={2.5} aria-hidden="true" />
           <p>
-            PayPal confirms the payment, Sprout’s server double-checks the amount, and the NGO pool
+            PayPal confirms the payment, sprout.io’s server double-checks the amount, and the NGO pool
             goes up by {money(amount)}.
           </p>
         </div>

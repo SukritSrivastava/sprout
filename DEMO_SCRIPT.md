@@ -1,4 +1,4 @@
-# Sprout: 3-minute demo script
+# sprout.io: 3-minute demo script
 
 For presenting to judges. Times are a guide; the bold lines are what to say, the rest is what to
 click. Everything runs on one laptop with `npm run dev`.
@@ -24,7 +24,7 @@ Free Gemini keys have a daily limit. Don't use the mentor much on judging day be
 ### 0:00 – 0:20 · The problem (home page)
 
 **"Most money lessons assume kids already have pocket money and a bank account. Millions don't.
-Sprout teaches money skills through NGOs, whatever a kid starts with."**
+sprout.io teaches money skills through NGOs, whatever a kid starts with."**
 
 Point at the headline, then the jars card on the right.
 
@@ -63,7 +63,7 @@ Scroll slowly so the three steps animate in.
 
 ### 2:50 – 3:00 · Close
 
-**"Sprout: money skills for every kid, whatever they start with. Thank you."**
+**"sprout.io: money skills for every kid, whatever they start with. Thank you."**
 
 Optional: if there's time, click **Take the tour**. It plays a 1½-minute guided tour by itself, in
 English or Hindi.

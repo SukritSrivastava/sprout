@@ -13,7 +13,7 @@ for (const path of ['/', '/app']) {
 
 test('home page has its headline and every section', async ({ page }) => {
   await page.goto('/');
-  await expect(page).toHaveTitle(/Sprout/);
+  await expect(page).toHaveTitle(/sprout.io/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Money skills');
   for (const id of ['home', 'how', 'meet-mentor', 'trust', 'soon']) {
     await expect(page.locator(`#${id}`)).toHaveCount(1);
@@ -24,7 +24,7 @@ test('home page has its headline and every section', async ({ page }) => {
 
 test('demo page has every section', async ({ page }) => {
   await page.goto('/app');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('This is your Sprout');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('This is your sprout.io');
   for (const id of ['earn', 'jars', 'grow', 'mentor', 'withdraw']) {
     await expect(page.locator(`#${id}`)).toHaveCount(1);
   }
@@ -34,7 +34,7 @@ test('"Open the demo" goes to /app and "Home" comes back', async ({ page }) => {
   await page.goto('/');
   await page.locator('.hero').getByRole('link', { name: 'Open the demo' }).click();
   await expect(page).toHaveURL(/\/app$/);
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('This is your Sprout');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('This is your sprout.io');
   await page.getByRole('link', { name: 'Home', exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Money skills');
@@ -45,7 +45,7 @@ test('switching pages works with motion off', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
   await page.locator('.hero').getByRole('link', { name: 'Open the demo' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('This is your Sprout');
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('This is your sprout.io');
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   await page.getByRole('link', { name: 'Home', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Money skills');

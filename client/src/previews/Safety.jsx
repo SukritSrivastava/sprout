@@ -5,7 +5,7 @@ import Walkthrough from './Walkthrough.jsx';
 
 const promises = [
   'I am Aanya’s parent or legal guardian.',
-  'I agree that Aanya can use Sprout with her NGO.',
+  'I agree that Aanya can use sprout.io with her NGO.',
   'I understand an NGO mentor can read her chats with Paisa Mentor.',
 ];
 
@@ -20,7 +20,7 @@ export default function Safety() {
       render: () => (
         <div className="stack">
           <p>
-            Before a kid can use Sprout, a parent or guardian gives consent. India’s data protection
+            Before a kid can use sprout.io, a parent or guardian gives consent. India’s data protection
             law (the DPDP Act, 2023) requires this for anyone under 18.
           </p>
           <ul className="consent-list">
@@ -57,7 +57,7 @@ export default function Safety() {
       render: () => (
         <div className="walk-grid">
           <div className="card mini-card proves">
-            <strong>Sprout keeps</strong>
+            <strong>sprout.io keeps</strong>
             <span>
               <Check size={16} strokeWidth={3} aria-hidden="true" /> First name and age group
             </span>
@@ -69,7 +69,7 @@ export default function Safety() {
             </span>
           </div>
           <div className="card mini-card proves-not">
-            <strong>Sprout never asks for</strong>
+            <strong>sprout.io never asks for</strong>
             <span>
               <X size={16} strokeWidth={3} aria-hidden="true" /> Photos of faces
             </span>
@@ -107,7 +107,7 @@ export default function Safety() {
     <Walkthrough
       id="safety"
       title="Guardian consent and child safety"
-      intro="Kids’ data is treated with care: a guardian agrees first, Sprout keeps very little, and it can all be deleted."
+      intro="Kids’ data is treated with care: a guardian agrees first, sprout.io keeps very little, and it can all be deleted."
       color="var(--lavender)"
       steps={steps}
       live={[

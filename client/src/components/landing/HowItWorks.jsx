@@ -25,7 +25,7 @@ const steps = [
   },
   {
     title: 'A grown-up checks it.',
-    text: 'A mentor at the NGO looks at what you did and approves it. Then the reward lands in your Sprout.',
+    text: 'A mentor at the NGO looks at what you did and approves it. Then the reward lands in your sprout.io jars.',
     card: (
       <div className="card checklist">
         <div>

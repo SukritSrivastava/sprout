@@ -13,8 +13,8 @@ import { waitForId } from '../lib/scroll.js';
 const icon = { size: 18, strokeWidth: 2.75, 'aria-hidden': true };
 
 const doneText = {
-  en: { title: 'That’s Sprout!', text: 'Explore at your own pace, or play the tour again.' },
-  hi: { title: 'यह था स्प्राउट!', text: 'अपनी रफ़्तार से देखो, या टूर फिर से चलाओ।' },
+  en: { title: 'That’s sprout.io!', text: 'Explore at your own pace, or play the tour again.' },
+  hi: { title: 'यह था sprout.io!', text: 'अपनी रफ़्तार से देखो, या टूर फिर से चलाओ।' },
 };
 
 export default function Tour({ open, onClose, returnFocusRef }) {

@@ -6,7 +6,7 @@ import { Reveal, Stagger } from '../../lib/motion.jsx';
 import { icon, iconSized } from '../../lib/icons.js';
 
 const points = [
-  { Icon: Landmark, title: 'The NGO keeps the money.', text: 'Kids see their balance in Sprout. The real funds stay with the NGO.' },
+  { Icon: Landmark, title: 'The NGO keeps the money.', text: 'Kids see their balance in sprout.io. The real funds stay with the NGO.' },
   { Icon: Users, title: 'Two adults approve every payout.', text: 'A mentor and an NGO admin both say yes before anything is paid.' },
   { Icon: Receipt, title: 'Every rupee leaves a receipt.', text: 'Donors and parents can check where the money went.' },
 ];

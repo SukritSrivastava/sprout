@@ -54,7 +54,7 @@ export default function Demo() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease }}
             >
-              Hi {sampleKid.name}. This is your Sprout.
+              Hi {sampleKid.name}. This is your sprout.io.
             </motion.h1>
             <p>Everything here is sample money. Tap things, move sliders, break nothing.</p>
           </div>

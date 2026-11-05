@@ -10,11 +10,11 @@ const steps = [
     seconds: 10,
     en: {
       title: 'Hi, I’m Sprout!',
-      text: 'Sprout teaches kids money skills through NGOs, whatever they start with. Kids earn a little by doing something useful, then decide where every rupee goes.',
+      text: 'sprout.io teaches kids money skills through NGOs, whatever they start with. Kids earn a little by doing something useful, then decide where every rupee goes.',
     },
     hi: {
       title: 'नमस्ते, मैं स्प्राउट हूँ!',
-      text: 'स्प्राउट NGO के ज़रिए बच्चों को पैसों की समझ सिखाता है। बच्चे कुछ अच्छा काम करके थोड़ा कमाते हैं, फिर खुद तय करते हैं कि हर रुपया कहाँ जाएगा।',
+      text: 'sprout.io NGO के ज़रिए बच्चों को पैसों की समझ सिखाता है। बच्चे कुछ अच्छा काम करके थोड़ा कमाते हैं, फिर खुद तय करते हैं कि हर रुपया कहाँ जाएगा।',
     },
   },
   {
@@ -62,11 +62,11 @@ const steps = [
     seconds: 10,
     en: {
       title: 'When can I get it?',
-      text: 'Pick a goal, like a bicycle, and how much to save each month. Sprout shows how long it could take.',
+      text: 'Pick a goal, like a bicycle, and how much to save each month. sprout.io shows how long it could take.',
     },
     hi: {
       title: 'मैं इसे कब ले पाऊँगा?',
-      text: 'कोई लक्ष्य चुनो, जैसे साइकिल, और हर महीने कितना बचाओगे। स्प्राउट बताता है कि कितना समय लगेगा।',
+      text: 'कोई लक्ष्य चुनो, जैसे साइकिल, और हर महीने कितना बचाओगे। sprout.io बताता है कि कितना समय लगेगा।',
     },
   },
   {

@@ -172,7 +172,7 @@ export default function ImpactLedger() {
     <Walkthrough
       id="impact"
       title="Public impact ledger"
-      intro="Anyone can check that donated money went where Sprout says it did, without seeing any kid’s details."
+      intro="Anyone can check that donated money went where sprout.io says it did, without seeing any kid’s details."
       color="var(--peach)"
       steps={steps}
       live={[

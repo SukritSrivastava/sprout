@@ -1,4 +1,7 @@
-# Sprout: complete project handoff for another LLM
+# sprout.io: complete project handoff for another LLM
+
+Naming: the product is **sprout.io** (logo, tab title, footer, product sentences). The mascot
+is still called **Sprout**. The folder, packages and code identifiers keep the name `sprout`.
 
 Snapshot: 2026-11-05, after the bold neo-brutalist redesign. Read this first, then `PHASES.md`
 (roadmap, decisions, phase status), `docs/REDESIGN.md` (agreed look), `DESIGN.md` (tokens and

@@ -23,7 +23,7 @@ export const jars = [
     name: 'Invest',
     color: 'var(--yellow)',
     note: 'For the future you.',
-    detail: 'Set money aside for later and learn how investing works. No real investing happens in Sprout.',
+    detail: 'Set money aside for later and learn how investing works. No real investing happens in sprout.io.',
   },
 ];
 

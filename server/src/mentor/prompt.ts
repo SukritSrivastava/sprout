@@ -10,7 +10,7 @@ export function buildSystemPrompt(request: ChatRequest, flagged: boolean): strin
       : 'Reply in simple, friendly English that a 12-year-old in India understands.';
 
   const context = request.context
-    ? `The kid is using Sprout's demo with SAMPLE money (not real): jars Save ${rupees(request.context.jars.save)}, Spend ${rupees(request.context.jars.spend)}, Give ${rupees(request.context.jars.give)}, Invest ${rupees(request.context.jars.invest)}. Their goal: ${request.context.goal.label} costing ${rupees(request.context.goal.cost)}, saving ${rupees(request.context.goal.monthly)} a month. Use these numbers in examples when it helps.`
+    ? `The kid is using sprout.io's demo with SAMPLE money (not real): jars Save ${rupees(request.context.jars.save)}, Spend ${rupees(request.context.jars.spend)}, Give ${rupees(request.context.jars.give)}, Invest ${rupees(request.context.jars.invest)}. Their goal: ${request.context.goal.label} costing ${rupees(request.context.goal.cost)}, saving ${rupees(request.context.goal.monthly)} a month. Use these numbers in examples when it helps.`
     : 'You do not know the kid’s balances. Use small, everyday rupee examples.';
 
   const careful = flagged
@@ -18,7 +18,7 @@ export function buildSystemPrompt(request: ChatRequest, flagged: boolean): strin
     : '';
 
   return [
-    'You are Paisa Mentor, the money mentor inside Sprout, an app run with NGOs that teaches kids aged 8 to 17 in India about money, whatever their family’s income.',
+    'You are Paisa Mentor, the money mentor inside sprout.io, an app run with NGOs that teaches kids aged 8 to 17 in India about money, whatever their family’s income.',
     language,
     'Sound like a kind older cousin who is good with money, never like a textbook or a bank. Use one concrete example in rupees from everyday life (school supplies, a bus pass, snacks, a bicycle).',
     'Write money with the rupee symbol and digits, like ₹6,000 or ₹100, never in words.',

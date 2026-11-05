@@ -1,4 +1,4 @@
-# Sprout
+# sprout.io
 
 Financial literacy for kids, run through NGOs. A React + Vite website (`client/`) and a small
 Fastify + TypeScript API (`server/`) that will power the AI Paisa Mentor. New here? Read
@@ -34,9 +34,9 @@ Installation needs internet; the installed app and bundled fonts run locally wit
 
 ## What's in it
 
-- **`/` home page**: what Sprout is, how it works, Paisa Mentor, how money is kept safe, and
+- **`/` home page**: what sprout.io is, how it works, Paisa Mentor, how money is kept safe, and
   what's coming soon.
-- **`/app` demo**: a sample kid's Sprout. Earn ₹200, split it into four jars, pick a savings goal,
+- **`/app` demo**: a sample kid's sprout.io. Earn ₹200, split it into four jars, pick a savings goal,
   chat with **Paisa Mentor, a live AI (Google Gemini)** in English or Hindi, and step through a
   simulated withdrawal. All money is sample data; the mentor knows the sample jars and goal.
 - **`/soon` previews**: nine clickable walkthroughs of what's coming (PayPal donations, payouts
@@ -45,7 +45,7 @@ Installation needs internet; the installed app and bundled fonts run locally wit
   data only, clearly labelled.
 - **Guided tour**: about 1½ minutes across the home page, demo, live mentor and previews, with
   captions in English or Hindi. (A human voiceover is parked for later.)
-- **Sprout the mascot** guides a 75-second tour across both pages (captions always on, voice
+- **Sprout the mascot** guides the tour across both pages (captions always on, voice
   optional, pause/skip/replay, Escape to close).
 - **Motion**: smooth scrolling (Lenis) and purposeful animation (Motion). Turn it off with the
   header toggle on desktop, or your device's reduced-motion setting.
