@@ -7,6 +7,14 @@ receipts, NGO learning reviews, saved Seedlings lessons and guardian demo permis
 Full-site Hindi, classroom/offline and certificates remain previews. The historical prompts below
 describe earlier phases; the status section records what now works.
 
+**Hosting decision (2026-11-06):** public demo target in two days, free hosting only. User chose
+Vercel website **and API**, Neon Free Postgres and Base Sepolia with a dedicated server-held
+test key; no visitor wallet. This supersedes older local-only/TBD/Render suggestions below.
+Audit complete; implementation and actual preview validation pending. See `DEPLOYMENT_AUDIT.md`,
+`docs/ADR-001-HOSTING.md` and `docs/DEPLOYMENT_CHECKLIST.md`. First migrate durable data with
+atomic payment/permission operations, then shared sessions/limits and publication recovery,
+then configure both Vercel projects and verify the preview. No deploy was performed by the audit.
+
 Guardian setup fix (2026-11-06): development now reloads `.env` saves/replacements through the
 existing tsx watcher; production still needs a restart. Duplicate-PIN errors identify the actual
 roles, and `npm run check:config -w server` validates local settings without exposing credentials.
@@ -41,11 +49,11 @@ Phase 0 fixes the API contract (`docs/mentor-api.md`) so both sides build agains
 | Visual style | **Calm neo-brutalist**: keep colours, outlines, Clicky; remove constant motion, tilted cards, custom cursor, glyph ornaments; 17–18px body text |
 | Demo shape | Short landing page + demo app; previews reachable from a "Coming soon" area |
 | Audience | Ages 8–17. Sprouts (12–17) is the main demo; Seedlings (8–11) has working sample lessons and a saved garden |
-| Hosting | Runs locally with one command **and** deployed online |
+| Hosting (updated 2026-11-06) | Runs locally today; selected Vercel website/API + Neon Free + Base Sepolia, migration/release gates pending |
 | Accounts | User has a Google AI Studio key. PayPal and a crypto wallet are **not needed** for this scope |
 | Gemini SDK | Official **`@google/genai`** (installed in Phase 1 when first used) |
 | Payout approvals (2026-11-05, audit fix) | Each adult approves with their own **PIN in `server/.env`**; the payee is a fixed `GUARDIAN_PAYPAL_EMAIL`. Chosen over full accounts. |
-| PayPal records (2026-11-05, audit fix) | Saved to one **JSON file** (`server/data/paypal-records.json`), no new packages. Chosen over SQLite. |
+| PayPal records (local; cloud decision 2026-11-06) | JSON file today. Hosted records will use **Neon Postgres**, with atomic operations and shared coordination; migration not implemented yet. |
 | Dev runner | **`concurrently`** + **`tsx watch`**; `npm run dev` starts both |
 | Validation | **zod** for settings and request bodies |
 | Browser tests | **Playwright**, Chromium only, desktop 1366×768 + Pixel 7 phone |
@@ -131,8 +139,8 @@ demo `/app` via React Router; Lucide icons; tour kept and restyled.
   `gemini-3.1-flash-tts-preview`, voice Achird, MP3) works; free tier allows ~3 clips/minute
   and ~10/day per model. 6 English clips are in git-ignored `qa/voice-parked/`. Lip-sync for
   the mascot was planned with it.
-- **Not done by choice:** deployment (client Vercel, server host TBD; set `TRUST_PROXY`,
-  `ALLOWED_ORIGIN`).
+- **Hosting implementation pending (updated 2026-11-06):** Vercel website/API + Neon + Base
+  Sepolia selected. Complete the deployment audit's repairs and preview checklist first.
 
 ### Open decisions (ask at the start of the phase named)
 - Phase 1: router: React Router (recommended) or keep a single page with hash sections?
@@ -140,7 +148,7 @@ demo `/app` via React Router; Lucide icons; tour kept and restyled.
 - Phase 1 backend: which Gemini model name (`GEMINI_MODEL`, a current Flash model is the default
   suggestion)? Streaming replies (SSE) or one full reply?
 - Phase 2: keep chat history only in the browser tab (default), or allow "save conversation"?
-- Phase 4: server host (Render, Railway or Fly.io) and Vercel for the client?
+- Hosting resolved 2026-11-06: Vercel for website and API, Neon and Base Sepolia; see ADR-001.
 
 ---
 

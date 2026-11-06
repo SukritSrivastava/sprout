@@ -4,6 +4,12 @@ You don't need to understand the code to change what the site says or how the AI
 behaves. Everything you'd normally want to change lives in a few files marked **✏️ EDIT ME**
 at the top.
 
+Hosting now targets Vercel website/API, Neon and Base Sepolia; migration is pending. The
+deployment audit lists local-only setup/storage/network wording that must change with that
+implementation. Keep current labels truthful until the hosted behavior exists. See
+[`DEPLOYMENT_AUDIT.md`](DEPLOYMENT_AUDIT.md) and [`docs/ADR-001-HOSTING.md`](docs/ADR-001-HOSTING.md).
+Future hosted credentials belong only in backend host settings, never in content or `VITE_*`.
+
 ## The rules for every "edit me" file
 
 - Change the words **inside the quotes** `'like this'`. Leave the names on the left (`title:`)

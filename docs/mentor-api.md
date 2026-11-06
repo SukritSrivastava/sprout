@@ -1,5 +1,11 @@
 # API contract (learning, guardian permission, mentor, PayPal and impact ledger)
 
+**Hosting status (2026-11-06):** current guarantees below describe one local API process. The
+Vercel website/API + Neon + Base Sepolia target is selected, but migration is pending. The
+deployment audit reproduced cross-instance stale permissions/payments, session failures,
+independent limits and unsafe publication retries. See [`../DEPLOYMENT_AUDIT.md`](../DEPLOYMENT_AUDIT.md).
+Hosted API routing, shared state and production origins have not been configured or verified.
+
 ## Guardian demo permission
 
 `GET /api/guardian/status?learner=A12` returns `{configured,consent}`. Learner codes are the fixed

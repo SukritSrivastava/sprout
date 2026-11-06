@@ -4,6 +4,11 @@ A guided path through the code, in the order that makes it click. Only want to c
 or the AI mentor's behaviour? Read `EDITING.md` instead. Budget about an hour.
 Keep this file next to the code in VS Code and open each file as you reach it.
 
+Cloud planning: the selected target is Vercel website/API + Neon + Base Sepolia. The code below
+still describes the implemented local prototype. `../DEPLOYMENT_AUDIT.md` explains why file
+snapshots, in-memory sessions/limits and local publish queues need shared database operations
+before hosting; `ADR-001-HOSTING.md` records the decision. No cloud adapter is implemented yet.
+
 Guardian permission now connects the learning features. `content/guardian.js` explains the demo
 policy; `previews/Safety.jsx` lets the guardian record, withdraw or delete with their configured
 PIN. `lib/permission.jsx` gates `/app` and Seedlings, refreshes on foreground/cross-tab changes,

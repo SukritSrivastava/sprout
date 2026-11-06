@@ -1,5 +1,49 @@
 # Verification
 
+## Vercel deployment audit (2026-11-06)
+
+Application baseline: `b4429e6`. Selected target: Vercel website/API, Neon Free Postgres and
+Base Sepolia. This delivery adds an audit, decision, release checklist and diagnostic harness;
+it does not change application behavior or deploy any service. See `DEPLOYMENT_AUDIT.md`.
+
+- `npm test`: **143 passed** (24 client, 113 server, 6 Solidity), no failures/skips.
+  Log: `qa/deployment-audit-unit.log`.
+- `npm run build`: **passed**, with the existing ~541 KB JavaScript bundle advisory.
+  Log: `qa/deployment-audit-build.log`.
+- Full browser rerun with two workers: **229 passed, 2 failed, 9 intentional skips**, 7.4 minutes.
+  Both failures were the full autoplay check at `e2e/tour.spec.js:124`, reaching the final part
+  of the tour as its 90-second test budget expired. No browser exception appears in the traces.
+  Log: `qa/deployment-audit-e2e-rerun.log`; original traces in `test-results/`.
+- The first browser attempt had **200 passed, 31 failed, 9 skipped**, mostly connection refusals
+  during a local web-server outage. A phone donation walkthrough also missed a step; it passed
+  in the fresh full run. Log: `qa/deployment-audit-e2e.log`.
+- Focused original autoplay checks also timed out using installed Chrome and a separate artifact
+  directory. The default focused launcher lacked its downloaded Chromium binary; Chrome was
+  selected through ignored QA configuration, without changing tracked tests. Logs:
+  `qa/deployment-audit-tour-recheck.log`, `qa/deployment-audit-tour-chrome.log`.
+- A diagnostic copy with the same assertions and an extended 180-second budget **passed both
+  desktop and phone checks** (2 passed, 3.1 minutes). Every step, completion/replay and absence
+  of audio/API writes passed without application changes. This isolates a wall-clock test-budget
+  problem; it does not replace the recorded original-suite result or modify tracked tests.
+  Log: `qa/deployment-audit-tour-extended.log`.
+- `node --import tsx --test server/scripts/audit-deployment.ts`: **13 diagnostic checks passed**,
+  meaning 13 defects were reproduced, **not fixed**. Fake providers and disposable synthetic
+  records only. Includes cross-instance pool overspending, permission restoration, lost tokens,
+  independent lockouts/AI caps, duplicate chain publication and missing network proof identity.
+  Log: `qa/deployment-audit-reproductions.log`. This harness is outside `npm test` deliberately.
+- Production dependency audit: **0 reported vulnerabilities**. Full dependency audit: **3 high
+  package entries** through the same dev-only Hardhat/Zod chain; no forced downgrade performed.
+  Logs: `qa/deployment-audit-production-dependencies.json`, `qa/deployment-audit-dependencies.json`.
+- Read-only source inventory: **151 files including the diagnostic harness**; no missing relative
+  import targets/case mismatches found. The client scan found no dangerous HTML/eval or matching
+  Gemini-key literal. These limited scans do not prove security. Inventory:
+  `qa/deployment-audit-source-inventory.json`.
+
+No real PayPal calls, fresh live-AI evaluation, database/cloud migration or Vercel/Neon/Base
+deployment occurred in this audit. Browser PayPal tests use SDK/provider fixtures; the opt-in
+live Gemini case was skipped. The report distinguishes reproduced/static defects from gates
+requiring a real preview. Application sources remained unchanged during the audit.
+
 ## Guardian PIN environment setup fix (2026-11-06)
 
 - Reproduced the local failure: the running API reported `configured:false` despite a saved

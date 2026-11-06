@@ -4,9 +4,18 @@ Read this whole file before touching anything. It is written so that any AI assi
 ChatGPT/Codex, Gemini, Cursor, Copilot…) can continue the project without the earlier
 conversations. **The source code wins if this file disagrees with it**, and then fix this file.
 
-Snapshot: **2026-11-06**, after guardian consent/deletion, Seedlings and the silent presentation feature.
-Baseline commit: `138164b`; the guardian environment follow-up is recorded in `VERIFICATION.md`.
+Snapshot: **2026-11-06**, after guardian setup fixes and the Vercel deployment audit.
+Feature checkpoint: `138164b`; deployment audit baseline: `b4429e6`. See `VERIFICATION.md`.
 The user pushes to GitHub themselves.
+
+**Latest hosting direction supersedes earlier local-only planning:** free hosting, public demo
+target in two days. The user chose Vercel for **both website and API**, accepting refactoring,
+with Neon Free Postgres and Base Sepolia using a dedicated server-held test-only key. No visitor
+wallet. Do not revert to Render or reopen the provider choice. Implementation is pending;
+`DEPLOYMENT_AUDIT.md` records confirmed cross-instance payment/permission/session/ledger defects.
+Read `docs/ADR-001-HOSTING.md` and `docs/DEPLOYMENT_CHECKLIST.md` before cloud implementation.
+The user still publishes; no deployment was performed in the audit. Keep local run instructions.
+Secrets remain private: local `server/.env`, later backend host settings, never `VITE_*`.
 
 ---
 
@@ -20,7 +29,8 @@ The user pushes to GitHub themselves.
 > clearly labelled sample data or a "Coming soon" preview. The user is learning the code: keep it
 > simple, commented in plain English and hand-editable. **Ask before any major change or tech
 > decision.** Test with Playwright, keep `LLM_CONTEXT.md` current, commit after each phase,
-> never deploy, never commit or print secrets. Start by reading `LLM_CONTEXT.md` fully.
+> follow the accepted hosting decision (cloud migration pending); the user publishes. Never
+> commit or print secrets. Start by reading `LLM_CONTEXT.md` fully.
 
 ---
 
@@ -37,12 +47,12 @@ These came from the user over many sessions. Follow all of them.
 | Test everything | Unit tests + Playwright (desktop 1366×768 and Pixel 7 phone). Add tests with every feature. |
 | Docs | Keep `LLM_CONTEXT.md` (this), `README.md`, `VERIFICATION.md`, `PHASES.md`, `EDITING.md`, `docs/LEARN.md`, `docs/mentor-api.md` current after every phase. |
 | Commits | Commit after each phase in `sprout/` (its own git repo, branch `main`). End messages with the attribution line the tool requires. **Do not push**: the user pushes (`git push origin main`). |
-| No deploy | "Do not deploy." Judges run it locally. |
+| Hosting/publication | Vercel website/API + Neon + Base Sepolia approved on 2026-11-06; audit complete, implementation pending. User handles publication. Local run remains the fallback. |
 | No video | The user said "no video": don't produce demo-video work. |
 | Voiceover | Parked ("lets not do voice over now"). Don't restart it unless asked. |
 | Look | Bold **neo-brutalist**, must **not look AI-made** or like "premium fintech". Thick black borders, hard offset shadows, flat pastel colours, Bricolage Grotesque, the Sprout mascot. Smooth scroll + purposeful motion, always with a reduced-motion path. |
 | Honesty | Label everything that isn't real ("Sample", "Coming soon", "PayPal sandbox · test money", "AI, can make mistakes"). |
-| Secrets | Keys live only in git-ignored `server/.env`, typed by the user. Never print, log, commit or put them in docs/client code. Before committing, check no key is tracked (`git grep --cached` for a key fragment). The Gemini key was once pasted in chat: recommend rotating it after the hackathon. Never use passwords the user pastes; tell them not to. |
+| Secrets | Local keys live in git-ignored `server/.env`, typed by the user; future hosted keys belong in backend host settings. Never print, log, commit or put them in docs/client code. Before committing, check no key is tracked (`git grep --cached` for a key fragment). The Gemini key was once pasted in chat: recommend rotating it after the hackathon. Never use passwords the user pastes; tell them not to. |
 
 ---
 
@@ -56,7 +66,7 @@ PayPal AI Hackathon requirements, as pasted by the user:
 | Meaningfully incorporate AI | **Google Gemini** (`gemini-3.5-flash-lite`): Paisa Mentor (kids' money chat, English/Hindi, safety rules) and the donor **impact note** written from PayPal's captured amount. |
 | Working prototype | Runs locally with `npm run dev`; verified live on the sandbox (see `VERIFICATION.md`). |
 | Documentation | `README.md` (features, **Tools used** table, setup from zero), `docs/mentor-api.md`, `PHASE_5_BLOCKCHAIN.md`. |
-| Functional demo for judges | Local run instructions (no hosted URL, by the user's choice). Judges need their own free PayPal sandbox app + optional Gemini key. |
+| Functional demo for judges | Local instructions work today; hosted demo is now planned. Rules permit runnable instructions or a hosted URL. No hosted URL exists yet. |
 | Public repo with licence | github.com/SukritSrivastava/sprout, public, MIT `LICENSE` (copyright Sukrit Srivastava). |
 | Demo video < 3 min on YouTube | **User's job; they said not to do video work.** |
 | No third-party trademarks without permission | Only the official PayPal button (rendered by PayPal's SDK) and plain "PayPal" text. No copied brand styling. |
@@ -259,6 +269,7 @@ tests inject fakes (`model: null` = prepared answers, fake chain, fake PayPal).
 | `src/ledger/chain.ts` | viem client: deploys `ImpactLedger` on the first **publish** only (address + deploy block saved in git-ignored `chain/deployments/<chainId>.json`); reads never deploy; event search starts at the deploy block; published batches cached; exact-loopback `isLocal`; Hardhat key only on chain 31337; one-at-a-time write queue |
 | `src/routes/ledger.ts` | ledger routes (§9) incl. `publish-live`; publishes queued one at a time; reads rate-limited |
 | `scripts/check-paypal.ts` | `npm run check:paypal -w server` |
+| `scripts/audit-deployment.ts` | Fake-provider diagnostics for known cloud defects; passing means reproduced, not repaired. Kept outside `npm test`. |
 | `scripts/eval-mentor.ts`, `scripts/make-voice.ts` | misuse eval; parked voice |
 | `test/*.test.ts` | `health`, `mentor`, `ledger`, `paypal` (node:test + `app.inject`, fakes only) |
 
@@ -407,8 +418,15 @@ lock an adult after 5.
 
 ## 11. Verification status
 
+Deployment audit on `b4429e6`: 143 unit/API/contract checks and build passed; 13 fake-provider
+audit cases reproduced defects (passing these means a defect exists). Full browser rerun:
+229 passed, 2 final-step autoplay timeouts, 9 intentional skips. Both autoplay checks passed
+with unchanged assertions in a diagnostic copy given 180 seconds instead of 90; tracked tests
+were not changed. See `VERIFICATION.md`. Production dependency audit: 0 vulnerabilities reported; 3 dev-only high
+package entries through Hardhat/Zod. No Vercel/Neon/Base deployment or fresh live-provider check.
+
 `npm test`: **143 pass** (24 client, 113 server, 6 contract), after the guardian environment fix.
-Latest full browser run: 230 pass, 9 intentional skips; one phone presentation trace-cleanup
+Earlier guardian follow-up browser run: 230 pass, 9 intentional skips; one phone presentation trace-cleanup
 error passed a dedicated rerun. All 22 guardian browser checks passed. Build and local saved-PIN
 validation passed; no saved consent was submitted by the assistant.
 The earlier full Playwright run with `LIVE_AI=1`, two workers had **232 pass, 8 intentional skips**, no failures or
@@ -451,7 +469,7 @@ Key decisions the user made (don't reopen without asking): React+Vite, Fastify+T
 `gemini-3.5-flash-lite`; neo-brutalist look with mascot; one "edit me" content folder; Phase 5
 on a **local Hardhat chain with a pretend wallet** ("Do not use any wallet"), publish button +
 mini explorer; Phase 6 **Donate + Payout** on the real sandbox, **donation impact note** as the
-AI-PayPal link, PayPal receipts **linked to the ledger**, judges run **locally** (no Render/deploy);
+AI-PayPal link, PayPal receipts **linked to the ledger**, local judge setup retained as fallback;
 no video; voiceover parked; product name sprout.io (brand only).
 
 ---
@@ -500,14 +518,17 @@ No offline queues or issued certificates exist yet. Guardian words are in `conte
 the gate/provider are `lib/permission.jsx`. Existing feature tests explicitly inject permitted
 samples; guardian tests use the real blocked-by-default app and disposable data. The live mentor
 eval also uses a permitted in-memory synthetic sample, never the user's saved permission.
-Hindi across the main site is next. Classroom and certificates remain queued; do not implement
+Hosting readiness now takes priority. Hindi across the main site is the next product feature;
+classroom and certificates remain queued. Do not implement
 them together. Shared behavior is recorded in `UX-CONTRACT.md`.
 
-- Move PayPal records from the JSON file to a database (SQLite) if many people ever use it.
+- Implement the selected Neon migration with atomic reservations/revisions and shared security
+  state; replacing whole JSON snapshots with database snapshots will not fix concurrency.
 - PayPal webhooks (`PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.PAYOUTSBATCH.*`) for status (needs a public URL/tunnel).
 - Full accounts instead of PINs, so each adult approves from their own login.
-- Publish to a public test network (Base Sepolia): set `CHAIN_RPC_URL` + `PUBLISHER_PRIVATE_KEY` (user types the key).
+- Implement approved Base Sepolia publishing with fixed contract metadata and durable jobs;
+  environment changes alone are insufficient. User enters the dedicated test key privately.
 - Investigate any further animation-timing failures from their traces while preserving motion.
-- Optional hosted demo (Render is a sponsor) only if the user changes their "no deploy" decision.
+- Complete the selected Vercel website/API release checklist; do not switch back to Render.
 
 Never put secrets in this file, client code or docs.

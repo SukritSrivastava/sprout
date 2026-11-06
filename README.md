@@ -7,6 +7,18 @@ and every PayPal payment becomes a receipt sealed on a **blockchain** so anyone 
 
 Built for the PayPal AI Hackathon. MIT licensed (see [`LICENSE`](LICENSE)).
 
+## Hosted demo plan
+
+Selected on 2026-11-06: **Vercel for the website and Fastify API, Neon Free Postgres, and
+Base Sepolia** with a dedicated server-held test key. Visitors will not need a wallet.
+The two-day target uses free plans within their quotas; PayPal remains sandbox-only.
+
+**Implementation is pending.** The deployment audit reproduced cross-instance payment,
+permission, session and ledger failures. Run this version locally until those release blockers
+are fixed. See [`DEPLOYMENT_AUDIT.md`](DEPLOYMENT_AUDIT.md),
+[`the hosting decision`](docs/ADR-001-HOSTING.md) and
+[`the release checklist`](docs/DEPLOYMENT_CHECKLIST.md). No public URL has been deployed.
+
 ## What works today
 
 | Feature | Where | What's real |
@@ -202,7 +214,7 @@ person to log in. `VERIFICATION.md` lists the manual sandbox checks.
 A hackathon prototype, not a finished financial app: adults use PINs, not full accounts; records
 are a JSON file, not a database; PayPal **sandbox** only; and the blockchain runs locally. Kids'
 jars on `/app` are sample data. Run it on your own computer only (the server listens on
-127.0.0.1). The plan for each is in [`PHASES.md`](PHASES.md).
+127.0.0.1) until the hosted release gates above pass. The plan is in [`PHASES.md`](PHASES.md).
 
 ## Files
 
