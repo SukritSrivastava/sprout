@@ -3,7 +3,6 @@
 import Lenis from 'lenis';
 
 let lenis = null;
-const HEADER_OFFSET = 96; // keeps section tops clear of the sticky header
 
 export function startSmoothScroll() {
   if (lenis) return;
@@ -18,14 +17,26 @@ export function stopSmoothScroll() {
 export function scrollToId(id, { instant = false } = {}) {
   const element = document.getElementById(id);
   if (!element) return false;
+  const headerOffset = (document.querySelector('.site-header')?.offsetHeight ?? 80) + 16;
+  const top = element.getBoundingClientRect().top + window.scrollY - headerOffset;
+  scrollToPosition(top, { instant });
+  return true;
+}
+
+// The presentation can frame a control above its caption panel using the same scroll owner.
+export function scrollToPosition(top, { instant = false } = {}) {
+  // Permission checks can replace a short gate with the full app between resize frames.
+  // Refresh Lenis's scroll limits before jumping to a newly mounted section.
+  lenis?.resize();
   if (lenis && !instant) {
-    lenis.scrollTo(element, { offset: -HEADER_OFFSET, duration: 1.1 });
+    // A touch, keyboard or browser scroll can move the page before Lenis catches up.
+    // Start at the actual position and use an absolute target (one header offset only).
+    lenis.scrollTo(window.scrollY, { immediate: true });
+    lenis.scrollTo(top, { duration: 1.1 });
   } else {
-    const top = element.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET;
     window.scrollTo({ top, behavior: 'instant' });
     lenis?.scrollTo(top, { immediate: true });
   }
-  return true;
 }
 
 export function scrollToTop() {

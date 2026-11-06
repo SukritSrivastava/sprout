@@ -16,7 +16,7 @@ import { demo } from '../../content/demo.js';
 
 const text = demo.grow;
 
-function Chips({ label, options, value, onChange }) {
+function Chips({ label, options, value, onChange, present }) {
   return (
     <div className="chip-group" role="group" aria-label={label}>
       <span className="chip-label">{label}</span>
@@ -24,6 +24,7 @@ function Chips({ label, options, value, onChange }) {
         {options.map((option) => (
           <button
             key={option.id}
+            data-present={`${present}-${option.id}`}
             className="chip"
             aria-pressed={value === option.id}
             onClick={() => onChange(option.id)}
@@ -63,12 +64,14 @@ export default function Growth({ goalId, setGoalId, monthly, setMonthly }) {
         <Reveal delay={0.1} className="card calculator">
           <div className="calc-pickers">
             <Chips
+              present="goal"
               label={text.goalLabel}
               options={savingsGoals.map((item) => ({ id: item.id, label: item.label }))}
               value={goalId}
               onChange={setGoalId}
             />
             <Chips
+              present="monthly"
               label={text.monthlyLabel}
               options={monthlyOptions.map((amount) => ({ id: amount, label: money(amount) }))}
               value={monthly}

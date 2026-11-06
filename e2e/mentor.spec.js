@@ -3,6 +3,7 @@
 // Gemini quota. The last test talks to the real AI, only when you run: LIVE_AI=1 npm run test:e2e
 import { test, expect, goToSection } from './fixtures.js';
 import { money, splitReward } from '../client/src/lib/model.js';
+import { startIsolatedApi, proxyApi } from './isolated-api.js';
 
 // Builds a streamed reply in the server's format (docs/mentor-api.md).
 const ndjson = ({ text, source = 'ai', flagged = false, suggestions = ['Next idea?'] }) =>
@@ -182,6 +183,33 @@ test.describe('when a request fails', () => {
     await expect(page.locator('.bubble-tag')).toHaveText('Prepared answer');
     await expect(page.locator('.status-tag')).toHaveText('Offline mode');
     await expect(page.locator('.chat-notice')).toContainText('prepared answer');
+    // "scam" is a sensitive word, so the trusted-adult card shows even with no server.
+    await expect(page.locator('.adult-card')).toBeVisible();
+  });
+
+  test('with no server, a worrying message still gets the trusted-adult reply and card', async ({ page }) => {
+    await fakeMentor(page, { abort: true });
+    await openChat(page);
+    await input(page).fill('Someone at school keeps bullying me for my pocket money');
+    await input(page).press('Enter');
+    await expect(mentorBubbles(page).last()).toContainText('talk to a grown-up you trust');
+    await expect(page.locator('.adult-card')).toContainText('Childline');
+  });
+
+  test('an answer that stops halfway is kept, marked, and explained', async ({ page }) => {
+    await page.route('**/api/health', (route) => route.fulfill({ json: { ok: true, mentor: { aiConfigured: true } } }));
+    await page.route('**/api/mentor/chat', (route) =>
+      route.fulfill({
+        contentType: 'application/x-ndjson',
+        body: '{"type":"start","source":"ai","flagged":false}\n{"type":"delta","text":"Saving a little"}\n',
+      }),
+    );
+    await openChat(page);
+    await input(page).fill('How do I save?');
+    await input(page).press('Enter');
+    await expect(mentorBubbles(page).last()).toContainText('Saving a little …');
+    await expect(page.locator('.chat-notice')).toContainText('cut off');
+    await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
   });
 });
 
@@ -225,6 +253,9 @@ test('LIVE: the real Gemini mentor answers in English and Hindi', async ({ page 
     'set LIVE_AI=1 to call the real AI',
   );
   test.setTimeout(60_000);
+  const api = await startIsolatedApi('live');
+  try {
+  await proxyApi(page, api.address);
   await openChat(page);
   await expect(page.locator('.status-tag')).toHaveText('Live AI');
   await input(page).fill('Why should I save money?');
@@ -237,4 +268,5 @@ test('LIVE: the real Gemini mentor answers in English and Hindi', async ({ page 
   await input(page).press('Enter');
   await expect(mentorBubbles(page).last()).toContainText(/[ऀ-ॿ]{3,}/, { timeout: 30_000 });
   await expect(page.locator('.bubble-tag')).toHaveCount(0); // real AI, not prepared
+  } finally { await api.close(); }
 });

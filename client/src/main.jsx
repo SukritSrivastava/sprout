@@ -8,6 +8,10 @@ import '@fontsource-variable/bricolage-grotesque/opsz.css';
 import 'lenis/dist/lenis.css';
 import App from './App.jsx';
 import './styles.css';
+import './ngo.css';
+import './seedlings.css';
+import './guardian.css';
+import './presentation.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -12,12 +12,11 @@ export const chatRequestSchema = z
     language: z.enum(['en', 'hi']),
     messages: z
       .array(
-        z
-          .object({
-            role: z.enum(['user', 'mentor']),
-            text: z.string().trim().min(1).max(mentorSettings.maxQuestionLength),
-          })
-          .strict(),
+        // Kids' questions and earlier mentor replies have different length limits.
+        z.discriminatedUnion('role', [
+          z.object({ role: z.literal('user'), text: z.string().trim().min(1).max(mentorSettings.maxQuestionLength) }).strict(),
+          z.object({ role: z.literal('mentor'), text: z.string().trim().min(1).max(mentorSettings.maxReplyLength) }).strict(),
+        ]),
       )
       .min(1)
       .max(mentorSettings.maxMessages)

@@ -21,18 +21,32 @@ at the top.
 | I want to change… | Open |
 | --- | --- |
 | Header links, footer, the floating tour button, the "page not found" text | `client/src/content/site.js` |
+| Seedlings lesson words, buttons, feedback and Hindi | `client/src/content/seedlings.js` (keep choice ids in sync with `server/src/learning/seedlings.ts`) |
+| Guardian permission statements and data explanation | `client/src/content/guardian.js`; keep the policy id in sync with `server/src/learning/store.ts` |
 | Anything on the home page (headline, three steps, sample chat, trust, coming soon, closing) | `client/src/content/home.js` |
 | Anything on the demo page (`/app`), the jar names, the sample kid's name and money | `client/src/content/demo.js` |
 | The mentor chat's fixed words (greeting, suggested questions, safety card, in English and Hindi) | `client/src/content/demo.js` → `mentorText` |
 | The guided tour's steps, captions (English and Hindi) and how long each step lasts | `client/src/content/tour.js` |
+| Manual/automatic presentation labels and help | `client/src/content/tour.js` → `tourUi` |
+| Where the automatic cursor points | `client/src/content/tour.js` → each step's `cues`; `at` is seconds into that step, and `target` identifies a control inside its section |
 | A Coming-soon preview's words | that preview's own file in `client/src/previews/` (e.g. `Donate.jsx`) |
 | A preview's title and one-liner on the hub | `client/src/previews/index.js` |
 | PayPal donation amounts, what one reward is worth, the largest payout, the NGO's name | `server/src/paypal/settings.ts` |
 | The AI thank-you note's rules | `server/src/paypal/impactNote.ts` → `NOTE_RULES` |
 | Words on the PayPal pages | `client/src/previews/Donate.jsx`, `Payout.jsx` |
-| The sample receipts in the impact-ledger preview | `client/src/previews/ImpactLedger.jsx` → `receipts` (keep ids like `RWD-2611-0108` and refs like `kid-a12`; the server rejects anything else) |
+| The sample receipts in the impact-ledger preview | `client/src/lib/sampleReceipts.js` **and** `server/src/ledger/sample.ts`: change both the same way (the server only publishes exactly its own list, and a test checks they match) |
+| The adults' payout PINs and the guardian's PayPal email | `server/.env` → `PAYOUT_PIN_MENTOR`, `PAYOUT_PIN_ADMIN`, `PAYOUT_PIN_GUARDIAN`, `GUARDIAN_PAYPAL_EMAIL` (then restart `npm run dev`) |
+| The sensitive-topic words (trusted-adult card) | `server/src/mentor/safety.ts`, then copy the list into `client/src/lib/safety.js` (a test checks they match) |
 
 ## The AI mentor's behaviour
+
+Presentation actions are intentionally limited to temporary sample controls: `sample-earn`,
+`sample-save`, `sample-goal` and `sample-monthly`. Keep that allow-list in
+`client/src/lib/presentation.js`; payment, PIN, AI-submit and saved-learning actions do not belong
+in the presentation. The reference cursor is drawn in `components/PresentationCursor.jsx`;
+its two colors and presentation styles are in `client/src/presentation.css`. No audio is used.
+Autoplay minimises automatically. Pause, Stop and expand/minimise labels are in `tourUi`;
+the small bar's layout is in `presentation.css` under `.tour-compact`.
 
 | I want to change… | Open |
 | --- | --- |
@@ -68,6 +82,17 @@ wording. The failure message shows the text it expected; search for it in the `e
 and update it to your new words.
 
 ## Things to leave alone unless you mean it
+
+- NGO workspace words: `client/src/content/ngo.js`. Its styles extend existing tokens in
+  `client/src/ngo.css`, loaded after the main stylesheet. Sample activities/reward values live
+  in `server/src/learning/store.ts`; existing saved decisions do not change when the seed list is
+  edited. Learning credits must stay distinct from PayPal USD; do not relabel them as real money.
+  `JUDGE_GUIDE.md` covers the judge walkthrough. Keep actual staff PINs out of it. After changing
+  a PIN in `server/.env`, restart the API and use **Check access again** on the setup screen.
+
+- Payout recovery words are in `client/src/content/payout.js`. Keep the request code field and
+  adult PIN check: only a code is saved in sessionStorage, never a PIN. Each adult must use a
+  different PIN in `server/.env`; changing wording does not change the 29-day retry safety limit.
 
 - Section ids like `id: 'how'` in `content/tour.js`: they must match a section on the page.
 - The two "safety against tricks" rules in `MENTOR_RULES`.

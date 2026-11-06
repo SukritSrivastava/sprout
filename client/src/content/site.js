@@ -7,6 +7,14 @@ export const site = {
     howItWorks: 'How it works',
     mentor: 'Mentor',
     comingSoon: 'Coming soon',
+    features: [
+      { id: 'seedlings', label: 'Seedlings', status: 'Saved learning garden' },
+      { id: 'safety', label: 'Guardian permission', status: 'Working local demo' },
+      { id: 'donate', label: 'Donate', status: 'PayPal sandbox' },
+      { id: 'payout', label: 'Payouts', status: 'PayPal sandbox' },
+      { id: 'impact', label: 'Impact ledger', status: 'Test blockchain' },
+      { id: 'ngo', label: 'NGO workspace', status: 'Working local demo' },
+    ],
     openDemo: 'Open the demo',
     home: 'Home',
     motionOn: 'Motion on',
@@ -25,8 +33,8 @@ export const site = {
 
   // The floating button with the mascot (bottom right)
   tourButton: {
-    label: 'Take the tour',
-    small: 'About 1½ minutes with Sprout',
+    label: 'Present with Sprout',
+    small: 'Manual or automatic · no audio',
   },
 
   // Shown for addresses that don't exist

@@ -21,6 +21,7 @@ const config = (extra = {}) => ({
   maxPayoutDollars: 50,
   ngoName: 'Asha Learning Trust (sample NGO)',
   poolDollars: 0,
+  payouts: { configured: true, guardian: 'sb…@personal.example.com' },
   ...extra,
 });
 
@@ -137,12 +138,46 @@ test.describe('donate with PayPal (sandbox)', () => {
 });
 
 test.describe('payout to a guardian with PayPal (sandbox)', () => {
-  async function fakePayouts(page, pool = 20) {
+  // Fakes our payout routes: a request, PIN approvals (the PIN "246810" is right for everyone
+  // here) and the send. Records what the page asked for.
+  async function fakePayouts(page, pool = 20, { sendStatus = 'PENDING', loseFirstAnswer = false } = {}) {
     const asked = await fakePayPal(page, { configReply: config({ poolDollars: pool }) });
-    const receipt = { id: 'PAY-2611-0001', type: 'payout', amount: 8, ref: 'guardian-81bd02', paypalId: 'BATCHQ1W2E3R4', batchId: null };
-    await page.route('**/api/paypal/payouts', (route) => {
-      asked.payouts.push(route.request().postDataJSON());
-      return route.fulfill({ json: { receipt: { ...receipt, status: 'PENDING' }, poolDollars: pool - 8 } });
+    asked.approvals = [];
+    asked.sends = [];
+    asked.requests = 0;
+    const receipt = { id: 'PAY-2611-0001', type: 'payout', amount: 8, currency: 'USD', ref: 'guardian-81bd02c4e5f6a7b8', paypalId: 'BATCHQ1W2E3R4', batchId: null };
+    const request = { id: 'REQ-2611-0001', amount: 8, child: 'Aanya (sample)', approvals: [], receipt: null };
+    await page.route('**/api/paypal/payout-requests', (route) => {
+      asked.requests++;
+      request.amount = route.request().postDataJSON().amount;
+      return route.fulfill({ json: { request, poolDollars: pool } });
+    });
+    await page.route('**/api/paypal/payout-requests/REQ-2611-0001/approve', (route) => {
+      const body = route.request().postDataJSON();
+      asked.approvals.push(body);
+      if (body.pin !== '246810') {
+        return route.fulfill({ status: 403, json: { error: 'wrong_pin', message: 'That PIN is not right for this adult.' } });
+      }
+      request.approvals = [...new Set([...request.approvals, body.approver])];
+      return route.fulfill({ json: { request, poolDollars: pool } });
+    });
+    await page.route('**/api/paypal/payout-requests/REQ-2611-0001/send', (route) => {
+      asked.sends.push(route.request().postDataJSON());
+      if (loseFirstAnswer && asked.sends.length === 1) {
+        request.receipt = { ...receipt, paypalId: '', status: 'UNKNOWN' };
+        return route.fulfill({ status: 502, json: {
+          error: 'payout_unknown', message: 'PayPal did not confirm the payout. Funds remain reserved.',
+          request, poolDollars: pool - 8,
+        } });
+      }
+      request.receipt = { ...receipt, status: sendStatus };
+      return route.fulfill({ json: { request, poolDollars: pool - 8 } });
+    });
+    await page.route('**/api/paypal/payout-requests/REQ-2611-0001/recover', (route) => {
+      if (route.request().postDataJSON().pin !== '246810') {
+        return route.fulfill({ status: 403, json: { error: 'wrong_pin', message: 'That PIN is not right for this adult.' } });
+      }
+      return route.fulfill({ json: { request, poolDollars: request.receipt ? pool - 8 : pool } });
     });
     await page.route('**/api/paypal/payouts/BATCHQ1W2E3R4', (route) =>
       route.fulfill({ json: { receipt: { ...receipt, status: 'SUCCESS' }, poolDollars: pool - 8 } }),
@@ -150,32 +185,76 @@ test.describe('payout to a guardian with PayPal (sandbox)', () => {
     return asked;
   }
 
-  test('two adults approve, PayPal pays the guardian, and the status refreshes', async ({ page }) => {
-    const asked = await fakePayouts(page);
+  test.describe('with a wrong PIN', () => {
+    test.use({ expectedConsoleErrors: [/status of 403/] });
+    test('two adults approve with PINs, one sends, and the status refreshes', async ({ page }) => {
+      const asked = await fakePayouts(page);
+      await page.goto('/soon/payout');
+      await expect(page.getByTestId('pool')).toContainText('$20');
+      await next(page).click();
+      const status = page.locator('.approval-status');
+
+      // A wrong PIN approves nothing.
+      await page.getByLabel('Mentor PIN').fill('111111');
+      await page.getByRole('button', { name: 'Approve as Mentor' }).click();
+      await expect(page.getByRole('alert')).toHaveText('That PIN is not right for this adult.');
+      await expect(status).toHaveText('0 of 3 approved. Needs 2.');
+
+      await page.getByLabel('Mentor PIN').fill('246810');
+      await page.getByRole('button', { name: 'Approve as Mentor' }).click();
+      await expect(status).toHaveText('1 of 3 approved. Needs 2.');
+      await next(page).click();
+      await expect(page.locator('.walk-step')).toContainText('Without two approvals, nothing is paid');
+      await expect(page.getByRole('button', { name: /Send \$8 with PayPal Payouts/ })).toBeDisabled();
+
+      await page.getByRole('button', { name: 'Back' }).click();
+      await page.getByLabel('Guardian PIN').fill('246810');
+      await page.getByRole('button', { name: 'Approve as Guardian' }).click();
+      await expect(status).toHaveText('2 of 3 approved. The payout can go ahead.');
+      await next(page).click();
+      // The payee is fixed by the server: the page only shows it, masked.
+      await expect(page.locator('.walk-step')).toContainText('sb…@personal.example.com');
+      await expect(page.getByLabel(/PayPal email/)).toHaveCount(0);
+      await page.getByLabel('Who is sending it?').selectOption('guardian');
+      await page.getByLabel('Their PIN again').fill('246810');
+      await page.getByRole('button', { name: /Send \$8 with PayPal Payouts/ }).click();
+
+      const result = page.getByTestId('payout-result');
+      await expect(result).toContainText('PayPal: On its way');
+      await expect(result.locator('.tag')).toHaveClass(/tag-yellow/);
+      await expect(result).toContainText('BATCHQ1W2E3R4');
+      await expect(result).toContainText('guardian-81bd02c4e5f6a7b8');
+      expect(asked.sends).toEqual([{ approver: 'guardian', pin: '246810' }]);
+      expect(asked.approvals.map((a) => a.approver)).toEqual(['mentor', 'mentor', 'guardian']);
+      await page.getByRole('button', { name: 'Check status with PayPal' }).click();
+      await expect(result).toContainText('PayPal: Paid');
+      await expect(result.locator('.tag')).toHaveClass(/tag-green/);
+    });
+  });
+
+  test('a failed payout is shown as failed, not as sent', async ({ page }) => {
+    await fakePayouts(page, 20, { sendStatus: 'FAILED' });
     await page.goto('/soon/payout');
-    await expect(page.getByTestId('pool')).toContainText('$20');
     await next(page).click();
-    const status = page.locator('.approval-status');
-    await page.getByRole('button', { name: /Mentor/ }).click();
-    await expect(status).toHaveText('1 of 3 approved. Needs 2.');
+    for (const who of ['Mentor', 'NGO admin']) {
+      await page.getByLabel(`${who} PIN`).fill('246810');
+      await page.getByRole('button', { name: `Approve as ${who}` }).click();
+    }
+    await expect(page.locator('.approval-status')).toHaveText('2 of 3 approved. The payout can go ahead.');
     await next(page).click();
-    await expect(page.locator('.walk-step')).toContainText('Without two approvals, nothing is paid');
-    await expect(page.getByRole('button', { name: /Send \$8 with PayPal Payouts/ })).toBeDisabled();
-
-    await page.getByRole('button', { name: 'Back' }).click();
-    await page.getByRole('button', { name: /Guardian/ }).click();
-    await expect(status).toHaveText('2 of 3 approved. The payout can go ahead.');
-    await next(page).click();
-    await page.getByLabel(/Guardian’s PayPal email/).fill('sb-guardian@personal.example.com');
+    await page.getByLabel('Who is sending it?').selectOption('admin');
+    await page.getByLabel('Their PIN again').fill('246810');
     await page.getByRole('button', { name: /Send \$8 with PayPal Payouts/ }).click();
-
     const result = page.getByTestId('payout-result');
-    await expect(result).toContainText('PayPal: On its way');
-    await expect(result).toContainText('BATCHQ1W2E3R4');
-    await expect(result).toContainText('guardian-81bd02');
-    expect(asked.payouts).toEqual([{ email: 'sb-guardian@personal.example.com', amount: 8, approvals: ['mentor', 'guardian'] }]);
-    await page.getByRole('button', { name: 'Check status with PayPal' }).click();
-    await expect(result).toContainText('PayPal: Paid');
+    await expect(result).toContainText('Failed; the money went back to the pool');
+    await expect(result.locator('.tag')).toHaveClass(/tag-peach/);
+  });
+
+  test('without PINs in server/.env, the page says how to switch payouts on', async ({ page }) => {
+    await fakePayPal(page, { configReply: config({ payouts: { configured: false, guardian: null } }) });
+    await page.goto('/soon/payout');
+    await next(page).click();
+    await expect(page.getByTestId('payout-setup')).toContainText('PAYOUT_PIN_MENTOR');
   });
 
   test('an empty pool sends you to donate first', async ({ page }) => {
@@ -184,6 +263,47 @@ test.describe('payout to a guardian with PayPal (sandbox)', () => {
     await expect(page.getByTestId('pool')).toContainText('$0');
     await page.getByRole('link', { name: 'Donate with PayPal first →' }).click();
     await expect(page).toHaveURL(/\/soon\/donate$/);
+  });
+
+  test.describe('recovering a lost payout answer', () => {
+    test.use({ expectedConsoleErrors: [/status of (502|403)/] });
+    test('keeps the unknown receipt and restores the same request after reload', async ({ page }) => {
+      const asked = await fakePayouts(page, 20, { loseFirstAnswer: true });
+      await page.goto('/soon/payout');
+      await next(page).click();
+      for (const adult of ['Mentor', 'NGO admin']) {
+        await page.getByLabel(`${adult} PIN`).fill('246810');
+        await page.getByRole('button', { name: `Approve as ${adult}` }).click();
+      }
+      await next(page).click();
+      await page.getByLabel('Who is sending it?').selectOption('mentor');
+      await page.getByLabel('Their PIN again').fill('246810');
+      await page.getByRole('button', { name: /Send \$8 with PayPal Payouts/ }).click();
+      await expect(page.getByText('PayPal hasn’t confirmed payout', { exact: false })).toBeVisible();
+      await expect(page.getByRole('alert')).toContainText('Funds remain reserved');
+      await page.getByRole('button', { name: /Go to step 1/ }).click();
+      await expect(page.getByTestId('pool')).toContainText('$12');
+      expect(await page.evaluate(() => sessionStorage.getItem('sprout-payout-request'))).toBe('REQ-2611-0001');
+
+      await page.reload();
+      await expect(page.getByLabel('Payout request code')).toHaveValue('REQ-2611-0001');
+      await expect(page.getByLabel('Recovery PIN')).toHaveValue('');
+      await page.getByLabel('Recovery PIN').fill('wrong');
+      await page.getByRole('button', { name: 'Recover request', exact: true }).click();
+      await expect(page.getByRole('alert')).toContainText('not right');
+      await page.getByLabel('Recovery PIN').fill('246810');
+      await page.getByRole('button', { name: 'Recover request', exact: true }).click();
+      await next(page).click();
+      await expect(page.locator('.approval-status')).toContainText('2 of 3 approved');
+      await next(page).click();
+      await expect(page.getByText('PayPal hasn’t confirmed payout', { exact: false })).toBeVisible();
+      await page.getByLabel('Who is sending it?').selectOption('mentor');
+      await page.getByLabel('Their PIN again').fill('246810');
+      await page.getByRole('button', { name: /Send \$8 with PayPal Payouts/ }).click();
+      await expect(page.getByTestId('payout-result')).toContainText('On its way');
+      expect(asked.requests).toBe(1);
+      expect(asked.sends).toHaveLength(2);
+    });
   });
 });
 
@@ -198,15 +318,15 @@ test.describe('impact ledger: real PayPal receipts', () => {
 
   test('publishing seals the PayPal receipts and the browser checks the code', async ({ page }) => {
     const receipts = [
-      { id: 'DON-2611-0001', type: 'donation', amount: 25, date: '2026-11-05', ref: 'donor-3fa9c1' },
-      { id: 'PAY-2611-0001', type: 'payout', amount: 8, date: '2026-11-05', ref: 'guardian-81bd02' },
+      { id: 'DON-2611-0001', type: 'donation', amount: 25, currency: 'USD', date: '2026-11-05', ref: 'donor-3fa9c1d2e4b5a697' },
+      { id: 'PAY-2611-0001', type: 'payout', amount: 8, currency: 'USD', date: '2026-11-05', ref: 'guardian-81bd02c4e5f6a7b8' },
     ];
     const { root } = await buildTree(receipts);
     let published = false;
     await page.route('**/api/paypal/receipts', (route) =>
       route.fulfill({
         json: {
-          receipts: receipts.map((r, i) => ({ ...r, currency: 'USD', paypalId: i ? 'BATCHQ1' : 'CAP9X8Y7', status: 'COMPLETED', batchId: published ? 101 : null })),
+          receipts: receipts.map((r, i) => ({ ...r, status: i ? 'SUCCESS' : 'COMPLETED', batchId: published ? 101 : null })),
           poolDollars: 17,
         },
       }),

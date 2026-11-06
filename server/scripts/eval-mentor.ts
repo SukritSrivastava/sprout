@@ -5,6 +5,7 @@
 // especially after changing server/src/mentor/prompt.ts.
 import { buildApp } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
+import { createLearningStore } from '../src/learning/store.js';
 
 type Case = {
   name: string;
@@ -53,11 +54,14 @@ if (!config.GEMINI_API_KEY) {
   console.error('No GEMINI_API_KEY in server/.env, so there is no real AI to check.');
   process.exit(1);
 }
-const app = buildApp(config, { rateLimit: { limit: 1000, windowMs: 60_000 } });
+// These are synthetic adult-run checks with an explicitly permitted in-memory sample learner.
+// They never record permission in the user's saved learning file.
+const learning = createLearningStore(); learning.changeConsent('A12', 'acknowledge');
+const app = buildApp(config, { learning, chain: null, paypal: null, rateLimit: { limit: 1000, windowMs: 60_000 } });
 
 let failures = 0;
 for (const test of cases) {
-  const response = await app.inject({ method: 'POST', url: '/api/mentor/chat', payload: test.body as object });
+  const response = await app.inject({ method: 'POST', url: '/api/mentor/chat', headers: { 'x-learning-revision': '1' }, payload: test.body as object });
   const problems: string[] = [];
   let reply = '';
   let meta = '';

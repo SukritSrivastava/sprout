@@ -36,7 +36,7 @@ export interface PayPal {
 
 // A PayPal error with the HTTP status and PayPal's own error name (e.g. ORDER_NOT_APPROVED).
 export class PayPalError extends Error {
-  constructor(readonly status: number, readonly issue: string) {
+  constructor(readonly status: number, readonly issue: string, readonly originalBatchId?: string) {
     super(`PayPal said ${status} ${issue}`);
   }
 }
@@ -82,7 +82,25 @@ export function createPayPal(config: Config, fetchImpl: typeof fetch = fetch): P
     const json = (await response.json().catch(() => ({}))) as any;
     if (!response.ok) {
       const issue = json.details?.[0]?.issue ?? json.name ?? 'UNKNOWN';
-      throw new PayPalError(response.status, issue);
+      let originalBatchId: string | undefined;
+      if (issue === 'DUPLICATE_BATCH_ID') {
+        // Never send credentials to a response-supplied URL. Extract only a sandbox batch id,
+        // then build our own URL for the follow-up read.
+        const links = [...(Array.isArray(json.links) ? json.links : []),
+          ...(Array.isArray(json.details) ? json.details.flatMap((d: any) => Array.isArray(d.links) ? d.links : []) : [])];
+        for (const link of links) {
+          try {
+            const url = new URL(link.href);
+            const match = /^\/v1\/payments\/payouts\/([A-Z0-9-]{8,40})$/.exec(url.pathname);
+            if (url.protocol === 'https:' && ['api-m.sandbox.paypal.com', 'api.sandbox.paypal.com'].includes(url.host) &&
+                !url.username && !url.password && match) {
+              originalBatchId = match[1];
+              break;
+            }
+          } catch { /* Ignore malformed links; the payout remains unknown. */ }
+        }
+      }
+      throw new PayPalError(response.status, issue, originalBatchId);
     }
     return json;
   }
@@ -122,7 +140,9 @@ export function createPayPal(config: Config, fetchImpl: typeof fetch = fetch): P
     },
 
     async sendPayout({ email, dollars, note, itemId }) {
-      const result = await call(
+      let result: any;
+      try {
+      result = await call(
         'POST',
         '/v1/payments/payouts',
         {
@@ -143,6 +163,28 @@ export function createPayPal(config: Config, fetchImpl: typeof fetch = fetch): P
         },
         itemId,
       );
+      } catch (error) {
+        if (!(error instanceof PayPalError) || error.issue !== 'DUPLICATE_BATCH_ID' || !error.originalBatchId) throw error;
+        try {
+          result = await call('GET', `/v1/payments/payouts/${encodeURIComponent(error.originalBatchId)}`);
+        } catch {
+          // A failed lookup does not mean the original send was refused.
+          throw new PayPalError(502, 'DUPLICATE_BATCH_ID', error.originalBatchId);
+        }
+        const item = result.items?.[0]?.payout_item;
+        // A duplicate is useful only if it points back to this exact business operation.
+        if (result.batch_header?.payout_batch_id !== error.originalBatchId ||
+            result.batch_header?.sender_batch_header?.sender_batch_id !== itemId ||
+            result.items?.length !== 1 || item?.sender_item_id !== itemId ||
+            item?.receiver?.toLowerCase() !== email.toLowerCase() ||
+            item?.amount?.currency !== CURRENCY || Number(item?.amount?.value) !== dollars) {
+          throw new Error('The original payout did not match this request.');
+        }
+        return { batchId: error.originalBatchId, status: result.items[0].transaction_status ?? 'UNKNOWN' };
+      }
+      if (!result.batch_header?.payout_batch_id || !result.batch_header?.batch_status) {
+        throw new Error('PayPal returned incomplete payout details.');
+      }
       return { batchId: result.batch_header.payout_batch_id, status: result.batch_header.batch_status };
     },
 

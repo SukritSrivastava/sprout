@@ -8,7 +8,8 @@ top of `client/src/styles.css`; components only use those variables.
 - **Readable first.** Body 17–18px, nothing under 14px (a Playwright test enforces 0% of text
   under 14px on both pages). Headlines are big and tight; labels are sentence case.
 - **Real UI, not drawings.** Visuals are product cards (jars, goal meter, chat, receipt) styled
-  like the rest of the UI. The only illustration is the Sprout mascot.
+  like the rest of the UI. Illustrations are the Sprout mascot and the user's reference-style
+  cursor during automatic presentation.
 - **Human, not template.** Asymmetric sections, zig-zag steps, a ledger-style coming-soon list.
   Plain kid-level words; no "empower", "seamless", sparkles or gradients.
 - **Honest.** Every sample number says "Sample", simulated steps say so, the AI mentor says it
@@ -32,6 +33,11 @@ top of `client/src/styles.css`; components only use those variables.
 
 Font: **Bricolage Grotesque** (variable, self-hosted, optical sizing on). Hindi falls back to
 Nirmala UI / Noto Sans Devanagari because Bricolage has no Devanagari glyphs.
+
+The silent presentation adds two narrowly used reference colors in `client/src/presentation.css`:
+`--presentation-blue: #76aaff` for the folded cursor edge, attention mark and target outline;
+`--presentation-paper: #eff7ec` for its pale green face. The cursor SVG consumes those variables
+and the existing ink/muted colors. Site and payment UI tokens are unchanged.
 
 ## Components (class names)
 

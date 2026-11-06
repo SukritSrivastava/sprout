@@ -8,12 +8,13 @@ const live = ['donate', 'payout', 'impact']; // these work for real and say so
 const next = (page) => page.getByRole('button', { name: /^Next/ });
 const stepTitle = (page) => page.locator('.walk-title');
 
-test('the hub lists all nine, with the three live ones stamped', async ({ page }) => {
+test('the hub lists all nine, including the working NGO dashboard', async ({ page }) => {
   await page.goto('/soon');
   await expect(page.locator('.soon-list a')).toHaveCount(9);
-  await expect(page.locator('.soon-list .stamp-live')).toHaveCount(3);
+  await expect(page.locator('.soon-list .stamp-live')).toHaveCount(6);
+  await expect(page.locator('a[href="/soon/ngo"] .stamp-live')).toContainText('Working');
   for (const id of live) await expect(page.locator(`a[href="/soon/${id}"] .stamp-live`)).toContainText('Live');
-  for (const id of ids) await expect(page.locator(`a[href="/soon/${id}"]`)).toHaveCount(1);
+  for (const id of ids) await expect(page.locator(`.soon-list a[href="/soon/${id}"]`)).toHaveCount(1);
 });
 
 test('header "Coming soon" opens the hub; home rows open their preview', async ({ page }, testInfo) => {
@@ -27,7 +28,7 @@ test('header "Coming soon" opens the hub; home rows open their preview', async (
   }
 });
 
-for (const id of ids) {
+for (const id of ids.filter((id) => !['ngo', 'seedlings', 'safety'].includes(id))) {
   const isLive = live.includes(id);
   test(`${id}: walks every step to the last one and back to the start`, async ({ page }) => {
     await page.goto(`/soon/${id}`);
@@ -120,43 +121,6 @@ test.describe('impact ledger: local blockchain', () => {
     expect(status.contract).toMatch(/^0x[0-9a-fA-F]{40}$/);
     expect(status.publisher.toLowerCase()).toBe('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
   });
-});
-
-test('NGO dashboard: approving and sending back activities', async ({ page }) => {
-  await page.goto('/soon/ngo');
-  await next(page).click();
-  await page.getByRole('button', { name: 'Approve: Reading hour at the learning centre' }).click();
-  await page.getByRole('button', { name: 'Approve: Taught counting change to a younger kid' }).click();
-  await page.getByRole('button', { name: 'Send back: Sorted the library shelves' }).click();
-  await expect(page.locator('.walk-step .hint')).toHaveText('Approved so far: ₹400 in rewards.');
-  await expect(page.locator('.queue-row.returned')).toHaveCount(1);
-});
-
-test('seedlings: sorting needs and wants, and growing the garden', async ({ page }) => {
-  await page.goto('/soon/seedlings');
-  const cards = page.locator('.sort-card');
-  for (const [i, need] of [true, true, true, true, false, true].entries()) {
-    await cards.nth(i).getByRole('button', { name: need ? 'Need' : 'Want' }).click();
-  }
-  await expect(page.locator('.walk-step .hint')).toHaveText(/^5 of 6 right/);
-  await expect(page.locator('.sort-card.wrong')).toHaveCount(1);
-  await next(page).click();
-  await page.getByRole('button', { name: /Finish a lesson/ }).click();
-  await expect(page.locator('.plot.planted')).toHaveCount(4);
-});
-
-test('safety: consent needs all three boxes; delete request confirms', async ({ page }) => {
-  await page.goto('/soon/safety');
-  const boxes = page.getByRole('checkbox');
-  await boxes.nth(0).check();
-  await boxes.nth(1).check();
-  await expect(page.locator('.walk-step [role="status"]')).toHaveText('Tick all three to give consent.');
-  await boxes.nth(2).check();
-  await expect(page.locator('.walk-step [role="status"]')).toContainText('Consent recorded');
-  await next(page).click();
-  await next(page).click();
-  await page.getByRole('button', { name: /Ask to delete/ }).click();
-  await expect(page.locator('.walk-step [role="status"]')).toContainText('Request received');
 });
 
 test('Hindi preview switches the sample home screen language', async ({ page }) => {

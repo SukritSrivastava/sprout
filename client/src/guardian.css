@@ -1,0 +1,18 @@
+/* Guardian controls use Sprout's existing cards, readable fields and bold borders. */
+.guardian-heading { margin: 28px 0; max-width: 850px; }
+.guardian-heading h1, .guardian-gate h1 { font-size: clamp(36px, 5vw, 60px); line-height: 1.08; }
+.guardian-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; align-items: start; margin-top: 28px; }
+.guardian-controls, .guardian-explainer, .guardian-gate { padding: 28px; }
+.guardian-explainer { background: var(--lavender); }
+.guardian-state { padding: 18px; background: var(--mint); border: var(--border-thin); border-radius: var(--radius-sm); overflow-wrap: anywhere; }
+.guardian-statements { min-width: 0; border: var(--border-thin); border-radius: var(--radius-sm); padding: 16px; display: grid; gap: 18px; }
+.guardian-statements legend { padding: 0 6px; font-weight: 750; }
+.guardian-statements .consent-item { align-items: flex-start; }
+.guardian-statements input { flex: 0 0 20px; margin-top: 4px; }
+.guardian-controls .field { display: grid; gap: 8px; }
+.guardian-controls input:not([type=checkbox]), .guardian-controls select { width: 100%; min-width: 0; padding: 12px; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--paper); font: inherit; }
+.guardian-controls button { white-space: normal; }
+.guardian-controls ol { padding-left: 24px; }
+.guardian-gate { margin-block: 30px; align-items: start; max-width: 850px; }
+@media (max-width: 900px) { .guardian-grid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) { .guardian-controls, .guardian-explainer, .guardian-gate { padding: 20px; } }

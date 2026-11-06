@@ -11,3 +11,6 @@ chain/artifacts/
 chain/cache/
 chain/types/
 chain/deployments/
+
+# PayPal records saved by the server (DATA_FILE)
+server/data/

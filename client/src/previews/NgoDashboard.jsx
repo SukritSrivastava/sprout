@@ -1,122 +1,100 @@
-// Preview: the NGO and mentor dashboard: money in and out, activities to check, reports.
-import React, { useState } from 'react';
-import { Check, Download, X } from 'lucide-react';
-import Walkthrough from './Walkthrough.jsx';
-import { money } from '../lib/model.js';
+// The local NGO workspace: saved reviews, sample learning jars and an actual CSV report.
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
+import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Lock, LogOut, RefreshCw, ShieldCheck } from 'lucide-react';
+import Mascot from '../components/Mascot.jsx';
+import { Reveal, Stagger, ease, useReduced } from '../lib/motion.jsx';
+import { useCountUp } from '../lib/hooks.js';
+import { useNgoWorkspace } from '../lib/useNgoWorkspace.js';
+import { ngo } from '../content/ngo.js';
+import { Overview, Reviews, Report } from './ngo/Views.jsx';
 
-const months = [
-  { month: 'Aug', donated: 12000, rewarded: 8400 },
-  { month: 'Sep', donated: 18500, rewarded: 11200 },
-  { month: 'Oct', donated: 15000, rewarded: 13600 },
-];
-const submissions = [
-  { id: 1, kid: 'Kid #A12', activity: 'Reading hour at the learning centre', reward: 200 },
-  { id: 2, kid: 'Kid #B07', activity: 'Sorted the library shelves', reward: 150 },
-  { id: 3, kid: 'Kid #C33', activity: 'Taught counting change to a younger kid', reward: 200 },
-];
+function Stat({ label, value, unit, color, dollar = false, testId }) {
+  const shown = useCountUp(value);
+  return <Stagger.Item className="card ngo-stat" style={{ background: color }} data-testid={testId}>
+    <span>{label}</span><strong>{dollar ? '$' : ''}{shown.toLocaleString('en-US')}</strong><span className="hint">{unit}</span>
+  </Stagger.Item>;
+}
 
 export default function NgoDashboard() {
-  const [decisions, setDecisions] = useState({});
-  const decide = (id, value) => setDecisions((all) => ({ ...all, [id]: value }));
-  const max = Math.max(...months.flatMap((m) => [m.donated, m.rewarded]));
-  const approvedTotal = submissions
-    .filter((s) => decisions[s.id] === 'approved')
-    .reduce((sum, s) => sum + s.reward, 0);
+  const workspace = useNgoWorkspace();
+  const { config, checking, data, busy, problem, notice } = workspace;
+  const reduced = useReduced();
+  const [role, setRole] = useState('mentor');
+  const [pin, setPin] = useState('');
+  const [showPin, setShowPin] = useState(false);
+  const [tab, setTab] = useState('overview');
+  const [filter, setFilter] = useState('pending');
+  useEffect(() => { if (config?.roles?.length) setRole(config.roles[0]); }, [config]);
+  const unlock = async (event) => {
+    event.preventDefault();
+    const entered = pin;
+    setPin(''); setShowPin(false);
+    await workspace.unlock(role, entered);
+  };
+  const download = async () => {
+    const reply = await workspace.report();
+    if (!reply) return;
+    const url = URL.createObjectURL(new Blob([reply.csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url; link.download = reply.filename;
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
-  const steps = [
-    {
-      title: 'Money in and out',
-      render: () => (
-        <div className="walk-grid">
-          <div className="stat-row">
-            <div className="card mini-card">
-              <span>Reward pool now</span>
-              <strong className="big-number">{money(12300)}</strong>
-            </div>
-            <div className="card mini-card">
-              <span>Kids active</span>
-              <strong className="big-number">46</strong>
-            </div>
-          </div>
-          <div className="bar-chart" role="img" aria-label="Donations and rewards for August to October, sample data">
-            {months.map((m) => (
-              <div key={m.month} className="bar-group">
-                <span className="bar in" style={{ height: `${(m.donated / max) * 100}%` }} title={`Donated ${money(m.donated)}`} />
-                <span className="bar out" style={{ height: `${(m.rewarded / max) * 100}%` }} title={`Rewarded ${money(m.rewarded)}`} />
-                <span className="bar-label">{m.month}</span>
-              </div>
-            ))}
-            <div className="legend">
-              <span className="key in" /> Donated <span className="key out" /> Rewarded
-            </div>
-          </div>
+  return <section id="preview" className="section ngo-page" data-preview="ngo">
+    <div className="container">
+      <Link to="/soon" className="link-btn quiet"><ArrowLeft size={18} aria-hidden="true" />{ngo.back}</Link>
+      <Reveal className="ngo-heading">
+        <div className="stack"><span className="tag tag-yellow">{ngo.tag}</span><h1>{ngo.title}</h1><p className="lead">{ngo.intro}</p></div>
+        <Mascot size={112} mood={data?.totals.pending === 0 ? 'cheer' : 'think'} />
+      </Reveal>
+      <div className="preview-banner real-banner ngo-note" role="note"><ShieldCheck size={22} aria-hidden="true" /><span>{ngo.note}</span></div>
+      {!data ? <Reveal className="ngo-unlock">
+        <div className="ngo-welcome stack"><h2>{ngo.lockedTitle}</h2><p>{ngo.lockedText}</p>
+          <ul className="ngo-promises">{ngo.promises.map((text) => <li key={text}><Check size={20} aria-hidden="true" />{text}</li>)}</ul>
         </div>
-      ),
-    },
-    {
-      title: 'Check kids’ activities',
-      render: () => (
-        <div className="stack">
-          <p>Mentors approve real work before any reward is paid. Kids show only as codes here.</p>
-          <ul className="queue">
-            {submissions.map((s) => (
-              <li key={s.id} className={decisions[s.id] ? `queue-row ${decisions[s.id]}` : 'queue-row'}>
-                <div>
-                  <strong>{s.activity}</strong>
-                  <span>
-                    {s.kid} · {money(s.reward)}
-                  </span>
-                </div>
-                {decisions[s.id] ? (
-                  <span className="tag tag-white">{decisions[s.id] === 'approved' ? 'Approved' : 'Sent back'}</span>
-                ) : (
-                  <span className="queue-actions">
-                    <button className="icon-btn" aria-label={`Approve: ${s.activity}`} onClick={() => decide(s.id, 'approved')}>
-                      <Check size={18} strokeWidth={3} />
-                    </button>
-                    <button className="icon-btn" aria-label={`Send back: ${s.activity}`} onClick={() => decide(s.id, 'returned')}>
-                      <X size={18} strokeWidth={3} />
-                    </button>
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-          <p className="hint" role="status">
-            Approved so far: {money(approvedTotal)} in rewards.
-          </p>
+        <form className="card stack ngo-login" onSubmit={unlock}>
+          <Lock size={28} aria-hidden="true" /><h2>{ngo.unlockTitle}</h2><p className="hint">{ngo.unlockHelp}</p>
+          {checking && <p role="status">{ngo.checking}</p>}
+          {config && !config.configured && <div className="ngo-setup stack"><p className="chat-notice" role="status">{ngo.setup}</p>
+            <button type="button" className="btn btn-sm btn-white" onClick={workspace.checkAccess} disabled={checking}><RefreshCw size={18} aria-hidden="true" />{ngo.checkAccess}</button>
+          </div>}
+          <label className="field">{ngo.role}<select value={role} onChange={(event) => setRole(event.target.value)} disabled={!config?.configured || Boolean(busy)}>
+            {(config?.roles?.length ? config.roles : ['mentor', 'admin']).map((key) => <option key={key} value={key}>{ngo.roles[key]}</option>)}
+          </select></label>
+          <div className="field"><label htmlFor="ngo-staff-pin">{ngo.pin}</label><div className="ngo-pin-input">
+            <input id="ngo-staff-pin" type={showPin ? 'text' : 'password'} required maxLength={64} autoComplete="off" value={pin} onChange={(event) => setPin(event.target.value)} disabled={!config?.configured || Boolean(busy)} />
+            <button type="button" className="btn btn-sm btn-white" aria-controls="ngo-staff-pin" aria-pressed={showPin} onClick={() => setShowPin(!showPin)} disabled={!config?.configured || Boolean(busy)}>
+              {showPin ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}{showPin ? ngo.hidePin : ngo.showPin}
+            </button>
+          </div></div>
+          <button className="btn btn-green" disabled={!config?.configured || !pin || Boolean(busy)}>{busy === 'unlock' ? ngo.unlocking : ngo.unlock}<ArrowRight size={20} aria-hidden="true" /></button>
+          {problem && <p className="chat-notice" role="alert">{problem}</p>}
+        </form>
+      </Reveal> : <>
+        <div className="ngo-toolbar"><span className="tag tag-white"><ShieldCheck size={18} aria-hidden="true" />{ngo.roles[workspace.role]} · {ngo.session}</span>
+          <div className="ngo-actions"><button className="btn btn-sm btn-white" onClick={workspace.refresh} disabled={Boolean(busy)}><RefreshCw size={18} className={busy === 'refresh' ? 'spin' : ''} aria-hidden="true" />{ngo.refresh}</button>
+            <button className="btn btn-sm btn-white" onClick={workspace.lock}><LogOut size={18} aria-hidden="true" />{ngo.lock}</button></div>
         </div>
-      ),
-    },
-    {
-      title: 'Share an impact report',
-      render: () => (
-        <div className="stack">
-          <p>One click makes a report for donors: totals only, no names, ready to share.</p>
-          <pre className="csv-preview">{`month,donated,rewarded,activities\n${months
-            .map((m) => `${m.month},${m.donated},${m.rewarded},${Math.round(m.rewarded / 200)}`)
-            .join('\n')}`}</pre>
-          <button className="btn btn-sm btn-white" disabled>
-            <Download size={18} strokeWidth={2.75} aria-hidden="true" /> Download CSV (when live)
-          </button>
-        </div>
-      ),
-    },
-  ];
-
-  return (
-    <Walkthrough
-      id="ngo"
-      title="NGO & mentor dashboard"
-      intro="One place for an NGO to see its money, check kids’ activities and report to donors."
-      color="var(--yellow)"
-      steps={steps}
-      live={[
-        'Mentors and NGO admins sign in; each role sees only what it needs.',
-        'Approving an activity moves a reward from the pool into the kid’s jars, in a ledger that can’t be edited.',
-        'Payout approvals (2 of 3 adults) happen here too.',
-        'Reports and AI-written donor summaries use totals only, never kids’ details.',
-      ]}
-    />
-  );
+        <Stagger className="ngo-stats" gap={0.07}>
+          <Stat label={ngo.stats.pending} value={data.totals.pending} unit={ngo.count} color="var(--yellow)" testId="ngo-pending" />
+          <Stat label={ngo.stats.credits} value={data.totals.totalCredits} unit={ngo.sampleUnit} color="var(--mint)" testId="ngo-credits" />
+          <Stat label={ngo.stats.available} value={data.sandbox.available} unit={ngo.sandboxUnit} color="var(--lavender)" dollar testId="ngo-pool" />
+          <Stat label={ngo.stats.approved} value={data.totals.approved} unit={ngo.count} color="var(--paper)" />
+        </Stagger>
+        <nav className="ngo-tabs" aria-label={ngo.nav}>{Object.entries(ngo.tabs).map(([key, label]) =>
+          <button key={key} className={`ngo-tab${tab === key ? ' selected' : ''}`} aria-current={tab === key ? 'page' : undefined} onClick={() => setTab(key)}>{label}{key === 'reviews' && <span className="ngo-tab-count">{data.totals.pending}</span>}</button>)}</nav>
+        <div className="ngo-feedback" aria-live="polite">{problem ? <p className="chat-notice" role="alert">{problem}</p> : notice ? <p className="ngo-saved" role="status"><Check size={20} aria-hidden="true" />{notice}</p> : null}</div>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={tab} initial={reduced ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: reduced ? 0 : -8 }} transition={{ duration: reduced ? 0 : 0.25, ease }}>
+            {tab === 'overview' && <Overview data={data} open={setTab} />}
+            {tab === 'reviews' && <Reviews data={data} busy={busy} filter={filter} setFilter={setFilter} review={workspace.review} />}
+            {tab === 'report' && <Report data={data} busy={busy} download={download} />}
+          </motion.div>
+        </AnimatePresence>
+      </>}
+    </div>
+  </section>;
 }

@@ -1,5 +1,233 @@
 # Verification
 
+## Parent/guardian consent and deletion (2026-11-06)
+
+- `/soon/safety` now records dated, PIN-authorized demo permission for A12/B07/C33, withdraws
+  it, and deletes selected learning data. This is a local demo acknowledgement, not verified
+  adult identity or production legal consent. A12 owns Seedlings and the AI demo. Other queued
+  phases were not implemented as part of this request.
+- `npm test`: **140 passed** (24 client, 110 server, 6 Solidity contract). Log:
+  `qa/guardian-final-unit.log`. The 11 new API checks cover blocked first entry, guardian-only
+  authorization, policy/schema validation, dates, revisions, concurrent stale decisions,
+  withdrawal, deletion/restart, selected-learner isolation, nonempty PayPal-file preservation,
+  shared PIN lockouts, origin/rate limits, failed storage recovery and cancellation of late AI.
+- Guardian API suite repeated **five times consecutively: 55 passed**, no failures.
+  Logs: `qa/guardian-api-repeat-1.log` through `qa/guardian-api-repeat-5.log`.
+- Final full browser run with `LIVE_AI=1`, two workers: **232 passed, 8 intentionally skipped,
+  0 failed**, 5.7 minutes, without retries. Log: `qa/guardian-final-e2e.log`. The skips are existing
+  desktop/phone-specific exclusions, including running the real AI case only on desktop.
+  Live Gemini answered in English and Hindi. Guardian browser tests use a disposable API and
+  records, never the host's saved consent/PINs. The 22 guardian checks include real lesson saves,
+  withdrawal, deletion, reload, another tab's chat clearing, errors, keyboard and reduced motion.
+- Focused guardian/navigation/presentation run: **81 passed, 5 intentional skips**. This caught
+  and verified a scroll-limit fix: Lenis refreshes its dimensions when permission replaces a
+  short gate with the full app. Direct `#grow` links now land correctly at both viewport sizes.
+  The presentation test preserves its explicit permitted-sample fixture and still makes no writes.
+- `npm run build`: **passed** (client production bundle + server TypeScript). Existing bundle-size
+  advisory remains. Log: `qa/guardian-final-build.log`. No new dependency was added.
+- `npm run eval:mentor`: **12/12 live Gemini checks passed** using explicitly permitted,
+  synthetic in-memory sample data. Log: `qa/parent-mentor-eval.log`.
+- `npm run check:paypal -w server`: **passed**; sandbox keys created a $5 order left unpaid.
+  No new live/manual checkout or payout was submitted. Those still need a person in PayPal's
+  sandbox window; automated provider regressions use fakes. Log: `qa/parent-paypal-check.log`.
+- Visual/keyboard checks: 1366×768 desktop and 375×812 phone, no horizontal overflow. Screenshots:
+  `qa/guardian-desktop.png`, `qa/guardian-phone.png`. Guardian PINs clear/hide on submission and
+  do not appear in browser storage. `git diff --check` passed; env/data/QA files remain ignored.
+- Failed permission saves block learning until durable; keep the process running through a disk
+  outage. An unsaved in-memory decision cannot survive a crash. Offline queues and issued
+  certificates do not exist yet; their screens remain previews. PayPal and chain records stay separate.
+
+## Compact autoplay controls follow-up (2026-11-06)
+
+- Automatic presentation now minimises immediately to a bottom bar with Pause/Resume, Stop
+  and an expand arrow. Captions and settings appear only when expanded; manual presentation
+  keeps the full controls. Completed autoplay stays compact with Replay/Stop.
+- Real browser measurements: **62.4px high** at 1366×768 desktop and 375×812 phone, compared
+  with the previous roughly 420px panel. English and Hindi fit without horizontal overflow.
+  Screenshots: `qa/presentation-compact-desktop.png`, `qa/presentation-compact-phone.png`,
+  `qa/presentation-compact-phone-hindi.png` and `qa/presentation-compact-controls.png`.
+- `npm test`: **129 passed** (24 client, 99 server, 6 contract). `npm run build`: passed;
+  the existing large-bundle advisory remains. Logs: `qa/presentation-compact-unit.log` and build.
+- Focused desktop/phone presentation suite: **30 passed**. New coverage checks the small bar's
+  height/position, visible Pause/Stop, clean Stop cancellation, and expand/minimise preserving
+  time, pause state and keyboard focus. Existing cursor, gaze, sample-action, manual-mode,
+  hidden-tab and silent/read-only full-story checks also passed.
+- Full `npm run test:e2e -- --workers=2 --reporter=line`: **213 passed, 9 skipped**, 4.7 minutes,
+  without retries (`qa/presentation-compact-e2e.log`).
+- Cursor framing refreshes when the panel size changes without clearing already-performed cues.
+  Hidden captions retain screen-reader announcements. Stop keeps the current page and removes
+  the cursor, gaze subscription and highlights. No audio, API, payment or learning behavior changed.
+- The strict UI audit still reports the same nine pre-existing findings outside this change;
+  no compact-presentation file is flagged (`qa/presentation-compact-ui-audit.json`).
+
+## Silent manual/automatic demo presentation (2026-11-06)
+
+- Scope: presentation only. Existing launchers now offer **Present manually** and **Present
+  automatically** before changing pages. There are 12 steps and 108 seconds of automatic play.
+  The pale green cursor with a blue folded edge and attention mark follows the supplied image;
+  all Sprout mascots look toward its actual animated position during autoplay. No audio is used.
+- `npm test`: **129 passed** (24 client, 99 server, 6 contract). Three added unit checks cover
+  cue boundaries/action allow-lists, bounded gaze in every direction and cursor viewport bounds.
+- `npm run test:e2e -- --workers=2 --reporter=line`: **209 passed, 9 skipped**, 5.3 minutes,
+  without retries. The presentation file has 26 desktop/phone scenarios replacing the old 12.
+  Results: `qa/presentation-unit.log`, `qa/presentation-e2e.log`.
+- `npm run build`: passed, including server TypeScript compilation. The existing large-bundle
+  advisory remains. Build output: `qa/presentation-build.log`.
+- Verified: chooser stays idle before a mode is selected; manual mode never advances or performs
+  actions by itself; next/previous and keyboard control stay ordered; sliders retain native key
+  behavior; caption/choice language switching; timed cursor movement; real sample earning,
+  65% savings, headphones goal and ₹500 monthly; gaze direction; pause/resume and manual takeover;
+  hidden-tab pause; close cancels pending actions and cleans highlights/gaze; focus restoration;
+  all launchers; reduced motion; full-story completion and replay.
+- The complete automatic story was instrumented in both browser projects: **zero API POSTs and
+  zero audio/speech playback calls**. Only registered temporary `/app` sample callbacks run.
+  Payments, PINs, AI chat, saved lessons and blockchain publications are never submitted.
+- Inspected the real local browser at 1366×768 and 375×812. Chooser, automatic, paused and manual
+  panels fit; no horizontal overflow. Screenshots: `qa/presentation-desktop-choice.png`,
+  `qa/presentation-desktop-auto.png` and their phone counterparts. The new cursor colors are
+  documented in `DESIGN.md` and consumed through CSS variables, with no site-token changes.
+- `designmd lint DESIGN.md`: zero errors, one warning that this pre-existing prose-based
+  design document has no YAML frontmatter. The strict repository UI audit reports the same nine
+  existing findings outside this change (recorded in the Seedlings section below); no presentation
+  file is flagged. Reports: `qa/presentation-design-lint.log`, `qa/presentation-premium-audit.json`.
+- The prior uncommitted work remains intact. No backend/payment feature, deployment or next
+  roadmap feature was implemented. The local preview at `http://127.0.0.1:5173/` is running.
+
+## Seedlings and direct navigation to working features (2026-11-06)
+
+- `npm test`: **126 passed** (21 client, 99 server, 6 contract).
+- `npm run test:e2e -- --workers=2 --reporter=line`: **195 passed, 9 skipped**, 4.0 minutes,
+  without retries. Includes 16 new desktop/phone checks; the old Seedlings walkthrough checks
+  were replaced by working-feature coverage. Logs: `qa/seedlings-unit.log`, `qa/seedlings-e2e.log`.
+- `npm run build`: passed, including server TypeScript compilation. The existing large-bundle
+  advisory remains. Windows sandbox restrictions required running build/tests with normal tool
+  access to the project and Hardhat compiler cache; these were environment failures, not code defects.
+- Seven new server tests cover allowed origins/no-store responses; strict and incorrect inputs;
+  concurrent retries and one-time rewards; both lesson languages matching server rules; old NGO
+  records upgrading without lost decisions; restart persistence; isolated PayPal/credit totals;
+  failed saves/recovery; and read/write rate limits.
+- Browser checks cover all three lessons, practice without duplicate seeds, reload, missing and
+  incorrect answers with focus/associated errors, failed load/save retries, a lost save reply,
+  Hindi preference and validation, read-aloud language/cancellation, unsupported speech, native
+  radio keyboard operation, all five top-menu links and phone menu closure.
+- `node --import tsx qa/verify-seedlings-live.mjs`: passed with the real UI, a temporary Fastify
+  server and disposable learning records. Completing a lesson saved one seed; after restarting
+  that API, a reload restored it and repeated practice still left one seed. No user records or
+  payment providers were used. Screenshot: `qa/seedlings-saved-real-api.png`.
+- Visual inspection at 1366px, 800px and 375px found no horizontal overflow. Compared the new
+  page with the existing NGO screen; font, borders, pastels, mascot and shadows match. Phone
+  navigation and Hindi screenshots are also in `qa/seedlings-*.png`. `DESIGN.md` tokens were
+  preserved; the new behavior and canonical owners are recorded in `UX-CONTRACT.md`.
+- Live read-only network check: `{chainId:31337,local:true}`. The ledger runs on local Hardhat,
+  not a configured public Sepolia network. Top-menu status says test blockchain. No public-chain
+  deployment or PayPal payment was made by this delivery.
+- The frontend skill's repository-wide static audit was run in strict mode. It reports nine
+  existing findings outside the new Seedlings/header files: native-select ownership metadata,
+  four existing forms without explicit application-validation declarations, the future Hindi
+  preview's inactive-looking activity control and a textarea resize false positive (its shared
+  CSS already sets `resize:none`). This is not a clean audit of the whole existing app; the
+  report is `qa/seedlings-premium-audit.json`. These unrelated forms were not refactored here.
+- Seedlings is one explicitly shared sample garden, with no personal learner account, real
+  consent verification or offline sync. Hindi across the main site is the next queued feature.
+  Existing uncommitted work was preserved; nothing was pushed or deployed.
+
+## NGO access and judge walkthrough follow-up (2026-11-05)
+
+- Root cause reproduced: the running API returned `{configured:false,roles:[]}` while a fresh
+  settings load reported a valid admin PIN. Editing `server/.env` does not trigger the source
+  watcher. Reloading the API made its public config report the admin role.
+- Confirmed the configured admin PIN unlocked the running API (200), then immediately locked
+  that temporary session (200). No activity decisions or payment records were changed by this
+  check, and no PIN or token was printed or copied into documentation.
+- The setup state now offers **Check access again** and explains the required server restart.
+  The form selects an available role. **Show PIN / Hide PIN** changes only typed input visibility;
+  it does not submit the form, and submission clears the input and restores masking.
+- Added `JUDGE_GUIDE.md` with setup, a review/report walkthrough and troubleshooting. It contains
+  no configured credentials; the host supplies the staff PIN privately.
+- `npm test`: **119 passed** (21 client, 92 server, 6 contract). The new API check confirms one
+  admin PIN enables NGO access without PayPal keys, a guardian email or the other adult PINs.
+- Focused desktop/phone NGO browser suite: **14 passed**. The new scenario covers rechecking
+  newly configured admin-only access, showing/hiding typed input without submitting, successful
+  unlock, locking, cleared/masked input and no horizontal overflow.
+- Full `npm run test:e2e -- --workers=2 --reporter=line`: **183 passed, 9 skipped**, 3.8 minutes,
+  without retries. Logs are in `qa/ngo-access-e2e.log` and `qa/ngo-access-unit.log`.
+- `npm run build`: passed, including server TypeScript compilation.
+- Checked the actual running login screen on desktop and phone: NGO admin selected, PIN input
+  enabled, Show/Hide working, no overflow. Screenshots: `qa/ngo-access-desktop.png` and phone.
+- Secrets and PayPal behavior remain unchanged. Existing uncommitted user work remains intact;
+  this follow-up does not bundle it into a commit.
+
+## Remaining features, first delivery: NGO workspace (2026-11-05)
+
+Only the NGO feature was implemented in this delivery. Seedlings, Hindi, classroom/offline,
+consent/deletion and certificates remain queued under `FEATURE_IMPLEMENTATION_PLAN.md`.
+
+- `npm test`: **118 passed** (21 client, 91 server, 6 contract), including the final rounding fix.
+- `npm run test:e2e -- --workers=2 --reporter=line`: **181 passed, 9 skipped**, 3.1 minutes,
+  without retries. This full desktop/phone run followed the scrolling fix. The only subsequent
+  code change floors fractional jar shares; its server regression and the full unit suite passed.
+- `npm run build`: passed, including server TypeScript compilation.
+- Nine new server tests cover staff-only access; strict review inputs and origins; concurrent
+  duplicate approvals; independent learning/PayPal balances; private aggregate CSV output;
+  token locking/expiry; shared PIN lockouts; restart persistence; failed writes without rewards;
+  rejection of matching payment/learning file paths; and nonnegative, conserved jar allocations
+  for small and odd credit rewards.
+- Twelve new browser checks (six on each device) cover wrong PIN correction, saved reviews,
+  filters, jars, report download, reload, locking, expired access, setup instructions, failed
+  saves, keyboard/reduced-motion use, queue width, overflow and late replies after locking.
+  The long data-integrity scenario uses reduced motion; other interaction scenarios retain
+  normal motion, with a separate explicit reduced-motion check.
+- Visual checks of overview and review screens preserve the existing font, pastels, black
+  outlines, hard shadows, mascot, animated counters and review transitions. Screenshots are in
+  `qa/ngo-desktop-overview.png`, `qa/ngo-desktop-reviews.png` and their phone equivalents.
+- Regression testing found a phone anchor-scroll bug: native scrolling could leave Lenis's
+  animated position stale. Section links now synchronize to the actual page position before
+  gliding to an absolute target, applying the header offset once. Existing desktop/phone
+  "See your jars" checks exercise this behavior with normal motion.
+- Tests use fake PayPal/AI providers and sample learners. No live payment was sent. The local
+  server currently reports no configured staff PIN; its setup notice was checked. A mentor or
+  admin PIN must be configured by the user before unlocking the real local workspace.
+- Existing user changes remain in the working tree; this delivery does not bundle them into a commit.
+
+## Priority payment follow-up (2026-11-05)
+
+- `npm test`: **109 passed** (21 client, 82 server, 6 contract).
+- Final `npm run test:e2e -- --workers=2 --reporter=line`: **173 passed, 9 skipped**, 4.8 minutes.
+  The clean run includes desktop and phone payout timeout/reload recovery. An earlier development
+  run hit server reloads and a test fixture override issue; the settled run passed without retries.
+- `npm run build`: passed, including server TypeScript compilation.
+- Ten payment recovery tests cover duplicate PIN rejection; blocked disk writes and subsequent
+  recovery; no provider call before a reservation is saved; preservation of an already-accepted
+  payment if saving its response fails; PIN-protected request restoration; aged retry rejection;
+  duplicate response recovery; rejected untrusted links and mismatched recipients; and failed
+  original-batch lookups keeping reservations intact.
+- API helper regression verifies that a 502 response keeps the unknown receipt and reserved
+  balance while remaining a failure. A desktop/phone browser scenario covers timeout, wrong
+  recovery PIN, reload, restoration of approvals and retry of the same request.
+- Live PayPal funds were not moved. Tests use fake providers. Crash recovery during a sustained
+  disk outage still needs manual provider reconciliation; the file cannot preserve an unsaved result.
+- Existing user changes remain in the working tree; this follow-up does not bundle them into a commit.
+
+## Security audit fixes (2026-11-05)
+
+Fixes for the 24 findings in `SECURITY_AND_BUG_AUDIT.md` (status per finding is in that file).
+
+- `npm test`: 98 passed: 20 client (new: `api.test.js` rejects an HTML/broken 200; `mentorApi.test.js`
+  reports a stream without `done` as cut short), 72 server (new `mentor-privacy.test.ts`; `audit.test.ts`
+  now asserts each defect stays fixed; PayPal tests cover PIN approvals, lockout, fixed payee,
+  simultaneous captures, lost payout answers retried with the same ids, restart from the JSON file,
+  settled-only sealing, concurrent publishing; ledger tests cover sample-only publishing, batch
+  clashes, currency in the fingerprint, exact-loopback RPC check, read limits), 6 contract.
+- `npm run test:e2e -- --workers=2`: 169 passed, 9 skipped, 2 failed in a full run: the known
+  animation-timing flake (tour entry points, a phone walkthrough); both passed when rerun alone
+  (20/20). New: payout page with PINs, a wrong PIN, a failed payout's colour, the "switch payouts
+  on" notice; mentor offline safety card and a cut-off answer.
+- `npm run build`: passed.
+- Not re-checked live: a real PayPal sandbox payout through the new PIN flow (needs the user's
+  PINs and guardian email in `server/.env`, then the README "Try the whole flow" steps).
+- Accepted: `npm audit` still reports the zod 3 inside Hardhat (dev tool only). Forcing zod 4 into
+  Hardhat was tried and undone; no patched zod 3 exists.
+
 ## Phase 6: PayPal sandbox at the centre (2026-11-05)
 
 Done to meet the PayPal AI Hackathon rules ("PayPal integration is central"): real PayPal sandbox

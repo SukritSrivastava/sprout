@@ -5,8 +5,17 @@
 import { test as base, expect } from '@playwright/test';
 
 export const test = base.extend({
+  guardianPermission: [true, { option: true }],
   expectedConsoleErrors: [[], { option: true }],
-  page: async ({ page, expectedConsoleErrors }, use) => {
+  page: async ({ page, expectedConsoleErrors, guardianPermission }, use) => {
+    // Existing feature tests exercise an explicitly permitted sample session. Guardian tests
+    // turn this off to cover first entry, withdrawal, deletion and real API enforcement.
+    if (guardianPermission) {
+    await page.route('**/api/seedlings', (route) => route.fulfill({ json: { garden: { completed: [], seeds: 0, totalLessons: 3 } } }));
+    await page.route('**/api/guardian/status?learner=A12', (route) => route.fulfill({ json: {
+      configured: true, consent: { learner: 'A12', status: 'active', revision: 1, policy: 'demo-permission-v1', acknowledgedAt: '2026-11-06T00:00:00.000Z', changedAt: '2026-11-06T00:00:00.000Z' },
+    } }));
+    }
     const problems = [];
     page.on('console', (message) => {
       if (message.type() !== 'error') return;

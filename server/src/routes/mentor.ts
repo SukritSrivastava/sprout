@@ -9,14 +9,18 @@ import { Readable } from 'node:stream';
 import type { FastifyInstance } from 'fastify';
 import { chatRequestSchema, type ChatRequest } from '../mentor/schema.js';
 import { isSensitive } from '../mentor/safety.js';
+import { redactPersonal } from '../mentor/privacy.js';
 import { buildSystemPrompt } from '../mentor/prompt.js';
 import { preparedAnswer, suggestionsFor } from '../mentor/prepared.js';
 import type { MentorModel } from '../mentor/model.js';
 import { createRateLimiter } from '../rate-limit.js';
 import { onlyOurWebsite } from '../origin.js';
 import { mentorSettings } from '../mentor/settings.js';
+import type { LearningStore } from '../learning/store.js';
+import { allowLearning } from '../learning/access.js';
 
 type Options = {
+  learning: LearningStore;
   model: MentorModel | null;
   allowedOrigins: string[];
   hourlyLimit: number;
@@ -43,7 +47,7 @@ export async function mentorRoutes(app: FastifyInstance, options: Options) {
   const timeoutMs = options.timeoutMs ?? mentorSettings.timeoutSeconds * 1000;
 
   // Only our own website may use the mentor from a browser (see origin.ts).
-  onlyOurWebsite(app, options.allowedOrigins, ['/api/mentor/chat']);
+  onlyOurWebsite(app, options.allowedOrigins, ['/api/mentor/chat'], ['x-learning-revision']);
 
   app.post('/api/mentor/chat', async (request, reply) => {
     const tooBusy = (wait: number, message: string) => {
@@ -52,12 +56,6 @@ export async function mentorRoutes(app: FastifyInstance, options: Options) {
     };
     const wait = perAddress.check(request.ip);
     if (wait) return tooBusy(wait, `Let's take a short break. Try again in ${wait} seconds.`);
-    const shared = everyone.check('everyone');
-    if (shared) {
-      request.log.warn('mentor hourly limit reached');
-      return tooBusy(shared, 'Lots of people are asking right now. Try again in a little while.');
-    }
-
     const parsed = chatRequestSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -65,16 +63,34 @@ export async function mentorRoutes(app: FastifyInstance, options: Options) {
         message: parsed.error.issues[0]?.message ?? 'Invalid request',
       });
     }
+    if (!allowLearning(options.learning, request, reply)) return reply;
+
+    // Malformed requests and prepared replies do not spend the shared AI budget.
+    const shared = options.model ? everyone.check('everyone') : 0;
+    if (shared) {
+      request.log.warn('mentor hourly limit reached');
+      return tooBusy(shared, 'Lots of people are asking right now. Try again in a little while.');
+    }
 
     const chat: ChatRequest = parsed.data;
     const question = chat.messages[chat.messages.length - 1].text;
-    const flagged = isSensitive(question);
+    // Any sensitive question in the chat keeps it flagged, so a short follow-up ("what now?")
+    // still gets the careful instruction and the trusted-adult card.
+    const flagged = chat.messages.some((m) => m.role === 'user' && isSensitive(m.text));
     const asked = chat.messages.filter((m) => m.role === 'user').map((m) => m.text);
     const started = Date.now();
 
     // Stop asking Gemini if the browser goes away or it takes too long.
     const abort = new AbortController();
     const timer = setTimeout(() => abort.abort(), timeoutMs);
+    const revision = options.learning.consent().revision;
+    const permitted = () => {
+      try {
+        const current = options.learning.consent();
+        return current.status === 'active' && current.revision === revision;
+      } catch { return false; } // A pending permission save also blocks streamed replies.
+    };
+    const permissionTimer = setInterval(() => { if (!permitted()) abort.abort(); }, 250);
     // Watch the response, not the request: Node closes the request as soon as its body is read.
     reply.raw.on('close', () => {
       if (!reply.raw.writableEnded) abort.abort();
@@ -86,7 +102,8 @@ export async function mentorRoutes(app: FastifyInstance, options: Options) {
         if (options.model) {
           const pieces = options.model.stream({
             system: buildSystemPrompt(chat, flagged),
-            turns: chat.messages.map((m) => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text })),
+            // Personal details are blanked out before anything leaves for Google (privacy.ts).
+            turns: chat.messages.map((m) => ({ role: m.role === 'user' ? 'user' : 'model', text: redactPersonal(m.text) })),
             signal: abort.signal,
           })[Symbol.asyncIterator]();
           // Wait for Gemini's first words before committing to an AI answer.
@@ -96,21 +113,25 @@ export async function mentorRoutes(app: FastifyInstance, options: Options) {
           } catch (error) {
             request.log.warn({ err: (error as Error).message }, 'mentor model failed, using prepared answer');
           }
+          if (!permitted()) return;
           if (first && !first.done) {
             source = 'ai';
             yield line({ type: 'start', source, flagged });
             yield line({ type: 'delta', text: first.value });
             try {
               for (let next = await pieces.next(); !next.done; next = await pieces.next()) {
+                if (!permitted()) return;
                 yield line({ type: 'delta', text: next.value });
               }
             } catch (error) {
+              if (!permitted()) return;
               request.log.warn({ err: (error as Error).message }, 'mentor stream cut short');
               yield line({ type: 'delta', text: chat.language === 'hi' ? ' …(जवाब बीच में रुक गया)' : ' …(the answer was cut short)' });
             }
           }
         }
         if (source === 'prepared') {
+          if (!permitted()) return;
           yield line({ type: 'start', source, flagged });
           for (const piece of words(preparedAnswer(question, chat.language))) {
             yield line({ type: 'delta', text: piece });
@@ -119,6 +140,7 @@ export async function mentorRoutes(app: FastifyInstance, options: Options) {
         yield line({ type: 'done', suggestions: suggestionsFor(chat.language, asked) });
       } finally {
         clearTimeout(timer);
+        clearInterval(permissionTimer);
         // Never log what the kid wrote: only timing, source and the safety flag.
         request.log.info({ ms: Date.now() - started, source, flagged }, 'mentor reply');
       }

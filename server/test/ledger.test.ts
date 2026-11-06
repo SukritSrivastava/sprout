@@ -5,17 +5,14 @@ import assert from 'node:assert/strict';
 import { buildApp } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
 import { batchRoot, batchTotals, type Receipt } from '../src/ledger/merkle.js';
-import type { BatchInput, LedgerChain, StoredBatch } from '../src/ledger/chain.js';
+import { isLocal, type BatchInput, type LedgerChain, type StoredBatch } from '../src/ledger/chain.js';
+import { SAMPLE_BATCH_ID, sampleReceipts } from '../src/ledger/sample.js';
+import * as websiteSample from '../../client/src/lib/sampleReceipts.js';
 // The website's version of the same maths, to prove both sides agree.
 import { buildTree } from '../../client/src/lib/ledger.js';
 
-const receipts: Receipt[] = [
-  { id: 'DON-2611-0042', type: 'donation', amount: 500, date: '2026-11-03', ref: 'donor-7f2' },
-  { id: 'RWD-2611-0108', type: 'reward', amount: 200, date: '2026-11-03', ref: 'kid-a12' },
-  { id: 'RWD-2611-0109', type: 'reward', amount: 150, date: '2026-11-04', ref: 'kid-b07' },
-  { id: 'PAY-2611-0015', type: 'payout', amount: 600, date: '2026-11-04', ref: 'kid-a12' },
-  { id: 'DON-2611-0043', type: 'donation', amount: 2500, date: '2026-11-05', ref: 'donor-1c9' },
-];
+// The real sample batch (the only one the sample route accepts) and a slice of it for maths tests.
+const receipts: Receipt[] = sampleReceipts.slice(0, 5);
 
 function fakeChain({ fail = false } = {}) {
   const published = new Map<number, StoredBatch>();
@@ -58,34 +55,59 @@ test('batch totals add up by type', () => {
   assert.deepEqual(batchTotals(receipts), { donated: 3000, rewarded: 350, paidOut: 600, receipts: 5 });
 });
 
+const sample = { batchId: SAMPLE_BATCH_ID, receipts: sampleReceipts };
+
+test('the website and the server hold the same sample receipts', () => {
+  assert.equal(websiteSample.SAMPLE_BATCH_ID, SAMPLE_BATCH_ID);
+  assert.deepEqual(websiteSample.sampleReceipts, sampleReceipts);
+});
+
+test('the currency is part of each fingerprint, and a batch holds one currency', () => {
+  const inDollars = { ...receipts[0], currency: 'USD' as const };
+  assert.notEqual(batchRoot([inDollars]), batchRoot([receipts[0]]));
+  assert.throws(() => batchTotals([receipts[0], inDollars]), /one currency/);
+});
+
 test('publish computes the code itself and sends it with the totals', async () => {
   const { chain, calls } = fakeChain();
-  const response = await publish(appWith(chain), { batchId: 1, receipts });
+  const response = await publish(appWith(chain), sample);
   assert.equal(response.statusCode, 200);
   assert.equal(response.json().alreadyPublished, false);
-  assert.deepEqual(calls[0], { batchId: 1, root: batchRoot(receipts), donated: 3000, rewarded: 350, paidOut: 600, receipts: 5 });
+  assert.deepEqual(calls[0], { batchId: 1, root: batchRoot(sampleReceipts), ...batchTotals(sampleReceipts) });
 });
 
-test('publishing the same batch twice changes nothing', async () => {
+test('publishing the sample twice changes nothing', async () => {
   const { chain } = fakeChain();
   const app = appWith(chain);
-  await publish(app, { batchId: 2, receipts });
-  const again = await publish(app, { batchId: 2, receipts: receipts.slice(0, 1) });
+  await publish(app, sample);
+  const again = await publish(app, sample);
   assert.equal(again.json().alreadyPublished, true);
-  assert.equal(again.json().batch.root, batchRoot(receipts));
+  assert.equal(again.json().batch.root, batchRoot(sampleReceipts));
 });
 
-test('rejects bad receipts, including real names instead of codes', async () => {
+test('a batch number already holding other receipts is a clash, not a success', async () => {
+  const { chain } = fakeChain();
+  // Something else already sits in batch 1 on the chain.
+  await chain.publish({ batchId: 1, root: 'ab'.repeat(32), donated: 1, rewarded: 0, paidOut: 0, receipts: 1 });
+  const response = await publish(appWith(chain), sample);
+  assert.equal(response.statusCode, 409);
+  assert.equal(response.json().error, 'batch_conflict');
+});
+
+test('only the fixed sample receipts can be published: no made-up text, ids or batch numbers', async () => {
   const app = appWith(fakeChain().chain);
+  const first = sampleReceipts[0];
   const bad = [
     {},
     { batchId: 1, receipts: [] },
-    { batchId: 0, receipts },
-    { batchId: 1, receipts: [{ ...receipts[0], ref: 'Aanya Sharma' }] },
-    { batchId: 1, receipts: [{ ...receipts[0], id: 'hello' }] },
-    { batchId: 1, receipts: [{ ...receipts[0], amount: -5 }] },
-    { batchId: 1, receipts: [{ ...receipts[0], type: 'gift' }] },
-    { batchId: 1, receipts, root: 'deadbeef' }, // a browser can't choose the code
+    { batchId: 0, receipts: sampleReceipts },
+    { batchId: 2, receipts: sampleReceipts },
+    { batchId: 101, receipts: sampleReceipts }, // live batch numbers belong to PayPal receipts
+    { batchId: 1, receipts: sampleReceipts.slice(1) },
+    { batchId: 1, receipts: [{ ...first, ref: 'alice-smith' }, ...sampleReceipts.slice(1)] },
+    { batchId: 1, receipts: [{ ...first, amount: 5 }, ...sampleReceipts.slice(1)] },
+    { batchId: 1, receipts: [{ ...first, currency: 'USD' }, ...sampleReceipts.slice(1)] },
+    { batchId: 1, receipts: sampleReceipts, root: 'deadbeef' }, // a browser can't choose the code
   ];
   for (const body of bad) {
     const response = await publish(app, body);
@@ -96,8 +118,8 @@ test('rejects bad receipts, including real names instead of codes', async () => 
 test('reads a published batch back, null if not published, 400 for nonsense', async () => {
   const { chain } = fakeChain();
   const app = appWith(chain);
-  await publish(app, { batchId: 3, receipts });
-  assert.equal((await app.inject({ method: 'GET', url: '/api/ledger/batches/3' })).json().batch.root, batchRoot(receipts));
+  await publish(app, sample);
+  assert.equal((await app.inject({ method: 'GET', url: '/api/ledger/batches/1' })).json().batch.root, batchRoot(sampleReceipts));
   assert.deepEqual((await app.inject({ method: 'GET', url: '/api/ledger/batches/4' })).json(), { batch: null });
   assert.equal((await app.inject({ method: 'GET', url: '/api/ledger/batches/abc' })).statusCode, 400);
 });
@@ -106,7 +128,7 @@ test('a chain that is down gives a clear 503, never a crash', async () => {
   for (const app of [appWith(fakeChain({ fail: true }).chain), appWith(null)]) {
     for (const response of [
       await app.inject({ method: 'GET', url: '/api/ledger/status' }),
-      await publish(app, { batchId: 1, receipts }),
+      await publish(app, sample),
       await app.inject({ method: 'GET', url: '/api/ledger/batches/1' }),
     ]) {
       assert.equal(response.statusCode, 503);
@@ -115,11 +137,21 @@ test('a chain that is down gives a clear 503, never a crash', async () => {
   }
 });
 
-test('only our website may publish from a browser, and publishing is rate limited', async () => {
+test('only our website may publish from a browser; publishing and reading are rate limited', async () => {
   const app = appWith(fakeChain().chain);
-  assert.equal((await publish(app, { batchId: 9, receipts }, { origin: 'https://evil.example' })).statusCode, 403);
-  for (let i = 0; i < 10; i++) await publish(app, { batchId: 10 + i, receipts });
-  assert.equal((await publish(app, { batchId: 99, receipts })).statusCode, 429);
+  assert.equal((await publish(app, sample, { origin: 'https://evil.example' })).statusCode, 403);
+  for (let i = 0; i < 10; i++) await publish(app, sample);
+  assert.equal((await publish(app, sample)).statusCode, 429);
+  let last = 0;
+  for (let i = 0; i < 61; i++) last = (await app.inject({ method: 'GET', url: '/api/ledger/batches/1' })).statusCode;
+  assert.equal(last, 429);
+});
+
+test('only exact loopback addresses count as a local chain', () => {
+  for (const url of ['http://127.0.0.1:8545', 'http://localhost:8545', 'http://[::1]:8545']) assert.ok(isLocal(url), url);
+  for (const url of ['https://localhost.attacker.example/rpc', 'http://127.0.0.1.evil.example', 'http://user:pw@localhost:8545', 'ftp://localhost']) {
+    assert.ok(!isLocal(url), url);
+  }
 });
 
 test('the public Hardhat test key is refused for a real chain', () => {

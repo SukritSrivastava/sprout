@@ -1,10 +1,10 @@
 // Entry point: load settings, build the app, start listening. `npm run dev` runs this with tsx,
-// which restarts the server whenever a file in src/ changes.
+// which restarts the server whenever a source file changes. Restart manually after editing .env.
 import { loadConfig } from './config.js';
 import { buildApp } from './app.js';
 
 const config = loadConfig();
-const app = buildApp(config, { logger: true });
+const app = buildApp(config, { logger: true, dataFile: config.DATA_FILE, learningDataFile: config.LEARNING_DATA_FILE });
 
 try {
   await app.listen({ port: config.API_PORT, host: config.HOST });

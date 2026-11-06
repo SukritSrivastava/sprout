@@ -4,7 +4,7 @@
 // (scripts, curl) pass here; the rate limits deal with those.
 import type { FastifyInstance } from 'fastify';
 
-export function onlyOurWebsite(app: FastifyInstance, allowedOrigins: string[], paths: string[]) {
+export function onlyOurWebsite(app: FastifyInstance, allowedOrigins: string[], paths: string[], extraHeaders: string[] = []) {
   app.addHook('onRequest', async (request, reply) => {
     const origin = request.headers.origin;
     if (!origin) return;
@@ -18,7 +18,7 @@ export function onlyOurWebsite(app: FastifyInstance, allowedOrigins: string[], p
     app.options(path, async (_request, reply) =>
       reply
         .header('access-control-allow-methods', 'GET, POST')
-        .header('access-control-allow-headers', 'content-type')
+        .header('access-control-allow-headers', ['content-type', ...extraHeaders].join(', '))
         .header('access-control-max-age', '600')
         .code(204)
         .send(),

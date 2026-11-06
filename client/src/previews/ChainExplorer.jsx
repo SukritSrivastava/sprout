@@ -2,7 +2,7 @@
 // Used by the impact-ledger preview after a batch is published.
 import React from 'react';
 import { motion } from 'motion/react';
-import { Blocks, CircleCheck } from 'lucide-react';
+import { Blocks, CircleCheck, CircleX } from 'lucide-react';
 import { ease } from '../lib/motion.jsx';
 import { shortHex } from '../lib/ledgerApi.js';
 
@@ -37,8 +37,8 @@ export default function ChainExplorer({ batch, network }) {
         {rows.map(([label, value]) => (
           <React.Fragment key={label}>
             <dt>{label}</dt>
-            <dd className={label === 'Status' ? 'explorer-ok' : 'mono'}>
-              {label === 'Status' && <CircleCheck size={16} strokeWidth={2.75} aria-hidden="true" />}
+            <dd className={label === 'Status' ? (tx.status === 'success' ? 'explorer-ok' : 'verify-result bad') : 'mono'}>
+              {label === 'Status' && (tx.status === 'success' ? <CircleCheck size={16} strokeWidth={2.75} aria-hidden="true" /> : <CircleX size={16} strokeWidth={2.75} aria-hidden="true" />)}
               {value}
             </dd>
           </React.Fragment>

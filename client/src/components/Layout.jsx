@@ -1,5 +1,5 @@
 // The frame around every page: header, footer and the floating tour launcher.
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { ease } from '../lib/motion.jsx';
@@ -23,26 +23,40 @@ export function Brand() {
 export function SiteHeader({ menuOpen, setMenuOpen, reduced, setReduced }) {
   const { pathname } = useLocation();
   const close = () => setMenuOpen(false);
+  const header = useRef(null);
+  const toggle = useRef(null);
+
+  // The desktop menu has two rows. Anchor links and focused controls clear its actual height.
+  useEffect(() => {
+    const update = () => document.documentElement.style.setProperty('--header-offset', `${header.current.offsetHeight + 16}px`);
+    const observer = new ResizeObserver(update);
+    observer.observe(header.current); update();
+    return () => observer.disconnect();
+  }, []);
 
   // Escape closes the phone menu.
   useEffect(() => {
     if (!menuOpen) return;
-    const key = (event) => event.key === 'Escape' && setMenuOpen(false);
+    const key = (event) => { if (event.key === 'Escape') { setMenuOpen(false); toggle.current?.focus(); } };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
   }, [menuOpen, setMenuOpen]);
 
   return (
-    <header className="site-header">
+    <header className="site-header" ref={header}>
       <div className="container header-inner">
         <Brand />
-        <nav aria-label="Main navigation" className={menuOpen ? 'nav nav-open' : 'nav'}>
+        <nav id="site-navigation" aria-label="Main navigation" className={menuOpen ? 'nav nav-open' : 'nav'}>
           <Link to="/#how" onClick={close}>
             {site.nav.howItWorks}
           </Link>
-          <Link to="/#meet-mentor" onClick={close}>
+          <Link to="/app#mentor" onClick={close}>
             {site.nav.mentor}
           </Link>
+          {site.nav.features.map(({ id, label, status }) => <Link key={id} to={`/soon/${id}`} onClick={close}
+            className="nav-feature" aria-current={pathname === `/soon/${id}` ? 'page' : undefined}>
+            <span>{label}</span><small>{status}</small>
+          </Link>)}
           <Link to="/soon" onClick={close}>
             {site.nav.comingSoon}
           </Link>
@@ -67,9 +81,11 @@ export function SiteHeader({ menuOpen, setMenuOpen, reduced, setReduced }) {
             </Link>
           )}
           <button
+            ref={toggle}
             className="menu-toggle"
             aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
             aria-expanded={menuOpen}
+            aria-controls="site-navigation"
             onClick={() => setMenuOpen((value) => !value)}
           >
             {menuOpen ? <X size={24} strokeWidth={2.75} /> : <Menu size={24} strokeWidth={2.75} />}

@@ -1,10 +1,11 @@
 # Sprout build plan: phases and prompts
 
-Revised 2026-11-04. Read `LLM_CONTEXT.md` first; this file is the roadmap it points to.
+Revised 2026-11-06. Read `LLM_CONTEXT.md` first; this file is the roadmap it points to.
 
-**Current scope in one line:** fix the look and feel, make the **Paisa Mentor a real AI bot
-(Gemini)**, and show every other feature as a **clickable "Coming soon" preview** with sample
-data and no real behavior behind it.
+**Current scope:** a local prototype with Gemini mentor chat, PayPal sandbox payments, local-chain
+receipts, NGO learning reviews, saved Seedlings lessons and guardian demo permission/deletion.
+Full-site Hindi, classroom/offline and certificates remain previews. The historical prompts below
+describe earlier phases; the status section records what now works.
 
 Each phase has a **frontend track** and a **backend track** that can run at the same time.
 Phase 0 fixes the API contract (`docs/mentor-api.md`) so both sides build against the same shape.
@@ -34,10 +35,12 @@ Phase 0 fixes the API contract (`docs/mentor-api.md`) so both sides build agains
 | Frontend | Stays **JavaScript** (React 18 + Vite) |
 | Visual style | **Calm neo-brutalist**: keep colours, outlines, Clicky; remove constant motion, tilted cards, custom cursor, glyph ornaments; 17–18px body text |
 | Demo shape | Short landing page + demo app; previews reachable from a "Coming soon" area |
-| Audience | Ages 8–17. Sprouts (12–17) is the live demo; Seedlings (8–11) is a preview |
+| Audience | Ages 8–17. Sprouts (12–17) is the main demo; Seedlings (8–11) has working sample lessons and a saved garden |
 | Hosting | Runs locally with one command **and** deployed online |
 | Accounts | User has a Google AI Studio key. PayPal and a crypto wallet are **not needed** for this scope |
 | Gemini SDK | Official **`@google/genai`** (installed in Phase 1 when first used) |
+| Payout approvals (2026-11-05, audit fix) | Each adult approves with their own **PIN in `server/.env`**; the payee is a fixed `GUARDIAN_PAYPAL_EMAIL`. Chosen over full accounts. |
+| PayPal records (2026-11-05, audit fix) | Saved to one **JSON file** (`server/data/paypal-records.json`), no new packages. Chosen over SQLite. |
 | Dev runner | **`concurrently`** + **`tsx watch`**; `npm run dev` starts both |
 | Validation | **zod** for settings and request bodies |
 | Browser tests | **Playwright**, Chromium only, desktop 1366×768 + Pixel 7 phone |
@@ -52,6 +55,40 @@ non-template layouts and plain wording (must not look AI-made); subtle motion; l
 demo `/app` via React Router; Lucide icons; tour kept and restyled.
 
 ### Phase status
+- **Parent/guardian consent and deletion: implemented (2026-11-06), at the user's explicit request.**
+  `/soon/safety` now records PIN-authorized demo permission per sample learner. The API blocks
+  Seedlings, AI and NGO reviews without active permission; withdrawal blocks access; deletion
+  removes selected learning records without changing PayPal data. Revision checks reject old tabs
+  and delayed learning requests. A failed permission save blocks learning until it is durable.
+  No new dependency, accounts or production legal verification. Hindi, classroom and certificates
+  remain queued; this deliberately brings forward only the requested parent phase.
+  Verified: 140 unit/API/contract tests, 232 browser checks with live Gemini (8 deliberate skips),
+  55 repeated guardian API checks, 12/12 live AI evals and production build passed. See VERIFICATION.md.
+- **Demo presentation: done (2026-11-06), separate from the feature roadmap.** The tour
+  now offers manual and automatic modes, a cursor matching the user's reference, eye tracking,
+  pause/resume and a 12-step silent story across current working flows. Automatic actions are
+  limited to temporary sample controls. No payment, PIN, AI or persistent-learning submissions.
+  Verified: 129 unit/API/contract tests and 209 browser tests passed, 9 skipped; build passed.
+  This does not start the next Hindi phase. Evidence is in `VERIFICATION.md`.
+  Autoplay follow-up: the large panel automatically minimises to a small bottom bar with
+  Pause/Resume, Stop and optional expanded controls; the clock and cursor continue normally.
+  Follow-up verified: 129 unit/API/contract and 213 browser tests passed, 9 skipped; build passed.
+- **Seedlings: done (2026-11-06).** Second remaining feature: three picture lessons at
+  `/soon/seedlings`, server-checked completion, one seed per lesson, a saved shared sample garden,
+  English/Hindi lesson text and device read-aloud. No personal profiles or money. Verification:
+  126 unit/API/contract tests, 195 browser checks passed, 9 skipped; build and real UI/API restart
+  check passed (see `VERIFICATION.md`). Full-site Hindi is next; other features stay queued.
+  The top menu now links directly to Seedlings, PayPal donations/payouts, the impact ledger and
+  NGO workspace, with working/sandbox/test-chain labels. The current blockchain is local
+  Hardhat; public Sepolia is not configured or claimed by this change.
+- **NGO workspace: done (2026-11-05).** First feature from the approved remaining-features plan. Replaces
+  the NGO walkthrough at the same URL with staff PIN access, saved sample activity reviews,
+  learning-credit jars, separate PayPal sandbox totals and CSV export. No payment changes or new
+  dependencies. Verified: 118 unit/API/contract tests; 181 browser checks passed, 9 skipped;
+  production build passed. Seedlings is the next delivered feature, documented above.
+  NGO access follow-up adds a typed-PIN visibility toggle, a setup-access recheck and
+  `JUDGE_GUIDE.md`; saved PIN changes require a server restart before signing in. Follow-up
+  verification: 119 unit/API/contract tests and 183 browser checks passed, 9 skipped; build passed.
 - **Phase 0: done (2026-11-05).** Server with `/api/health`, Vite proxy, one-command dev,
   `docs/mentor-api.md`, Playwright suite (65 tests), `docs/LEARN.md`.
 - **Redesign v2: done (2026-11-05).** Bold neo-brutalist, landing `/` + demo `/app`, Sprout
@@ -84,7 +121,7 @@ demo `/app` via React Router; Lucide icons; tour kept and restyled.
   from the captured amount (`paypal/impactNote.ts`). PayPal receipts (salted codes, no emails)
   are published to the chain by the server (`POST /api/ledger/publish-live`, batches 101+) and
   shown in `/soon/impact` step 4. Donate, Payout and Impact are stamped "Live". Judges run it
-  locally with their own free sandbox keys (README); no deploy. Receipts live in memory.
+  locally with their own free sandbox keys (README); no deploy. Receipts persist in the local JSON file.
 - **Parked by the user:** human voiceover. `npm run make:voice` (Gemini TTS
   `gemini-3.1-flash-tts-preview`, voice Achird, MP3) works; free tier allows ~3 clips/minute
   and ~10/day per model. 6 English clips are in git-ignored `qa/voice-parked/`. Lip-sync for
@@ -259,6 +296,11 @@ without contacting any service. Each preview ends with "What this will do when i
 ---
 
 ## Later: how the "coming soon" features would become real
+
+Completed follow-up bug fixes (2026-11-05): sandbox duplicate-payout recovery, a 29-day retry
+cutoff, PIN-authenticated request restoration after reload, distinct PIN validation, and blocking
+payment operations until a failed JSON-file save can complete. Architecture remains PINs + JSON.
+The remaining re-audit findings are deferred; this phase does not claim production readiness.
 
 Kept so nothing from earlier planning is lost. Not in the current scope.
 

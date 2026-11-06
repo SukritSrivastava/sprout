@@ -4,7 +4,8 @@
 // To add words: add them inside a line's (...) separated by |, or add a new /.../ line.
 // A backslash-b at the start means "start of a word"; `i` at the end means "ignore capitals".
 // This is a safety net on top of the AI's own rules, not a guarantee.
-const patterns: RegExp[] = [
+// The website keeps a copy for when the server is unreachable: client/src/lib/safety.js.
+export const patterns: RegExp[] = [
   // English
   /\bscam|fraud|otp\b|password|pin number|lottery|prize money|double (my|your) money|guaranteed return/i,
   /\bloan|debt|borrow|owe\b|lend me|interest on (a )?loan/i,

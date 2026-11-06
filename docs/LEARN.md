@@ -4,6 +4,35 @@ A guided path through the code, in the order that makes it click. Only want to c
 or the AI mentor's behaviour? Read `EDITING.md` instead. Budget about an hour.
 Keep this file next to the code in VS Code and open each file as you reach it.
 
+Guardian permission now connects the learning features. `content/guardian.js` explains the demo
+policy; `previews/Safety.jsx` lets the guardian record, withdraw or delete with their configured
+PIN. `lib/permission.jsx` gates `/app` and Seedlings, refreshes on foreground/cross-tab changes,
+and unmounts temporary answers/chat when permission changes. The API's `routes/guardian.ts`
+uses the same PIN checker as payouts. `learning/access.ts` checks active permission and its
+revision before lessons or AI; NGO reviews check their learner's permission too. Learning records
+keep acknowledgements separately from PayPal. A12 owns the garden/chat demo; B07/C33 own the other
+sample activities. Deletion removes only the selected learner's progress and activities. A minimal
+blocked marker prevents old requests from restoring them. Nothing here verifies legal identity.
+
+Seedlings is now a working feature: `client/src/content/seedlings.js` holds English/Hindi
+picture lessons; `lib/useSeedlings.js` loads/saves the garden; `previews/Seedlings.jsx` displays
+native radio choices, accessible feedback and device read-aloud. On the server,
+`learning/seedlings.ts` owns correct answers and `routes/seedlings.ts` validates completions.
+The existing learning store saves each lesson once before awarding its seed, separately from
+NGO credit jars and PayPal dollars. There is one shared sample garden, without learner accounts.
+The top menu links directly to working features. `components/Layout.jsx` measures the sticky
+header height so `lib/scroll.js` keeps section links clear of both desktop menu rows.
+
+The presentation is separate from learning features. `components/Tour.jsx` offers manual or
+automatic delivery of the 12 steps in `content/tour.js`. `lib/presentation.jsx` shares cursor
+motion values and an allow-list of four temporary sample controls. `lib/usePresentationPointer.js`
+frames each cue, moves the SVG from `PresentationCursor.jsx`, and stops on pause/exit. `Mascot.jsx`
+uses those coordinates for bounded eye movement only during autoplay. There is no audio or API
+write automation. Pure cursor/gaze maths is in `lib/presentation.js`; tests are in `tour.test.js`
+and `e2e/tour.spec.js`.
+Automatic playback now defaults to the compact `.tour-compact` bottom bar. Its expand/minimise
+state in `Tour.jsx` preserves the clock and feeds the cursor hook a layout key for reframing.
+
 ---
 
 ## 1. The big picture
@@ -88,7 +117,7 @@ sprout/
 │     │  └─ demo/             Earn, Jars, Growth, Mentor (+ ChatBubble), Withdraw sections of /app
 │     └─ lib/
 │        ├─ model.js          the maths: jar split, savings growth, goals
-│        ├─ tour.js           the guided tour: 8 steps, where each goes, words in English + Hindi
+│        ├─ tour.js           12 silent presentation steps, cursor cues and en/hi mode controls
 │        ├─ useMentorChat.js  the mentor chat logic (send, stream, errors, offline answers)
 │        ├─ icons.js          one shared size/stroke for every icon
 │        ├─ model.test.js     unit tests for that maths
@@ -109,10 +138,12 @@ sprout/
 │  │  │                       prepared (backup answers)
 │  │  ├─ rate-limit.ts        max 20 questions per 5 minutes per address
 │  │  ├─ routes/ledger.ts     publish and read impact-ledger batches (incl. real PayPal receipts)
-│  │  ├─ routes/paypal.ts     PayPal sandbox: donations, payouts, receipts
-│  │  ├─ paypal/              client.ts (talks to PayPal), store.ts (receipts + reward pool),
+│  │  ├─ routes/paypal.ts     PayPal sandbox: donations, payout requests + PIN approvals, receipts
+│  │  ├─ paypal/              client.ts (talks to PayPal), store.ts (receipts + reward pool,
+│  │  │                       saved to server/data/paypal-records.json), pins.ts (adult PINs),
 │  │  │                       impactNote.ts (AI thank-you), settings.ts (✏️ amounts)
-│  │  └─ ledger/              merkle.ts (receipt maths), chain.ts (talks to the blockchain)
+│  │  └─ ledger/              merkle.ts (receipt maths), chain.ts (talks to the blockchain),
+│  │                          sample.ts (the only receipts the sample button may publish)
 │  ├─ test/                  route tests with a fake Gemini (no real network needed)
 │  ├─ scripts/eval-mentor.ts `npm run eval:mentor`: misuse attempts against the real AI
 │  └─ .env.example            the settings you can set; copy to .env
@@ -210,6 +241,23 @@ Small exercises that touch each part. Undo them afterwards with `git checkout .`
 ---
 
 ## 7. Words you'll see
+
+Payout recovery: `server/src/paypal/client.ts` resolves duplicate batches using only sandbox
+reads, then verifies the original operation, guardian and amount. `store.ts` holds unsaved
+changes behind a save barrier: no financial read or change proceeds until disk writes succeed.
+`Payout.jsx` remembers only a request code in sessionStorage and restores the server's saved
+approvals through the PIN-protected `/recover` route. The failure cases are tested in
+`server/test/payment-recovery.test.ts` and `e2e/paypal.spec.js`.
+
+The NGO workspace uses a separate learning store (`server/src/learning/store.ts`), so reviews
+cannot spend PayPal money. Each approved sample activity contributes credits once to the learner's
+four jars. The next state is written before becoming visible in memory. Staff access uses
+15-minute tokens held only on the page and the same PIN lockouts as payouts. UI words live in
+`client/src/content/ngo.js`; workspace styling in `client/src/ngo.css` extends the shared theme.
+The access screen can re-fetch roles after setup without a page reload. Its Show PIN button
+changes only the typed input's visibility, never fetches the server's PIN, and does not submit
+the form. PIN changes in `.env` require restarting the server because the source watcher ignores
+hidden settings files. `JUDGE_GUIDE.md` walks through access and review checks without secrets.
 
 | Word | Meaning here |
 | --- | --- |

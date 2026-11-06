@@ -1,0 +1,54 @@
+/* Picture lessons and a small growing garden, using the same tokens as the NGO workspace. */
+.seedlings-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: center; margin: 28px 0; }
+.seedlings-heading h1 { font-size: clamp(38px, 5vw, 64px); max-width: 800px; line-height: 1.05; }
+.seedlings-heading .lead { max-width: 760px; }
+.seedlings-toolbar, .seedlings-lesson-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; }
+.seedlings-toolbar { margin: 24px 0; }
+.seedlings-toolbar .row { display: flex; gap: 8px; }
+.seedlings-layout { display: grid; grid-template-columns: minmax(230px, .7fr) minmax(0, 1.6fr); gap: 28px; align-items: start; }
+.seedlings-garden { background: var(--mint); display: grid; gap: 18px; padding: 28px; }
+.seedlings-garden h2 { font-size: 32px; }
+.seedlings-plots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.seedlings-plot { min-height: 94px; display: grid; place-items: center; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--paper); color: var(--muted); border-bottom-width: 8px; }
+.seedlings-plot.planted { background: var(--green); color: var(--ink); }
+.seedlings-lessons { display: grid; gap: 12px; margin-top: 8px; }
+.seedlings-lesson { display: flex; align-items: center; gap: 12px; text-align: left; background: var(--paper); border: var(--border-thin); border-radius: var(--radius-sm); padding: 14px; box-shadow: var(--shadow-sm); }
+.seedlings-lesson.selected { background: var(--yellow); }
+.seedlings-lesson-number { flex: 0 0 28px; display: grid; place-items: center; font-weight: 800; }
+.seedlings-lesson strong, .seedlings-lesson small { display: block; }
+.seedlings-lesson small { font-size: 14px; margin-top: 2px; }
+.seedlings-lesson:active { transform: translate(2px, 2px); box-shadow: none; }
+.seedlings-lesson-panel { padding: 28px; }
+.seedlings-lesson-panel > h2 { font-size: 34px; }
+.seedlings-lesson-head .btn { white-space: normal; }
+.seedlings-questions { display: grid; gap: 18px; }
+.seedlings-sort { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.seedlings-question { min-width: 0; margin: 0; padding: 18px; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--paper); scroll-margin-top: var(--header-offset, 96px); }
+.seedlings-question legend { max-width: 100%; font-size: 19px; font-weight: 750; padding: 0 6px; }
+.seedlings-question > svg { margin-bottom: 10px; }
+.seedlings-question p { font-size: 16px; margin-bottom: 12px; }
+.seedlings-question.needs-answer { border-style: dashed; border-width: 3px; background: var(--yellow); }
+.seedlings-choices { display: grid; gap: 10px; }
+.seedlings-choice { display: flex; align-items: center; gap: 10px; padding: 10px; min-height: 46px; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--white); cursor: pointer; font-size: 16px; font-weight: 600; }
+.seedlings-choice.selected { background: var(--purple); }
+.seedlings-choice input { width: 18px; height: 18px; flex: 0 0 18px; accent-color: var(--ink); }
+.seedlings-choice:has(input:focus-visible) { outline: 3px solid var(--ink); outline-offset: 3px; }
+.seedlings-question:disabled { opacity: .7; }
+.seedlings-question:disabled .seedlings-choice { cursor: wait; }
+.seedlings-feedback { min-height: 58px; scroll-margin-top: var(--header-offset, 96px); }
+.seedlings-saved { display: flex; align-items: start; gap: 10px; font-weight: 650; }
+.seedlings-saved svg { flex: 0 0 20px; }
+.seedlings-submit { min-height: 54px; white-space: normal; }
+.seedlings-loading { min-height: 300px; justify-items: start; align-content: center; }
+@media (hover: hover) and (pointer: fine) {
+  .seedlings-lesson:hover:not(:disabled), .seedlings-choice:hover { background: var(--yellow); }
+}
+@media (max-width: 900px) { .seedlings-layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) {
+  .seedlings-heading { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .seedlings-heading > svg { display: none; }
+  .seedlings-garden, .seedlings-lesson-panel { padding: 20px; }
+  .seedlings-sort { grid-template-columns: minmax(0, 1fr); }
+  .seedlings-lesson-head { align-items: start; }
+  .seedlings-lesson-panel > h2 { font-size: 30px; }
+}

@@ -12,7 +12,9 @@ export async function sha256(text) {
 }
 
 // The exact text that gets fingerprinted. No names: kids appear only as a pseudonymous code.
-export const receiptText = (r) => `${r.id}|${r.type}|${r.amount}|${r.date}|${r.ref}`;
+// "v2" = this format; `currency` (INR or USD) says what the amount counts.
+// Must match server/src/ledger/merkle.ts (a server test checks they agree).
+export const receiptText = (r) => `v2|${r.id}|${r.type}|${r.amount}|${r.currency}|${r.date}|${r.ref}`;
 
 export const leafHash = (receipt) => sha256(`leaf:${receiptText(receipt)}`);
 const pairHash = (left, right) => sha256(`node:${left}${right}`);

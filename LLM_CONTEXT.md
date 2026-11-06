@@ -4,7 +4,7 @@ Read this whole file before touching anything. It is written so that any AI assi
 ChatGPT/Codex, Gemini, Cursor, Copilot…) can continue the project without the earlier
 conversations. **The source code wins if this file disagrees with it**, and then fix this file.
 
-Snapshot: **2026-11-05**, after Phase 6 (PayPal sandbox live, verified with the user's keys).
+Snapshot: **2026-11-06**, after guardian consent/deletion, Seedlings and the silent presentation feature.
 Last commit at writing: `1359975`. The user pushes to GitHub themselves.
 
 ---
@@ -84,11 +84,15 @@ Kid-facing money is in rupees (₹); PayPal sandbox money is **USD** (see §8).
 | Payout to guardian | `/soon/payout` | **Real PayPal sandbox** Payouts |
 | Impact ledger | `/soon/impact` | **Real** Merkle maths + contract + local chain; steps 1–3 use sample receipts, step 4 uses the real PayPal receipts |
 | Demo jars, earn, goals, withdraw | `/app` | Sample data in the browser (refresh resets); withdraw is simulated |
-| NGO dashboard, Seedlings (8–11), consent/safety, Hindi everywhere, classroom, certificates | `/soon/*` | "Coming soon" clickable previews, sample data |
-| Guided tour | button "Tour with Sprout" | Real UI feature, captions en/hi, no voice |
+| NGO dashboard | `/soon/ngo` | Working local demo: staff PIN, saved sample reviews/jars, separate sandbox totals, aggregate CSV |
+| Seedlings (8–11) | `/soon/seedlings` | Working shared sample garden, three checked lessons, saved one-time seeds, en/hi read-aloud |
+| Guardian consent/safety | `/soon/safety` | Working local demo: guardian PIN acknowledgement, withdrawal and selected-learner deletion |
+| Hindi everywhere, classroom, certificates | `/soon/*` | "Coming soon" clickable previews, sample data |
+| Silent presentation | floating "Present with Sprout" / "Tour with Sprout" | Manual or automatic, 12 steps, reference cursor, mascot gaze, en/hi captions, no audio |
 
-Not implemented: real money, logins/authentication, a database (PayPal receipts + pool live in
-server memory and reset on restart), a public blockchain, deployment.
+Not implemented: real money, full adult accounts (adults approve payouts with PINs from
+`server/.env`), a real database (PayPal records are one JSON file, `server/data/paypal-records.json`),
+a public blockchain, deployment.
 
 ---
 
@@ -113,7 +117,7 @@ npm run dev                            # web 127.0.0.1:5173 + api 127.0.0.1:8787
 | --- | --- |
 | `npm run dev` | concurrently: `[web]` Vite, `[api]` tsx watch, `[chain]` Hardhat node |
 | `npm run dev:web` / `dev:api` / `dev:chain` | one of them |
-| `npm test` | client node tests (11) + server tests (45) + Solidity contract tests (6) |
+| `npm test` | client node tests (24) + server tests (110) + Solidity contract tests (6) |
 | `npm run test:e2e` | Playwright (starts/reuses chain, api, web) |
 | `npm run test:all` | both |
 | `npm run build` | client → `client/dist`, server → `server/dist` |
@@ -142,6 +146,9 @@ reloads it.
 | `PAYPAL_CLIENT_SECRET` | – | secret; server only |
 | `CHAIN_RPC_URL` | http://127.0.0.1:8545 | |
 | `PUBLISHER_PRIVATE_KEY` | – | only for a real public chain later; local uses Hardhat test account #0 |
+| `PAYOUT_PIN_MENTOR` / `_ADMIN` / `_GUARDIAN` | – | each adult's payout PIN (6+ chars); all three + guardian email switch payouts on |
+| `GUARDIAN_PAYPAL_EMAIL` | – | the only payee; a sandbox personal account email |
+| `DATA_FILE` | `data/paypal-records.json` | where PayPal records are saved (relative to `server/`; git-ignored) |
 
 Note: the user's `.env` has short `#…` comments after the PayPal values; Node's env parser treats
 them as comments, which is fine.
@@ -154,8 +161,9 @@ Server: fastify 5, zod 4, @google/genai 2.32, viem 2.57. Dev: typescript 7, tsx,
 @breezystack/lamejs (voice script only). Chain: hardhat 3.21 (dev). Root dev: @playwright/test,
 concurrently. **No PayPal npm package**: the server calls PayPal's REST API with `fetch`, and the
 browser loads PayPal's SDK script from `https://www.paypal.com/sdk/js`. Prettier 3 via npx (width
-100, single quotes), no lint, no CI. `npm audit` flags an old zod bundled inside Hardhat (dev
-only; accepted).
+100, single quotes), no lint, no CI. `npm audit` flags an old zod 3 bundled inside Hardhat (dev
+tool only; no patched zod 3 exists, and forcing zod 4 into Hardhat was tried and rejected on
+2026-11-05; accepted until Hardhat updates).
 
 ---
 
@@ -191,14 +199,15 @@ tests inject fakes (`model: null` = prepared answers, fake chain, fake PayPal).
 | --- | --- |
 | `main.jsx` | BrowserRouter, font, Lenis CSS, styles |
 | `App.jsx` | shell: reduced-motion (OS + header toggle, starts/stops Lenis), `useHashScrolling`, page transitions (`AnimatePresence`, instant when motion is off), routes `/`, `/app`, `/soon`, `/soon/:id`, 404, header/footer, tour |
-| `content/` ✏️ | **all site words**: `site.js` (nav, footer note, tour button, 404), `home.js` (hero, how, mentor band, trust, "Live and coming soon" list `show: ['donate','payout','impact','ngo','seedlings']`, closing), `demo.js` (`sampleKid`, `jars`, demo words, `mentorText` en/hi, `offlineAnswers`), `tour.js` (8 steps `{path,id,seconds,en,hi}`) |
+| `content/` ✏️ | **all site words**: `site.js` (nav, footer note, tour button, 404), `home.js` (hero, how, mentor band, trust, "Live and coming soon" list `show: ['donate','payout','impact','ngo','seedlings']`, closing), `demo.js` (`sampleKid`, `jars`, demo words, `mentorText` en/hi, `offlineAnswers`), `tour.js` (12 steps `{path,id,seconds,cues,en,hi}` and `tourUi` controls) |
 | `pages/Landing.jsx` | `/` sections ids `home`, `how`, `meet-mentor`, `trust`, `soon` |
 | `pages/Demo.jsx` | `/app`: Earn, Jars, Growth, Mentor, Withdraw; owns `earned`, `save`, `goalId`, `monthly` |
 | `pages/Soon.jsx` | `SoonHub` (`/soon`, lists previews, green "Live" stamps) and `SoonPreview` |
 | `pages/NotFound.jsx` | 404 |
 | `components/Layout.jsx` | `Brand`, `SiteHeader` (nav: How it works, Mentor, Coming soon; motion toggle; phone menu), `SiteFooter`, `TourLauncher` |
 | `components/Mascot.jsx` | Sprout SVG, moods `happy`/`think`/`cheer` |
-| `components/Tour.jsx` | tour panel: clock, en/hi captions, navigates `path#id`, highlights `.tour-target` |
+| `components/Tour.jsx` | silent mode chooser, manual/automatic clock, pause, route readiness, en/hi captions and focus restoration |
+| `components/PresentationCursor.jsx`, `lib/presentation.jsx`, `lib/usePresentationPointer.js` | reference SVG cursor; shared motion values and sample-action allow-list; cue tracking/camera/cleanup |
 | `components/landing/*.jsx` | `Hero`, `HowItWorks`, `MeetMentor`, `Trust`, `ComingSoon` (rows use `live` stamp), `Closing` |
 | `components/demo/*.jsx` | `Earn`, `Jars`, `Growth`, `Mentor` + `ChatBubble`, `Withdraw` (simulated trail) |
 | `previews/index.js` | registry `{ id, title, live?, line, icon, color, component }`; `live` = green stamp text ("Live · PayPal sandbox", "Live · local blockchain") for donate, payout, impact |
@@ -209,13 +218,17 @@ tests inject fakes (`model: null` = prepared answers, fake chain, fake PayPal).
 | `previews/ImpactLedger.jsx` | 6 steps: fingerprints (sample receipts), batch code + publish to chain + explorer, verify a receipt, **step 4 "Now with real PayPal receipts"**, proves/doesn't, what's real |
 | `previews/LivePayPalReceipts.jsx` | lists live receipts, "Publish N PayPal receipts to the blockchain", explorer, browser-rebuilt code must match chain |
 | `previews/ChainExplorer.jsx` | mini block explorer (status, block, tx, time, from, to, code, gas, fee in test ETH) |
-| `previews/NgoDashboard.jsx`, `Seedlings.jsx`, `Safety.jsx`, `More.jsx` (`Hindi`, `Classroom` PIN 1234, `Certificates` code SPR-MB1-7Q4K) | Coming-soon previews |
-| `lib/api.js` | `call(path, options)` / `post(path, body)` → `{ok:true,...}` or `{ok:false,status,message}`, never throws |
-| `lib/paypalApi.js` | `paypalConfig`, `liveReceipts`, `createOrder`, `captureOrder`, `sendPayout`, `payoutStatus`, `dollars` |
-| `lib/paypalSdk.js` | loads `https://www.paypal.com/sdk/js?client-id=…&currency=USD&intent=capture&components=buttons` once |
+| `previews/NgoDashboard.jsx`, `Seedlings.jsx` | Working local sample workspace and saved picture lessons |
+| `previews/Safety.jsx`, `content/guardian.js`, `lib/permission.jsx` | Working guardian demo permission, withdrawal, selected-learner deletion and learning gate |
+| `previews/More.jsx` (`Hindi`, `Classroom` PIN 1234, `Certificates` code SPR-MB1-7Q4K) | Coming-soon previews |
+| `lib/api.js` | `call(path, options)` / `post(path, body)` → `{ok:true,...}` or `{ok:false,status,message}`, never throws; a 200 that isn't a JSON object counts as a failure |
+| `lib/paypalApi.js` | `paypalConfig`, `liveReceipts`, `createOrder`, `captureOrder`, `requestPayout`, `approvePayout`, `sendPayout`, `payoutStatus`, `dollars` |
+| `lib/paypalSdk.js` | loads `https://www.paypal.com/sdk/js?client-id=…&currency=USD&intent=capture&components=buttons` once; any failure or a 20 s timeout clears it so a retry works |
+| `lib/sampleReceipts.js` | the six sample receipts (INR) of batch 1; must equal `server/src/ledger/sample.ts` (tested) |
+| `lib/safety.js` | copy of the server's sensitive-word list for offline use; must equal `server/src/mentor/safety.ts` (tested) |
 | `lib/ledger.js` | SHA-256 Merkle maths: `leafHash`, `buildTree`, `proofFor`, `verifyReceipt`, `short` |
 | `lib/ledgerApi.js` | `ledgerStatus`, `readBatch`, `publishBatch`, `publishLiveReceipts`, `shortHex` |
-| `lib/mentorApi.js`, `lib/useMentorChat.js` | mentor streaming client and chat hook |
+| `lib/mentorApi.js`, `lib/useMentorChat.js` | mentor streaming client (needs a `done` event, else `cutShort`) and chat hook (message ids + a round counter so a cleared chat ignores late replies; long mentor replies trimmed to 1,000 chars in history; offline sensitive check) |
 | `lib/model.js` | `money`, `splitReward`, `projectSavings`, `monthsToGoal`, `describeMonths`, goals |
 | `lib/tour.js`, `motion.jsx`, `scroll.js`, `hooks.js`, `icons.js` | tour timing, animation helpers, Lenis scrolling, `useCountUp`, icon props |
 | `styles.css` | the whole design system (tokens → components → pages → tour → reduced motion → tablet/phone) |
@@ -233,13 +246,16 @@ tests inject fakes (`model: null` = prepared answers, fake chain, fake PayPal).
 | `src/routes/mentor.ts` | `POST /api/mentor/chat`, NDJSON stream `start`/`delta`/`done` |
 | `src/mentor/` | `prompt.ts` ✏️ (`MENTOR_RULES`, `LANGUAGE_RULES`, `SENSITIVE_TOPIC_RULE`), `settings.ts` ✏️ (model, temperature 0.5, 400 tokens, 15s, 600 chars, 12 messages, 20 per 5 min), `safety.ts` (risky-topic words incl. Hindi/Hinglish), `prepared.ts`, `schema.ts` (goal names enum), `model.ts` (only Gemini caller; `MentorModel` interface) |
 | `src/paypal/client.ts` | **only PayPal caller.** `PAYPAL_SANDBOX_API = https://api-m.sandbox.paypal.com` hard-coded; `CURRENCY = 'USD'`; token cache; `createOrder`, `captureOrder`, `sendPayout`, `getPayout`; `PayPal-Request-Id` for safe retries; `PayPalError(status, issue)` |
-| `src/paypal/store.ts` | in-memory receipts + pool. Ids `DON-yymm-nnnn` / `PAY-yymm-nnnn`; refs `donor-<6 hex>` (salted SHA-256 of PayPal payer id) and `guardian-<6 hex>` (of email); random salt per server start; pool = donations − payouts not failed; payouts reserved as `SENDING` before calling PayPal; live batches start at **101** |
+| `src/paypal/store.ts` | receipts, pool, open orders and payout requests, saved to `DATA_FILE` after every change (temp file + rename). Ids `DON/PAY/REQ-yymm-nnnn` from counters that never go back; refs `donor-<16 hex>` / `guardian-<16 hex>` (salted SHA-256; salt saved in the file); pool = donations − payouts not failed (`UNKNOWN` stays reserved); a `SENDING` payout found at start-up becomes `UNKNOWN`; `unpublished()` = completed donations + `SUCCESS` payouts only; public list hides `paypalId`; orders expire after 24 h, max 500; live batches start at **101** |
+| `src/paypal/pins.ts` | constant-time PIN check; 5 wrong PINs lock that adult 15 min (shared by all addresses) |
 | `src/paypal/impactNote.ts` | Gemini donor note (`NOTE_RULES` ✏️: 2–3 sentences, ≤60 words, facts only), via `MentorModel`, 10s timeout, prepared fallback |
 | `src/paypal/settings.ts` ✏️ | `ngoName`, `donationAmounts [5,10,25,50]`, `rewardDollars 2`, `maxPayoutDollars 50`, `approvers ['mentor','admin','guardian']` |
-| `src/routes/paypal.ts` | PayPal routes (§9) |
-| `src/ledger/merkle.ts` | same receipt maths as the client (parity-tested) + `batchTotals` |
-| `src/ledger/chain.ts` | viem client: lazy deploy of `ImpactLedger` (address saved in git-ignored `chain/deployments/<chainId>.json`), one-at-a-time write queue (avoids nonce clashes), `status`, `publish`, `readBatch` with tx details |
-| `src/routes/ledger.ts` | ledger routes (§9) incl. `publish-live` |
+| `src/routes/paypal.ts` | PayPal routes (§9): donations, payout request → PIN approvals → send, status (15 s cache) |
+| `src/mentor/privacy.ts` | blanks out emails and 7+ digit numbers before Gemini sees any turn |
+| `src/ledger/merkle.ts` | same receipt maths as the client (parity-tested), format v2 with currency; `batchTotals` refuses mixed currencies |
+| `src/ledger/sample.ts` | the fixed sample receipts; the only ones `/api/ledger/publish` accepts |
+| `src/ledger/chain.ts` | viem client: deploys `ImpactLedger` on the first **publish** only (address + deploy block saved in git-ignored `chain/deployments/<chainId>.json`); reads never deploy; event search starts at the deploy block; published batches cached; exact-loopback `isLocal`; Hardhat key only on chain 31337; one-at-a-time write queue |
+| `src/routes/ledger.ts` | ledger routes (§9) incl. `publish-live`; publishes queued one at a time; reads rate-limited |
 | `scripts/check-paypal.ts` | `npm run check:paypal -w server` |
 | `scripts/eval-mentor.ts`, `scripts/make-voice.ts` | misuse eval; parked voice |
 | `test/*.test.ts` | `health`, `mentor`, `ledger`, `paypal` (node:test + `app.inject`, fakes only) |
@@ -278,17 +294,28 @@ a receipt if status is `COMPLETED`, currency USD and the amount equals what it c
 orders it didn't create; capturing twice returns the same receipt) → Gemini writes the impact note
 from the amount and reward count only (never donor data) → page shows receipt + note.
 
-**Payout flow:** `POST /api/paypal/payouts {email, amount, approvals}` → needs ≥2 **different**
-approvers from the list and `amount ≤ pool` → receipt reserved (`SENDING`) → Payouts v1 call →
-receipt gets PayPal batch id + status (usually `PENDING`, later `SUCCESS`/`UNCLAIMED`); if PayPal
-refuses, the receipt is dropped and the pool is untouched; `GET /api/paypal/payouts/:batchId`
-refreshes status; failed/returned/blocked statuses put money back in the pool. The guardian email
-goes only to PayPal; the receipt stores a salted code. Approvals are honour-based (no logins):
-this is stated on the page and in the README.
+**Payout flow (since the 2026-11-05 audit fixes):** `POST /api/paypal/payout-requests {amount}`
+makes a request bound to that amount and to `GUARDIAN_PAYPAL_EMAIL` → two different adults
+`POST …/:id/approve {approver, pin}` with their own `PAYOUT_PIN_*` → one of them
+`POST …/:id/send {approver, pin}` (PIN again) → checks the pool and that no payout is `UNKNOWN` →
+receipt reserved (`SENDING`) and a sender batch id saved **before** the Payouts v1 call → receipt
+gets PayPal batch id + status. A clear 4xx refusal on the first try → `REJECTED` (money back in
+the pool, id kept). A timeout, lost answer or 5xx → `UNKNOWN` (money reserved, new payouts
+blocked); sending the same request again retries with the same ids. Duplicate responses are
+resolved through a sandbox-only lookup and checked against the operation, payee and amount.
+Retries are limited to 29 days from first send (legacy records use request creation time).
+Older unknown payouts stay reserved for manual review. Distinct adult PINs are enforced at startup.
+`POST …/:id/recover {approver,pin}` restores a request after reload; sessionStorage remembers
+only the request code. The API helper preserves recovery data even on HTTP errors.
+If a record save fails, store reads/changes remain blocked until the pending result can be saved.
+Do not restart during a disk outage: unsaved results still require provider reconciliation after a crash.
+`GET /api/paypal/payouts/:batchId` refreshes status; failed/returned/blocked statuses put money
+back in the pool. The email never reaches the browser; receipts store a salted code.
 
-**Ledger link:** `POST /api/ledger/publish-live` takes the server's own unpublished receipts (not
-`SENDING`), up to 64, computes the Merkle root from `id|type|amount|date|ref` only, skips batch
-numbers already on the chain, publishes, and marks them with the batch id (101, 102…).
+**Ledger link:** `POST /api/ledger/publish-live` takes the server's own settled receipts
+(completed donations, `SUCCESS` payouts), up to 64, computes the Merkle root from
+`v2|id|type|amount|currency|date|ref`, skips batch numbers already on the chain, publishes,
+checks the chain holds exactly that batch, and only then marks them (101, 102…).
 
 **Sandbox gotchas found with the user (important for anyone setting it up):**
 1. **The sandbox business account must be in the United States.** PayPal creates the default
@@ -320,19 +347,23 @@ accepted (PENDING), both sealed as batch #101 in block #3 with a matching code.
 | `GET /api/paypal/config` | `{configured, clientId, currency, mode:'sandbox', amounts, rewardDollars, maxPayoutDollars, ngoName, poolDollars}` |
 | `POST /api/paypal/orders` | `{amount}` → `{id}` |
 | `POST /api/paypal/orders/:id/capture` | → `{receipt, note:{text,source}, poolDollars}` |
-| `POST /api/paypal/payouts` | `{email, amount, approvals}` → `{receipt, poolDollars}` |
+| `POST /api/paypal/payout-requests` | `{amount}` → `{request, poolDollars}` |
+| `POST /api/paypal/payout-requests/:id/approve` | `{approver, pin}` → `{request, poolDollars}` |
+| `POST /api/paypal/payout-requests/:id/send` | `{approver, pin}` → `{request, poolDollars}` |
+| `POST /api/paypal/payout-requests/:id/recover` | PIN-authenticated read, no payment sent; restores request + approvals after reload |
 | `GET /api/paypal/payouts/:batchId` | refreshed `{receipt, poolDollars}` |
 | `GET /api/paypal/receipts` | `{receipts, poolDollars}` |
 | `GET /api/ledger/status` | `{ok, chainId, blockNumber, contract, publisher, local}` |
-| `POST /api/ledger/publish` | sample batch `{batchId, receipts}`; server computes the root |
+| `POST /api/ledger/publish` | sample batch only: `{batchId: 1, receipts: <the exact sample list>}`; server computes the root |
 | `POST /api/ledger/publish-live` | real PayPal receipts → `{batch, alreadyPublished, receipts}` |
 | `GET /api/ledger/batches/:id` | `{batch}` or `{batch:null}` |
 
 Error shape: `{ error: '<code>', message: '<human readable>' }`. PayPal errors → `502 paypal_error`
 with `issue` and friendly messages (`ORDER_NOT_APPROVED`, `INSUFFICIENT_FUNDS`,
 `PAYOUT_NOT_AVAILABLE`, `AUTHORIZATION_ERROR`, bad keys); no keys → `503 paypal_not_configured`;
-chain down → `503 chain_unreachable`. Rate limits: PayPal orders/captures 20, payouts 10, ledger
-publishes 10, per device per 5 minutes.
+chain down → `503 chain_unreachable`. Rate limits: PayPal orders/captures 20, payout steps 20,
+ledger publishes 10, per device per 5 minutes; PayPal and ledger reads 60 per minute; wrong PINs
+lock an adult after 5.
 
 ---
 
@@ -347,8 +378,14 @@ publishes 10, per device per 5 minutes.
   dots, streaming, suggestions, Hindi switch, trusted-adult card with Childline 1098 for risky
   topics, 429/400 notices, client fallback); simulated Withdraw trail.
 - **`/soon` hub**: nine rows, three with green Live stamps. Previews use `Walkthrough`.
-- **Tour**: 8 steps, ~84 s, across `/`, `/app`, `/soon/impact`, `/soon`; en/hi captions; last
-  step "Real PayPal, and more coming".
+- **Presentation**: choose manual or automatic before any navigation. Twelve steps, 108 seconds
+  automatically, across home, sample app, donation/payout, impact, NGO, Seedlings and hub. No audio.
+  Automatic cursor follows cues; mascot eyes follow its actual position. Sample actions only:
+  earn, save 65%, headphones goal, ₹500 monthly. No API writes are automated. Pause/visibility
+  freezes playback; manual takeover hides cursor/gaze without restarting. Reduced motion jumps.
+  Autoplay defaults to a ~62px-high bottom bar with Pause/Resume, Stop and expand controls.
+  Captions/settings expand on demand; minimise preserves pause/time and updates cursor framing.
+  Completed autoplay stays compact with Replay/Stop. Manual/chooser panels retain their full view.
 - **Motion**: Lenis smooth scroll + Motion animations; off via OS reduced-motion or the header
   toggle (desktop ≥1100 px), which also stops Lenis and swaps pages instantly. Hover effects only
   on mouse devices (`@media (hover:hover) and (pointer:fine)`).
@@ -368,14 +405,17 @@ publishes 10, per device per 5 minutes.
 
 ## 11. Verification status
 
-`npm test`: **62 pass** (11 client, 45 server, 6 contract). `npx playwright test`: **162 pass, 9
-skipped by design** (desktop + phone). PayPal browser tests (`e2e/paypal.spec.js`) replace PayPal's
+`npm test`: **140 pass** (24 client, 110 server, 6 contract), after guardian consent/deletion.
+Full Playwright with `LIVE_AI=1`, two workers: **232 pass, 8 intentional skips**, no failures or
+retries (desktop + phone; details in `VERIFICATION.md`). Guardian API tests also passed five
+consecutive repeats (55 checks). Build and all 12 live Gemini evaluation checks passed.
+PayPal browser tests (`e2e/paypal.spec.js`) replace PayPal's
 SDK with a stand-in button and fake `/api/paypal` answers, because approving a real payment needs
 a human login; the real sandbox was checked by hand (§8). Opt-in `LIVE_AI=1` test hits real Gemini.
 
-**Known flake:** on a busy laptop, one older animation-heavy test per full run (a different one
-each time: tour entry points, Withdraw, `#section` landing) can time out while smooth-scroll is
-still moving; each passes alone. Not fixed yet (a candidate: run those with reduced motion).
+Earlier runs had intermittent animation timing failures. The NGO delivery also fixed a concrete
+phone anchor-scroll bug: Lenis now synchronizes with native scroll position before gliding to
+an absolute target with one header offset. The full browser run then passed without retries.
 Testing note: the Claude app's preview pane freezes animations when hidden; judge motion with
 Playwright.
 
@@ -399,6 +439,8 @@ Playwright.
 | `1dbed94` | Phase 5: ImpactLedger on a local Hardhat chain, publish + explorer + verify |
 | `a000dbe` | Phase 6: PayPal sandbox donations/payouts, Gemini donor note, live receipts on chain, judge README |
 | `1359975` | PayPal verified live; US-account setup; `check:paypal`; pop-up message |
+| `18ac6ab` | AI-assistant handoff docs |
+| (next) | Security audit fixes (`SECURITY_AND_BUG_AUDIT.md`): PIN-approved payouts to a fixed guardian, JSON-file records, safe capture/payout retries, settled-only ledger, receipt format v2 with currency, mentor privacy/safety/stream fixes. The user chose PINs over full accounts and a JSON file over SQLite. |
 
 Key decisions the user made (don't reopen without asking): React+Vite, Fastify+TS, Gemini
 `gemini-3.5-flash-lite`; neo-brutalist look with mascot; one "edit me" content folder; Phase 5
@@ -411,11 +453,54 @@ no video; voiceover parked; product name sprout.io (brand only).
 
 ## 13. Ideas for next steps (ask the user before starting any)
 
-- Persist PayPal receipts and the pool (SQLite or a hosted DB) so restarts don't clear them.
+The user approved FEATURE_IMPLEMENTATION_PLAN.md on 2026-11-05, with **one feature at a time** and
+testing/polish before the next. First delivery: NGO workspace at `/soon/ngo`, using existing staff
+PINs and a separate `LEARNING_DATA_FILE` (default `data/learning-records.json`). `learning/store.ts`
+persists sample activity decisions before changing memory; each can be approved/returned once.
+Learning credits (not money) split 50/30/10/remainder into sample jars; fractional shares stay
+in Invest so every jar remains nonnegative and the total is conserved. Staff get full-history
+PayPal USD aggregates and a names-free CSV. Fifteen-minute staff tokens stay in page memory;
+PIN lockouts are shared with payouts. UI words: `content/ngo.js`; scoped theme: `ngo.css`.
+NGO access follow-up: saving `.env` does not restart the API's source watcher. The user saved a
+valid admin PIN while the old server still reported no roles; reloading the API fixed login.
+Keep manual restart guidance in the setup state and `JUDGE_GUIDE.md`. **Check access again**
+fetches roles without remounting the page; the form chooses an available role. **Show PIN**
+reveals only typed input, resets on submit, and never reads a configured PIN from the server.
+Do not publish actual PINs in the judge guide: these credentials are also used for payouts.
+Seedlings was implemented on 2026-11-06. `learning/seedlings.ts` owns correct lesson answers;
+`routes/seedlings.ts` checks all answers before the shared learning store saves a completion.
+Existing version-1 learning files default to an empty `seedlings` array and retain NGO decisions.
+There is one shared sample garden, no private learner identity or money. Each of needs/wants,
+waiting and sharing earns one seed once. Failed saves do not mutate memory; retry is idempotent.
+The client uses `content/seedlings.js`, `lib/useSeedlings.js`, `previews/Seedlings.jsx` and
+`seedlings.css`. Only the lesson language preference is in localStorage. Speech stops on exit
+and lesson/language changes. Requests have a 12-second timeout and discard late replies.
+The header directly links to the working learning, PayPal, NGO and ledger flows; Mentor opens
+the actual chat. Desktop uses two rows and scrolling measures the header height. Blockchain
+labels say test blockchain; current network is local Hardhat, with no Sepolia deployment.
+The user explicitly requested the parent phase on 2026-11-06 and confirmed it means guardian
+consent/deletion. That phase was brought forward on its own. `routes/guardian.ts` records the
+`demo-permission-v1` acknowledgement with the configured guardian PIN. Fixed sample codes are
+A12/B07/C33; A12 owns Seedlings and the AI demo. No adult identity is verified. `/app` and
+Seedlings require permission; NGO reviews check the activity's learner. The client supplies
+`x-learning-revision` so old requests cannot recreate progress after withdrawal/deletion and
+fresh permission. Deletion removes that learner's activities, derived jars and A12's garden;
+it preserves separate PayPal records and keeps only a minimal blocked permission marker.
+Pending permission writes block all learning reads/writes until durable; keep the server running
+through a storage outage. The client clears learning/chat on revision changes, cross-tab storage
+events and foreground checks; it rechecks every 15 seconds while visible. PINs stay out of storage.
+No offline queues or issued certificates exist yet. Guardian words are in `content/guardian.js`;
+the gate/provider are `lib/permission.jsx`. Existing feature tests explicitly inject permitted
+samples; guardian tests use the real blocked-by-default app and disposable data. The live mentor
+eval also uses a permitted in-memory synthetic sample, never the user's saved permission.
+Hindi across the main site is next. Classroom and certificates remain queued; do not implement
+them together. Shared behavior is recorded in `UX-CONTRACT.md`.
+
+- Move PayPal records from the JSON file to a database (SQLite) if many people ever use it.
 - PayPal webhooks (`PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.PAYOUTSBATCH.*`) for status (needs a public URL/tunnel).
-- Real logins so each adult approves from their own account.
+- Full accounts instead of PINs, so each adult approves from their own login.
 - Publish to a public test network (Base Sepolia): set `CHAIN_RPC_URL` + `PUBLISHER_PRIVATE_KEY` (user types the key).
-- Fix the animation-timing flake in older Playwright tests.
+- Investigate any further animation-timing failures from their traces while preserving motion.
 - Optional hosted demo (Render is a sponsor) only if the user changes their "no deploy" decision.
 
 Never put secrets in this file, client code or docs.

@@ -68,8 +68,12 @@ Scroll slowly so the three steps animate in.
 
 **"sprout.io: money skills for every kid, whatever they start with. Thank you."**
 
-Optional: if there's time, click **Take the tour**. It plays a 1½-minute guided tour by itself, in
-English or Hindi.
+Optional: click **Present with Sprout** and choose **Present manually** to control the pace while
+you speak, or **Present automatically** for the 108-second cursor-led walkthrough. Both modes are
+silent, with English/Hindi captions. Automatic mode demonstrates only temporary sample controls;
+payments, PINs and saved learning actions remain in your hands. Pause or switch to Manual any time.
+Autoplay minimises to a small bottom bar. Pause/Resume and Stop stay visible; the up arrow opens
+the full controls when you want captions or to switch modes.
 
 ---
 

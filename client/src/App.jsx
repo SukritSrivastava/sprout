@@ -10,6 +10,8 @@ import Demo from './pages/Demo.jsx';
 import NotFound from './pages/NotFound.jsx';
 import { SoonHub, SoonPreview } from './pages/Soon.jsx';
 import { ReducedMotion, ease } from './lib/motion.jsx';
+import { PresentationProvider } from './lib/presentation.jsx';
+import { LearningGate, PermissionProvider } from './lib/permission.jsx';
 import { scrollToId, scrollToTop, startSmoothScroll, stopSmoothScroll, waitForId } from './lib/scroll.js';
 
 const osPrefersReduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -68,7 +70,7 @@ function Pages({ startTour, location }) {
   return (
     <Routes location={location}>
       <Route path="/" element={<Landing onTour={startTour} />} />
-      <Route path="/app" element={<Demo />} />
+      <Route path="/app" element={<LearningGate><Demo /></LearningGate>} />
       <Route path="/soon" element={<SoonHub />} />
       <Route path="/soon/:id" element={<SoonPreview />} />
       <Route path="*" element={<NotFound />} />
@@ -92,7 +94,7 @@ export default function App() {
   const closeTour = useCallback(() => setTourOpen(false), []);
 
   return (
-    <ReducedMotion.Provider value={reduced}>
+    <PermissionProvider><PresentationProvider><ReducedMotion.Provider value={reduced}>
       <MotionConfig reducedMotion={reduced ? 'always' : 'never'}>
         <a className="skip-link" href="#main">
           Skip to content
@@ -127,6 +129,6 @@ export default function App() {
         <TourLauncher hidden={tourOpen} onTour={startTour} />
         <Tour open={tourOpen} onClose={closeTour} returnFocusRef={tourTrigger} />
       </MotionConfig>
-    </ReducedMotion.Provider>
+    </ReducedMotion.Provider></PresentationProvider></PermissionProvider>
   );
 }

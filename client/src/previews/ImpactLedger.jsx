@@ -13,18 +13,11 @@ import LivePayPalReceipts from './LivePayPalReceipts.jsx';
 import { money } from '../lib/model.js';
 import { buildTree, proofFor, short, verifyReceipt } from '../lib/ledger.js';
 import { publishBatch, readBatch } from '../lib/ledgerApi.js';
+import { SAMPLE_BATCH_ID, sampleReceipts } from '../lib/sampleReceipts.js';
 
-const BATCH_ID = 1; // the sample batch's number on the chain
+const BATCH_ID = SAMPLE_BATCH_ID; // the sample batch's number on the chain
 const NETWORK = 'Local test chain · fake ETH';
-
-const receipts = [
-  { id: 'DON-2611-0042', type: 'donation', amount: 500, date: '2026-11-03', ref: 'donor-7f2' },
-  { id: 'RWD-2611-0108', type: 'reward', amount: 200, date: '2026-11-03', ref: 'kid-a12' },
-  { id: 'RWD-2611-0109', type: 'reward', amount: 150, date: '2026-11-04', ref: 'kid-b07' },
-  { id: 'PAY-2611-0015', type: 'payout', amount: 600, date: '2026-11-04', ref: 'kid-a12' },
-  { id: 'DON-2611-0043', type: 'donation', amount: 2500, date: '2026-11-05', ref: 'donor-1c9' },
-  { id: 'RWD-2611-0110', type: 'reward', amount: 200, date: '2026-11-05', ref: 'kid-c33' },
-];
+const receipts = sampleReceipts;
 
 export default function ImpactLedger() {
   const [tree, setTree] = useState(null);

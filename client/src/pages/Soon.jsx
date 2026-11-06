@@ -16,8 +16,8 @@ export function SoonHub() {
             <h1 className="hub-title">Try what works today, and what’s next.</h1>
           </div>
           <p>
-            Stamped <strong>Live</strong>: real PayPal sandbox calls (test money) and a local test
-            blockchain. The rest are clickable previews with sample data.
+            Try PayPal sandbox payments, the local blockchain, guardian permission, the NGO workspace and saved Seedlings lessons.
+            The rest are clickable previews with sample data.
           </p>
         </Reveal>
         <Stagger as="ul" className="soon-list" gap={0.05}>

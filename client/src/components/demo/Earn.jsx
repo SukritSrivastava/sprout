@@ -57,6 +57,7 @@ export default function Earn({ earned, burstId, onEarn, onReset, reward }) {
             <p>{text.activityText}</p>
             <div className="activity-action">
               <button
+                data-present="earn"
                 className={`btn btn-lg ${earned ? 'btn-white' : 'btn-green'}`}
                 disabled={earned}
                 onClick={onEarn}

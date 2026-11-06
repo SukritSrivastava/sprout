@@ -30,7 +30,8 @@ export default function ChatBubble({ message, words }) {
         </p>
       )}
       {message.source === 'prepared' && finished && <span className="bubble-tag">Prepared answer</span>}
-      {message.flagged && finished && (
+      {/* Shown straight away, not after the reply finishes: help shouldn't wait for the network. */}
+      {message.flagged && (
         <div className="adult-card" role="note">
           <ShieldAlert {...iconSized(22, 2.75)} />
           <div>

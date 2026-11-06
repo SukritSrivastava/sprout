@@ -18,6 +18,10 @@ export const mentorSettings = {
   // Longest question a kid can type, in characters (the website uses the same number).
   maxQuestionLength: 600,
 
+  // Longest earlier mentor reply the website may send back as chat history, in characters.
+  // (Replies are limited in tokens, so the website shortens longer ones to this.)
+  maxReplyLength: 1000,
+
   // How many earlier messages are sent with each question, so the mentor remembers the chat.
   maxMessages: 12,
 

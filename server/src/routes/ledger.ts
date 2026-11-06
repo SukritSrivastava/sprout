@@ -1,12 +1,13 @@
 // The public impact ledger API (see PHASE_5_BLOCKCHAIN.md and docs/mentor-api.md).
 //
 //   GET  /api/ledger/status        Is the blockchain reachable? Which contract and wallet?
-//   POST /api/ledger/publish       Seal a batch of receipts and publish its code on the chain.
+//   POST /api/ledger/publish       Seal the SAMPLE batch (only the fixed sample receipts).
 //   GET  /api/ledger/batches/:id   Read a batch back from the chain ({ batch: null } if not yet).
 //   POST /api/ledger/publish-live  Seal the real PayPal sandbox receipts not yet published.
 //
 // The server computes the batch code from the receipts itself (ledger/merkle.ts); it never
-// trusts a code sent by the browser. Receipts only ever contain coded kid references.
+// trusts a code sent by the browser. Receipts only ever contain coded references. Batch numbers
+// 1–100 are for samples, 101+ for real PayPal receipts.
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { batchRoot, batchTotals } from '../ledger/merkle.js';
@@ -14,26 +15,33 @@ import type { LedgerChain } from '../ledger/chain.js';
 import { createRateLimiter } from '../rate-limit.js';
 import { onlyOurWebsite } from '../origin.js';
 import type { PayPalStore } from '../paypal/store.js';
+import { SAMPLE_BATCH_ID, sampleReceipts } from '../ledger/sample.js';
 
 type Options = { chain: LedgerChain | null; allowedOrigins: string[]; store: PayPalStore };
 
 const receiptSchema = z
   .object({
-    id: z.string().regex(/^[A-Z]{3}-\d{4}-\d{4}$/, 'Receipt ids look like RWD-2611-0108'),
+    id: z.string(),
     type: z.enum(['donation', 'reward', 'payout']),
-    amount: z.number().int().min(0).max(10_000_000),
-    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-    // Coded references only (like kid-a12 or donor-7f2), never names.
-    ref: z.string().regex(/^[a-z]+-[a-z0-9]{2,8}$/, 'References must be codes like kid-a12'),
+    amount: z.number().int(),
+    currency: z.enum(['INR', 'USD']),
+    date: z.string(),
+    ref: z.string(),
   })
   .strict();
 
 const publishSchema = z
-  .object({
-    batchId: z.number().int().min(1).max(1_000_000),
-    receipts: z.array(receiptSchema).min(1).max(64),
-  })
+  .object({ batchId: z.number().int(), receipts: z.array(receiptSchema).max(64) })
   .strict();
+
+// True only for exactly the server's own sample receipts, in order.
+const isTheSample = (receipts: z.infer<typeof receiptSchema>[]) =>
+  receipts.length === sampleReceipts.length &&
+  receipts.every((r, i) => (Object.keys(sampleReceipts[i]) as (keyof typeof r)[]).every((key) => r[key] === sampleReceipts[i][key]));
+
+// Same batch number, same contents? (A batch on the chain can't be changed, so anything else is a clash.)
+const sameBatch = (a: Record<string, unknown>, b: Record<string, unknown>) =>
+  ['batchId', 'root', 'donated', 'rewarded', 'paidOut', 'receipts'].every((field) => a[field] === b[field]);
 
 const chainDown = {
   error: 'chain_unreachable',
@@ -44,6 +52,21 @@ export async function ledgerRoutes(app: FastifyInstance, options: Options) {
   onlyOurWebsite(app, options.allowedOrigins, ['/api/ledger/publish', '/api/ledger/publish-live']);
   // Publishing writes to the chain, so keep it to a few per device.
   const publishLimit = createRateLimiter({ limit: 10, windowMs: 5 * 60_000 });
+  // Reads are limited too: each one asks the chain.
+  const readLimit = createRateLimiter({ limit: 60, windowMs: 60_000 });
+  // Publishes wait in line, one after another (see publish-live below).
+  let publishing: Promise<unknown> = Promise.resolve();
+  const onePublishAtATime = <T>(work: () => Promise<T>) => {
+    const run = publishing.then(work, work);
+    publishing = run.catch(() => undefined);
+    return run;
+  };
+  app.addHook('onRequest', async (request, reply) => {
+    if (request.method !== 'GET') return;
+    const wait = readLimit.check(request.ip);
+    if (wait) return reply.header('retry-after', String(wait)).code(429)
+      .send({ error: 'rate_limited', message: 'Too many ledger checks. Try again shortly.' });
+  });
 
   // Every route needs the chain; this wraps the "is it reachable?" handling in one place.
   const withChain = <T>(work: (chain: LedgerChain) => Promise<T>) =>
@@ -61,7 +84,7 @@ export async function ledgerRoutes(app: FastifyInstance, options: Options) {
 
   app.get('/api/ledger/batches/:id', async (request, reply) => {
     const id = Number((request.params as { id: string }).id);
-    if (!Number.isInteger(id) || id < 1) return reply.code(400).send({ error: 'invalid_request', message: 'Bad batch number' });
+    if (!Number.isSafeInteger(id) || id < 1) return reply.code(400).send({ error: 'invalid_request', message: 'Bad batch number' });
     return withChain(async (chain) => {
       // "Not published yet" is a normal answer, not an error.
       return { batch: await chain.readBatch(id) };
@@ -79,9 +102,19 @@ export async function ledgerRoutes(app: FastifyInstance, options: Options) {
       return reply.code(400).send({ error: 'invalid_request', message: parsed.error.issues[0]?.message ?? 'Invalid request' });
     }
     const { batchId, receipts } = parsed.data;
-    return withChain(async (chain) =>
-      chain.publish({ batchId, root: batchRoot(receipts), ...batchTotals(receipts) }),
-    )(request, reply);
+    if (batchId !== SAMPLE_BATCH_ID || !isTheSample(receipts)) {
+      return reply.code(400).send({ error: 'invalid_request', message: 'Only the sample batch can be published here.' });
+    }
+    return onePublishAtATime(() =>
+      withChain(async (chain) => {
+        const input = { batchId, root: batchRoot(receipts), ...batchTotals(receipts) };
+        const existing = await chain.readBatch(batchId);
+        if (existing && !sameBatch(existing, input)) {
+          return reply.code(409).send({ error: 'batch_conflict', message: 'That batch number already holds different receipts. Restart `npm run dev` for a fresh local chain.' });
+        }
+        return chain.publish(input);
+      })(request, reply),
+    );
   });
 
   // The real PayPal receipts: the server publishes its OWN records, so the browser sends nothing.
@@ -91,19 +124,28 @@ export async function ledgerRoutes(app: FastifyInstance, options: Options) {
       reply.header('retry-after', String(wait));
       return reply.code(429).send({ error: 'rate_limited', message: `Try again in ${wait} seconds.` });
     }
-    const pending = options.store.unpublished().slice(0, 64);
-    if (pending.length === 0) {
-      return reply.code(409).send({ error: 'nothing_to_publish', message: 'No new PayPal receipts to publish yet.' });
-    }
-    // Only the five receipt fields go into the code (no PayPal ids, no statuses).
-    const receipts = pending.map(({ id, type, amount, date, ref }) => ({ id, type, amount, date, ref }));
-    return withChain(async (chain) => {
-      // Skip batch numbers already used on this chain (e.g. the server restarted, the chain didn't).
-      let batchId = options.store.nextBatchId();
-      while (await chain.readBatch(batchId)) batchId += 1;
-      const result = await chain.publish({ batchId, root: batchRoot(receipts), ...batchTotals(receipts) });
-      options.store.markPublished(receipts.map((r) => r.id), batchId);
-      return { ...result, receipts };
-    })(request, reply);
+    // One publish at a time: picking the receipts, the batch number, writing and marking them
+    // all happen inside the queue, so two clicks can't seal the same receipts twice.
+    return onePublishAtATime(async () => {
+      const pending = options.store.unpublished().slice(0, 64);
+      if (pending.length === 0) {
+        return reply.code(409).send({ error: 'nothing_to_publish', message: 'No new PayPal receipts to publish yet.' });
+      }
+      // Only the six receipt fields go into the code (no PayPal ids, no statuses).
+      const receipts = pending.map(({ id, type, amount, currency, date, ref }) => ({ id, type, amount, currency, date, ref }));
+      return withChain(async (chain) => {
+        // Skip batch numbers already used on this chain (e.g. the server's records were reset).
+        let batchId = options.store.nextBatchId();
+        while (await chain.readBatch(batchId)) batchId += 1;
+        const input = { batchId, root: batchRoot(receipts), ...batchTotals(receipts) };
+        const result = await chain.publish(input);
+        // Mark receipts as published only if the chain holds exactly this batch.
+        if (!sameBatch(result.batch, input)) {
+          return reply.code(409).send({ error: 'batch_conflict', message: 'The blockchain returned a different batch. No receipts were marked published.' });
+        }
+        options.store.markPublished(receipts.map((r) => r.id), batchId);
+        return { ...result, receipts };
+      })(request, reply);
+    });
   });
 }

@@ -8,6 +8,15 @@ const envFile = fileURLToPath(new URL('../.env', import.meta.url));
 // Node 22+ can read .env files itself, so no dotenv package is needed.
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
+// An empty PIN means "not set"; a set PIN must be at least 6 characters so it can't be guessed fast.
+const optionalPin = z
+  .string()
+  .trim()
+  .min(6, 'must be at least 6 characters')
+  .max(64)
+  .optional()
+  .or(z.literal('').transform(() => undefined));
+
 const schema = z.object({
   // API_PORT, not PORT: tools and hosts often set PORT for the website, which would clash.
   API_PORT: z.coerce.number().int().min(1).max(65535).default(8787),
@@ -38,9 +47,26 @@ const schema = z.object({
   // Leave both empty and the PayPal pages show "add sandbox keys" instead of the button.
   PAYPAL_CLIENT_ID: z.string().trim().optional(),
   PAYPAL_CLIENT_SECRET: z.string().trim().optional(),
+  // Payout approvals: each adult's own PIN (at least 6 characters). A payout needs two different
+  // adults to type their PIN. Leave them empty and payouts stay switched off.
+  PAYOUT_PIN_MENTOR: optionalPin,
+  PAYOUT_PIN_ADMIN: optionalPin,
+  PAYOUT_PIN_GUARDIAN: optionalPin,
+  // The guardian's PayPal sandbox email. The server always pays this address; the page can't change it.
+  GUARDIAN_PAYPAL_EMAIL: z.email().optional().or(z.literal('').transform(() => undefined)),
+  // Where PayPal receipts, the pool and payout requests are saved, so a restart doesn't lose them.
+  // Relative paths start in the server/ folder.
+  DATA_FILE: z.string().trim().min(1).default('data/paypal-records.json'),
+  // Learning credits are kept separately; they are never a claim on the PayPal pool.
+  LEARNING_DATA_FILE: z.string().trim().min(1).default('data/learning-records.json'),
   // Secret. Lives only on the server; never sent to the browser or written to logs.
   GEMINI_API_KEY: z.string().trim().optional(),
   GEMINI_MODEL: z.string().trim().optional(),
+}).superRefine((config, ctx) => {
+  const pins = [config.PAYOUT_PIN_MENTOR, config.PAYOUT_PIN_ADMIN, config.PAYOUT_PIN_GUARDIAN].filter(Boolean);
+  if (new Set(pins).size !== pins.length) {
+    ctx.addIssue({ code: 'custom', path: ['PAYOUT_PIN_MENTOR'], message: 'Each adult must have a different payout PIN.' });
+  }
 });
 
 export type Config = z.infer<typeof schema>;

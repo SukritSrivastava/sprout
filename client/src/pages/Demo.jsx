@@ -1,6 +1,6 @@
 // The demo at "/app": a sample kid's Sprout with earn, jars, growth, mentor and withdraw.
 // Shared sample state lives here so sections stay in sync and the AI mentor knows the numbers.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import Mascot from '../components/Mascot.jsx';
 import Earn from '../components/demo/Earn.jsx';
@@ -12,9 +12,11 @@ import { ease, useReduced } from '../lib/motion.jsx';
 import { useCountUp } from '../lib/hooks.js';
 import { money, savingsGoals, splitReward } from '../lib/model.js';
 import { demo, sampleKid } from '../content/demo.js';
+import { usePresentation } from '../lib/presentation.jsx';
 
 export default function Demo() {
   const reduced = useReduced();
+  const { registerActions } = usePresentation();
   const [earned, setEarned] = useState(false);
   const [save, setSave] = useState(50);
   const [goalId, setGoalId] = useState('bicycle');
@@ -35,13 +37,21 @@ export default function Demo() {
     goal: { label: goal.label, cost: goal.cost, monthly },
   };
 
-  const earn = () => {
+  const earn = useCallback(() => {
     setEarned(true);
     setBurstId((value) => value + 1);
     setCheering(true);
     clearTimeout(cheerTimer.current);
     cheerTimer.current = setTimeout(() => setCheering(false), 1600);
-  };
+  }, []);
+
+  // The presenter uses the same sample controls. No persistent records or payments are touched.
+  useEffect(() => registerActions({
+    'sample-earn': earn,
+    'sample-save': () => setSave(65),
+    'sample-goal': () => setGoalId('headphones'),
+    'sample-monthly': () => setMonthly(500),
+  }), [registerActions, earn]);
 
   return (
     <>

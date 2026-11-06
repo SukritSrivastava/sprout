@@ -123,8 +123,9 @@ export const mentorText = {
     adultTitle: 'This sounds important.',
     adultText:
       'Please talk to a parent, guardian, teacher or your NGO mentor today. If you ever feel unsafe, call Childline on 1098, free, any time.',
-    privacy: 'Don’t share your real name, phone number, address or passwords.',
+    privacy: 'Don’t share your real name, phone number, address or passwords. Your questions go to Google’s Gemini AI; emails and long numbers are blanked out first.',
     offline: 'The mentor can’t be reached, so here’s a prepared answer.',
+    cutShort: 'The answer was cut off. Ask again to get the rest.',
   },
   hi: {
     greeting: `नमस्ते ${sampleKid.name}! मैं पैसा मेंटर हूँ। पैसों के बारे में कुछ भी पूछो: बचत, खर्च, दान, धोखाधड़ी, कुछ भी। मैं तुम्हारे सैंपल जार और लक्ष्य देख सकता हूँ।`,
@@ -139,8 +140,9 @@ export const mentorText = {
     adultTitle: 'यह बात ज़रूरी लगती है।',
     adultText:
       'आज ही अपने माता-पिता, अभिभावक, टीचर या NGO मेंटर से बात करो। अगर कभी असुरक्षित लगे, तो Childline 1098 पर मुफ़्त कॉल करो, कभी भी।',
-    privacy: 'अपना असली नाम, फ़ोन नंबर, पता या पासवर्ड शेयर मत करो।',
+    privacy: 'अपना असली नाम, फ़ोन नंबर, पता या पासवर्ड शेयर मत करो। तुम्हारे सवाल Google के Gemini AI को जाते हैं; ईमेल और लंबे नंबर पहले छिपा दिए जाते हैं।',
     offline: 'मेंटर से अभी जुड़ नहीं पाए, इसलिए यह पहले से तैयार जवाब है।',
+    cutShort: 'जवाब बीच में कट गया। बाकी जवाब के लिए फिर से पूछो।',
   },
 };
 
@@ -148,6 +150,12 @@ export const mentorText = {
 // (When the server is up but the AI isn't, the server's own backup answers are used:
 // server/src/mentor/prepared.ts.) The first matching `words` wins; otherwise `default`.
 export const offlineAnswers = {
+  // Used instead of the answers below when the question sounds like a scam, debt, theft,
+  // bullying or self-harm. The trusted-adult card is shown with it.
+  sensitive: {
+    en: 'Thank you for telling me. This sounds important, so please talk to a grown-up you trust today: a parent, guardian, teacher or your NGO mentor. Never share passwords or OTPs, and if you ever feel unsafe, call Childline on 1098.',
+    hi: 'मुझे बताने के लिए धन्यवाद। यह बात ज़रूरी लगती है, इसलिए आज ही किसी भरोसेमंद बड़े से बात करो: माता-पिता, अभिभावक, टीचर या NGO मेंटर। पासवर्ड या OTP कभी शेयर मत करो, और अगर कभी असुरक्षित लगे तो Childline 1098 पर कॉल करो।',
+  },
   en: [
     {
       words: /scam|fraud|otp|password/,

@@ -44,13 +44,14 @@ export default function LivePayPalReceipts({ network }) {
       </p>
     );
   }
-  const waiting = receipts.filter((r) => r.batchId === null && r.status !== 'SENDING').length;
+  const waiting = receipts.filter((r) => r.batchId === null &&
+    (r.type === 'donation' ? r.status === 'COMPLETED' : r.status === 'SUCCESS')).length;
 
   return (
     <div className="stack">
       <p>
-        These came from real PayPal sandbox calls on this server: dollars are test money. People appear only as codes; the PayPal
-        id lets the NGO look each one up.
+        These came from real PayPal sandbox calls on this server: dollars are test money. People appear only as codes, and PayPal’s
+        own ids stay private with the NGO.
       </p>
       <div className="table-wrap" data-lenis-prevent>
         <table className="ledger-table" data-testid="live-receipts">
@@ -60,7 +61,7 @@ export default function LivePayPalReceipts({ network }) {
               <th>Type</th>
               <th>Amount</th>
               <th>Code</th>
-              <th>PayPal id</th>
+              <th>Status</th>
               <th>Batch</th>
             </tr>
           </thead>
@@ -71,7 +72,7 @@ export default function LivePayPalReceipts({ network }) {
                 <td>{r.type}</td>
                 <td>{dollars(r.amount)}</td>
                 <td className="mono">{r.ref}</td>
-                <td className="mono">{r.paypalId}</td>
+                <td>{r.status}</td>
                 <td>{r.batchId ? `#${r.batchId}` : 'not yet'}</td>
               </tr>
             ))}
@@ -84,7 +85,7 @@ export default function LivePayPalReceipts({ network }) {
             {working ? <Loader2 className="spin" size={20} strokeWidth={2.75} aria-hidden="true" /> : <UploadCloud size={20} strokeWidth={2.75} aria-hidden="true" />}
             {working ? 'Publishing…' : `Publish ${waiting} PayPal receipt${waiting === 1 ? '' : 's'} to the blockchain`}
           </button>
-          <span className="hint">The server seals its own records; nothing you send can change them.</span>
+          <span className="hint">Only completed donations and successful payouts are sealed. Refresh payout status on the payout page first.</span>
         </div>
       )}
       {published && (

@@ -1,0 +1,48 @@
+/* Silent presentation controls and the reference-style cursor. Existing site tokens stay intact. */
+:root { --presentation-blue: #76aaff; --presentation-paper: #eff7ec; }
+.tour-chooser { width: min(480px, calc(100vw - 32px)); }
+.tour-choice-content { padding-top: 12px; }
+.tour-choices { display: grid; gap: 14px; }
+.tour-mode-choice { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 16px; text-align: left; border: var(--border-thin); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); transition: var(--press); }
+.tour-mode-choice.manual { background: var(--mint); }
+.tour-mode-choice.auto { background: var(--lavender); }
+.tour-mode-choice strong { display: block; font-size: 18px; line-height: 1.25; margin-bottom: 5px; }
+.tour-mode-choice small { display: block; font-size: 15px; font-weight: 500; line-height: 1.4; }
+.tour-mode-choice:active { transform: translate(3px, 3px); box-shadow: none; }
+.tour-silent { margin-top: 16px; color: var(--muted); font-size: 14px; font-weight: 600; }
+.tour-mode-switch { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+.tour-mode-switch > span { flex-basis: 100%; font-size: 14px; color: var(--muted); line-height: 1.3; }
+.tour-top { gap: 8px; }
+.tour-top-actions { gap: 8px; }
+.tour-top-actions .lang-switch { gap: 6px; }
+.tour-controls { flex-wrap: wrap; }
+.tour-controls .link-btn { font-size: 14px; }
+.tour-loading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 0; font-size: 14px; }
+/* Automatic playback leaves just a small bottom bar; captions and settings are optional. */
+.tour-panel.tour-compact { width: max-content; max-width: calc(100vw - 24px); right: 16px; bottom: 12px; padding: 8px 10px 10px; display: flex; align-items: center; gap: 12px; overflow: visible; border: var(--border-thin); box-shadow: var(--shadow-sm); }
+.tour-mini-summary, .tour-mini-controls { display: flex; align-items: center; gap: 8px; }
+.tour-mini-summary .mascot { width: 30px; height: 33px; }
+.tour-mini-count { font-size: 14px; font-weight: 700; white-space: nowrap; }
+.tour-compact .tour-time { margin: 0; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.tour-mini-controls .btn { min-height: 36px; padding: 6px 8px; font-size: 14px; gap: 6px; box-shadow: 2px 2px 0 var(--ink); }
+.tour-mini-controls .btn svg { width: 16px; height: 16px; }
+.tour-mini-controls .icon-btn { width: 34px; height: 36px; min-height: 36px; box-shadow: 2px 2px 0 var(--ink); }
+.tour-compact .tour-progress { position: absolute; left: 8px; right: 8px; bottom: 0; height: 3px; border: 0; border-radius: 0; }
+.presentation-cursor { position: fixed; left: -16px; top: -12px; z-index: 44; width: 75px; height: 85px; pointer-events: none; user-select: none; will-change: transform; }
+.presentation-cursor svg { display: block; overflow: visible; }
+.presentation-click { display: none; position: absolute; left: 4px; top: 0; width: 25px; height: 25px; border: 3px solid var(--presentation-blue); border-radius: 50%; background: transparent; }
+.presentation-cursor.is-clicking .presentation-click { display: block; animation: presentation-tap 550ms ease-out both; }
+.presentation-focus { outline: 3px solid var(--presentation-blue); outline-offset: 6px; border-radius: var(--radius-sm); }
+@keyframes presentation-tap { from { transform: scale(.5); opacity: 1; } to { transform: scale(2.1); opacity: 0; } }
+@media (hover: hover) and (pointer: fine) { .tour-mode-choice:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow); } }
+@media (max-width: 760px) {
+  .tour-panel.tour-compact { right: 12px; gap: 8px; }
+  .tour-compact .tour-time { display: none; }
+  .tour-panel { max-height: calc(100dvh - 96px); }
+  .tour-mode-choice { padding: 12px; gap: 10px; }
+  .tour-mode-choice strong { font-size: 17px; }
+  .tour-mode-choice small { font-size: 14px; }
+  .tour-body { gap: 10px; }
+  .tour-body > .mascot { width: 48px; height: auto; }
+  .tour-body h3 { font-size: 20px; }
+}

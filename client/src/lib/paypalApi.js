@@ -10,8 +10,15 @@ export const liveReceipts = () => call('/api/paypal/receipts');
 export const createOrder = (amount) => post('/api/paypal/orders', { amount });
 export const captureOrder = (orderId) => post(`/api/paypal/orders/${encodeURIComponent(orderId)}/capture`);
 
-// Payouts (PayPal Payouts v1) to a guardian's PayPal account, after two adults approve.
-export const sendPayout = (email, amount, approvals) => post('/api/paypal/payouts', { email, amount, approvals });
+// Payouts (PayPal Payouts v1) to the guardian's PayPal account (set in server/.env):
+// a kid's request, then two adults approve with their own PIN, then one of them sends it.
+export const requestPayout = (amount) => post('/api/paypal/payout-requests', { amount });
+export const approvePayout = (requestId, approver, pin) =>
+  post(`/api/paypal/payout-requests/${encodeURIComponent(requestId)}/approve`, { approver, pin });
+export const sendPayout = (requestId, approver, pin) =>
+  post(`/api/paypal/payout-requests/${encodeURIComponent(requestId)}/send`, { approver, pin });
+export const recoverPayout = (requestId, approver, pin) =>
+  post(`/api/paypal/payout-requests/${encodeURIComponent(requestId)}/recover`, { approver, pin });
 export const payoutStatus = (batchId) => call(`/api/paypal/payouts/${encodeURIComponent(batchId)}`);
 
 // "$10"

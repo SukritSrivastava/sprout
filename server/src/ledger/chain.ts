@@ -54,12 +54,17 @@ export type TxDetails = {
 export type StoredBatch = BatchInput & { publishedAt: number; tx: TxDetails | null };
 
 export interface LedgerChain {
-  status(): Promise<{ chainId: number; blockNumber: number; contract: Address; publisher: Address; local: boolean }>;
+  // `contract` is null until the first publish deploys it.
+  status(): Promise<{ chainId: number; blockNumber: number; contract: Address | null; publisher: Address; local: boolean }>;
   publish(batch: BatchInput): Promise<{ batch: StoredBatch; alreadyPublished: boolean }>;
   readBatch(batchId: number): Promise<StoredBatch | null>;
 }
 
-const isLocal = (url: string) => /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?/.test(url);
+export const isLocal = (value: string) => {
+  const url = new URL(value);
+  return ['http:', 'https:'].includes(url.protocol) &&
+    ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) && !url.username && !url.password;
+};
 
 export function createLedgerChain(config: Config): LedgerChain {
   const local = isLocal(config.CHAIN_RPC_URL);
@@ -72,27 +77,40 @@ export function createLedgerChain(config: Config): LedgerChain {
   const reader = createPublicClient({ transport });
   const writer = createWalletClient({ account, transport });
 
-  // The contract is deployed the first time it's needed. A local chain forgets everything when
-  // it restarts, so we check the contract is still there before every use.
-  // The address is remembered in chain/deployments/<chain id>.json (git-ignored), so restarting
-  // the server finds the same contract and its earlier batches.
+  // The contract is deployed by the first PUBLISH (never by a read, so reading costs no fees).
+  // A local chain forgets everything when it restarts, so we check the contract is still there.
+  // The address and its deploy block are remembered in chain/deployments/<chain id>.json
+  // (git-ignored), so restarting the server finds the same contract and its earlier batches.
   let address: Address | null = null;
+  let deployBlock = 0n; // searching for batch announcements starts here, not at block 0
   let deploying: Promise<Address> | null = null; // so two requests at once deploy only one copy
   const savedFile = (chainId: number) => new URL(`../../../chain/deployments/${chainId}.json`, import.meta.url);
-  async function contractAddress(): Promise<Address> {
+  async function existingContract(): Promise<Address | null> {
     if (address && (await reader.getCode({ address }))) return address;
+    address = null;
+    batchCache.clear(); // the chain was restarted: forget what it held
     const { id } = await chainInfo();
-    if (!address && existsSync(savedFile(id))) {
-      const saved = JSON.parse(readFileSync(savedFile(id), 'utf8')).address as Address;
-      if (await reader.getCode({ address: saved })) return (address = saved);
+    if (existsSync(savedFile(id))) {
+      const saved = JSON.parse(readFileSync(savedFile(id), 'utf8')) as { address: Address; deployBlock?: string };
+      if (await reader.getCode({ address: saved.address })) {
+        deployBlock = BigInt(saved.deployBlock ?? 0);
+        return (address = saved.address);
+      }
     }
+    return null;
+  }
+  async function contractAddress(): Promise<Address> {
+    const found = await existingContract();
+    if (found) return found;
     deploying ??= (async () => {
       const chain = await chainInfo();
       const hash = await writer.deployContract({ abi, bytecode: contract.bytecode, chain, account });
       const receipt = await reader.waitForTransactionReceipt({ hash });
       address = receipt.contractAddress!;
+      deployBlock = receipt.blockNumber;
+      batchCache.clear();
       mkdirSync(new URL('../../../chain/deployments/', import.meta.url), { recursive: true });
-      writeFileSync(savedFile(chain.id), `${JSON.stringify({ address, deployTx: hash }, null, 2)}\n`);
+      writeFileSync(savedFile(chain.id), `${JSON.stringify({ address, deployTx: hash, deployBlock: String(deployBlock) }, null, 2)}\n`);
       return address;
     })().finally(() => {
       deploying = null;
@@ -105,6 +123,9 @@ export function createLedgerChain(config: Config): LedgerChain {
   async function chainInfo() {
     if (chainCache) return chainCache;
     const id = await reader.getChainId();
+    if (key === HARDHAT_TEST_KEY && id !== 31337) {
+      throw new Error('The public Hardhat test key is only allowed on chain 31337.');
+    }
     chainCache = {
       id,
       name: local ? 'Local test chain' : `Chain ${id}`,
@@ -137,13 +158,18 @@ export function createLedgerChain(config: Config): LedgerChain {
       abi,
       eventName: 'BatchPublished',
       args: { batchId: BigInt(batchId) },
-      fromBlock: 0n,
+      fromBlock: deployBlock,
     });
     return (logs[0]?.transactionHash as Hash) ?? null;
   }
 
+  // Published batches never change, so each is read from the chain once, then remembered.
+  const batchCache = new Map<number, StoredBatch>();
   async function readBatch(batchId: number): Promise<StoredBatch | null> {
-    const contractAt = await contractAddress();
+    const contractAt = await existingContract();
+    if (!contractAt) return null; // nothing deployed yet, so nothing published yet
+    const cached = batchCache.get(batchId);
+    if (cached) return cached;
     const [root, publishedAt, donated, rewarded, paidOut, receipts] = (await reader.readContract({
       address: contractAt,
       abi,
@@ -152,7 +178,7 @@ export function createLedgerChain(config: Config): LedgerChain {
     })) as [Hash, bigint, bigint, bigint, bigint, number];
     if (publishedAt === 0n) return null;
     const hash = await findPublishTx(contractAt, batchId);
-    return {
+    const batch: StoredBatch = {
       batchId,
       root: root.slice(2),
       publishedAt: Number(publishedAt),
@@ -162,6 +188,9 @@ export function createLedgerChain(config: Config): LedgerChain {
       receipts: Number(receipts),
       tx: hash ? await txDetails(hash) : null,
     };
+    if (batchCache.size > 1000) batchCache.clear();
+    batchCache.set(batchId, batch);
+    return batch;
   }
 
   // Writes from one wallet must go one at a time: each transaction needs the next number
@@ -175,7 +204,7 @@ export function createLedgerChain(config: Config): LedgerChain {
 
   return {
     async status() {
-      const contractAt = await contractAddress();
+      const contractAt = await existingContract();
       const chain = await chainInfo();
       return {
         chainId: chain.id,
@@ -188,7 +217,13 @@ export function createLedgerChain(config: Config): LedgerChain {
 
     publish: (batch) => oneAtATime(async () => {
       const existing = await readBatch(batch.batchId);
-      if (existing) return { batch: existing, alreadyPublished: true };
+      if (existing) {
+        if (['root', 'donated', 'rewarded', 'paidOut', 'receipts'].some((field) =>
+          existing[field as keyof BatchInput] !== batch[field as keyof BatchInput])) {
+          throw new Error('Batch id already contains different receipts.');
+        }
+        return { batch: existing, alreadyPublished: true };
+      }
       const contractAt = await contractAddress();
       const hash = await writer.writeContract({
         address: contractAt,

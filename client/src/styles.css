@@ -31,7 +31,7 @@
 
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-padding-top: 96px; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: var(--header-offset, 96px); }
 body {
   margin: 0;
   min-width: 300px;
@@ -128,6 +128,7 @@ svg { flex-shrink: 0; }
 .tag-green { background: var(--green); color: var(--ink); }
 .tag-purple { background: var(--purple); }
 .tag-white { background: var(--white); }
+.tag-peach { background: var(--peach); }
 .tilt { transform: rotate(-1.5deg); }
 
 .highlight {
@@ -163,13 +164,16 @@ input[type='range'] { width: 100%; height: 32px; accent-color: var(--ink); curso
 
 /* ---------- Header ---------- */
 .site-header { position: sticky; top: 0; z-index: 30; background: var(--mint); border-bottom: var(--border); }
-.header-inner { display: flex; align-items: center; gap: 28px; height: 78px; }
+.header-inner { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0 28px; padding-top: 14px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 30px; font-weight: 800; letter-spacing: -0.04em; text-decoration: none; }
 .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; background: var(--green); border: var(--border-thin); border-radius: 10px; box-shadow: 2px 2px 0 var(--ink); }
 .brand-dot { color: var(--green-strong); }
-.nav { display: flex; gap: 28px; margin-left: auto; }
+.nav { display: flex; grid-column: 1 / -1; grid-row: 2; justify-content: space-between; align-items: center; gap: 14px; padding: 10px 0 12px; }
 .nav a { font-size: 17px; font-weight: 600; text-decoration: none; padding: 8px 0; background: linear-gradient(var(--ink), var(--ink)) left bottom / 0 3px no-repeat; transition: background-size 0.25s ease; }
-.header-actions { display: flex; align-items: center; gap: 16px; }
+.nav a.nav-feature { display: grid; gap: 1px; }
+.nav-feature small { font-size: 14px; font-weight: 500; color: var(--muted); }
+.nav a[aria-current='page'] { background-size: 100% 3px; }
+.header-actions { display: flex; align-items: center; justify-content: end; gap: 16px; grid-column: 2; grid-row: 1; }
 .motion-toggle { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; font-size: 15px; font-weight: 600; min-height: 44px; padding: 0 4px; }
 .motion-dot { width: 12px; height: 12px; border-radius: 50%; border: var(--border-thin); background: var(--white); }
 .motion-dot.on { background: var(--green-strong); }
@@ -434,6 +438,16 @@ input[type='range'] { width: 100%; height: 32px; accent-color: var(--ink); curso
 .approver-check { display: grid; place-items: center; width: 30px; height: 30px; border: var(--border-thin); border-radius: 8px; background: var(--paper); }
 .approver[aria-pressed='true'] .approver-check { background: var(--green); }
 .approval-status { font-weight: 700; }
+/* Payout approvals: each adult types their own PIN. */
+.approver-row { display: grid; grid-template-columns: 1fr minmax(120px, 160px) auto; align-items: center; gap: 10px; padding: 10px 14px; background: var(--white); border: var(--border-thin); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); }
+.approver-row.is-approved { background: var(--mint); }
+.approver-row input { min-height: 44px; min-width: 0; padding: 8px 12px; font: inherit; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--paper); }
+.approver-row .approver-check { flex: none; }
+.approver-name { display: flex; align-items: center; gap: 12px; font-size: 17px; }
+@media (max-width: 560px) {
+  .approver-row { grid-template-columns: 1fr auto; }
+  .approver-row .approver-name { grid-column: 1 / -1; }
+}
 .stat-row { display: grid; gap: 14px; }
 .bar-chart { position: relative; display: flex; align-items: flex-end; justify-content: space-around; gap: 16px; height: 240px; padding: 16px 16px 56px; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--paper); }
 .bar-group { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 100%; }
@@ -575,13 +589,14 @@ html[data-reduced='true'] *, html[data-reduced='true'] *::before, html[data-redu
 @media (max-width: 1100px) {
   .jar-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .motion-toggle { display: none; }
-  .nav { gap: 20px; }
+  .nav { gap: 10px; }
+  .nav a { font-size: 15px; }
 }
 
 /* ---------- Phone ---------- */
 @media (max-width: 760px) {
   body { font-size: 17px; }
-  .header-inner { height: 68px; gap: 12px; }
+  .header-inner { display: flex; height: 68px; gap: 12px; padding-top: 0; }
   .brand { font-size: 26px; }
   .brand-mark { width: 34px; height: 34px; }
   .header-actions { margin-left: auto; gap: 10px; }
@@ -591,8 +606,10 @@ html[data-reduced='true'] *, html[data-reduced='true'] *::before, html[data-redu
   .nav.nav-open {
     display: grid; gap: 0; position: absolute; left: 0; right: 0; top: 100%;
     background: var(--mint); border-bottom: var(--border); padding: 8px var(--gutter) 16px;
+    max-height: calc(100dvh - 68px); overflow-y: auto; overscroll-behavior: contain;
   }
   .nav.nav-open a { padding: 14px 0; font-size: 20px; border-bottom: 2px solid rgba(17, 17, 17, 0.15); }
+  .nav.nav-open a.nav-feature { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .hero-grid, .step, .step-2, .step-3, .mentor-grid, .trust-grid, .earn-grid, .grow-grid,
   .withdraw-grid, .allocation, .closing-grid, .split-head { grid-template-columns: minmax(0, 1fr); }
   .step-2 .step-copy { order: 0; }
@@ -643,6 +660,6 @@ html[data-reduced='true'] *, html[data-reduced='true'] *::before, html[data-redu
 .receipt-inline dt { color: var(--muted); }
 .receipt-inline dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
 .field { display: grid; gap: 6px; font-weight: 700; }
-.field input { min-height: 48px; padding: 10px 14px; font: inherit; font-weight: 500; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--white); }
+.field input, .field select { min-height: 48px; padding: 10px 14px; font: inherit; font-weight: 500; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--white); }
 .ledger-table td.mono { overflow-wrap: anywhere; }
 .soon-live { display: inline-block; margin-top: 10px; font-size: 14px; }

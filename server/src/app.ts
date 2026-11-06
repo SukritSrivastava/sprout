@@ -9,7 +9,14 @@ import { ledgerRoutes } from './routes/ledger.js';
 import { createLedgerChain, type LedgerChain } from './ledger/chain.js';
 import { paypalRoutes } from './routes/paypal.js';
 import { createPayPal, type PayPal } from './paypal/client.js';
-import { createPayPalStore } from './paypal/store.js';
+import { createPayPalStore, PaymentStoreError } from './paypal/store.js';
+import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { createLearningStore, LearningStoreError, type LearningStore } from './learning/store.js';
+import { guardianRoutes } from './routes/guardian.js';
+import { createPinChecker } from './paypal/pins.js';
+import { ngoRoutes } from './routes/ngo.js';
+import { seedlingsRoutes } from './routes/seedlings.js';
 
 type AppOptions = {
   logger?: boolean;
@@ -20,12 +27,16 @@ type AppOptions = {
   chain?: LedgerChain | null;
   // Tests pass a fake PayPal; `undefined` means "use the sandbox keys from server/.env".
   paypal?: PayPal | null;
+  // Where PayPal records are saved. index.ts passes DATA_FILE; tests leave it out (memory only).
+  dataFile?: string | null;
+  learningDataFile?: string | null;
+  learning?: LearningStore;
 };
 
 export function buildApp(config: Config, options: AppOptions = {}) {
   const app = Fastify({
     logger: options.logger ?? false,
-    bodyLimit: 16 * 1024, // 16KB is plenty for chat messages and blocks oversized requests.
+    bodyLimit: 32 * 1024, // 32KB fits a full chat history (Hindi text is 3 bytes a letter) and blocks huge requests.
     // Behind a host's proxy, read the user's real address from X-Forwarded-For. Off locally,
     // so nobody can fake their address to dodge the rate limit.
     trustProxy: config.TRUST_PROXY,
@@ -36,12 +47,34 @@ export function buildApp(config: Config, options: AppOptions = {}) {
   const chain = options.chain === undefined ? createLedgerChain(config) : options.chain;
 
   const paypal = options.paypal === undefined ? createPayPal(config) : options.paypal;
-  const store = createPayPalStore(); // the live receipts and reward pool, in memory
+  // The live receipts, reward pool and payout requests, saved to DATA_FILE (relative to server/).
+  const serverFolder = fileURLToPath(new URL('../', import.meta.url));
+  const dataFile = options.dataFile ? resolve(serverFolder, options.dataFile) : null;
+  const learningFile = options.learningDataFile ? resolve(serverFolder, options.learningDataFile) : null;
+  if (dataFile && learningFile && dataFile.toLowerCase() === learningFile.toLowerCase()) {
+    throw new Error('Learning records and PayPal records must use different files.');
+  }
+  const store = createPayPalStore({ file: dataFile });
+  const learning = options.learning ?? createLearningStore(learningFile);
+  const pins = createPinChecker(config); // One lockout counter across the workspace and payouts.
+  app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof LearningStoreError) {
+      return reply.code(503).send({ error: 'learning_records_unavailable', message: error.message });
+    }
+    if (error instanceof PaymentStoreError) {
+      return reply.code(503).send({ error: 'payment_records_unavailable', message: error.message });
+    }
+    return reply.send(error);
+  });
 
   app.register(healthRoutes, { config });
   app.register(ledgerRoutes, { chain, allowedOrigins: config.ALLOWED_ORIGIN, store });
-  app.register(paypalRoutes, { paypal, store, model, allowedOrigins: config.ALLOWED_ORIGIN });
+  app.register(paypalRoutes, { config, pins, paypal, store, model, allowedOrigins: config.ALLOWED_ORIGIN });
+  app.register(ngoRoutes, { config, pins, payments: store, learning });
+  app.register(guardianRoutes, { config, pins, learning });
+  app.register(seedlingsRoutes, { learning, allowedOrigins: config.ALLOWED_ORIGIN });
   app.register(mentorRoutes, {
+    learning,
     model,
     allowedOrigins: config.ALLOWED_ORIGIN,
     hourlyLimit: config.MENTOR_HOURLY_LIMIT,

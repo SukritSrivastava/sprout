@@ -1,14 +1,16 @@
 // Sprout, the mascot: a seedling in a sunny pot, drawn in the same thick-outline style as the UI.
 // Moods: 'happy' (default), 'think' (while the mentor answers), 'cheer' (when you earn).
 // Idle motion is gentle (a blink, a leaf sway) and switches off when motion is reduced.
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useRef } from 'react';
+import { motion, useMotionValue } from 'motion/react';
 import { useReduced } from '../lib/motion.jsx';
+import { usePresentation } from '../lib/presentation.jsx';
+import { gazeToward } from '../lib/presentation.js';
 
 const ink = 'var(--ink)';
 
-function Eyes({ mood, reduced }) {
-  if (mood === 'cheer') {
+function Eyes({ mood, reduced, following, lookX, lookY }) {
+  if (mood === 'cheer' && !following) {
     // Closed, smiling eyes: ^ ^
     return (
       <g stroke={ink} strokeWidth="3.5" strokeLinecap="round" fill="none">
@@ -17,8 +19,9 @@ function Eyes({ mood, reduced }) {
       </g>
     );
   }
-  const look = mood === 'think' ? { x: 3, y: -3 } : { x: 0, y: 0 };
+  const look = mood === 'think' && !following ? { x: 3, y: -3 } : { x: 0, y: 0 };
   return (
+    <motion.g className="mascot-gaze" style={{ x: lookX, y: lookY }}>
     <motion.g
       style={{ originY: '64px' }}
       animate={reduced ? undefined : { scaleY: [1, 1, 0.12, 1] }}
@@ -28,6 +31,7 @@ function Eyes({ mood, reduced }) {
       <ellipse cx={62 + look.x} cy={64 + look.y} rx="4.2" ry="5.4" fill={ink} />
       <circle cx={39.5 + look.x} cy={62 + look.y} r="1.4" fill="#fff" />
       <circle cx={63.5 + look.x} cy={62 + look.y} r="1.4" fill="#fff" />
+    </motion.g>
     </motion.g>
   );
 }
@@ -44,9 +48,29 @@ function Mouth({ mood }) {
 
 export default function Mascot({ mood = 'happy', size = 96, label, className = '' }) {
   const reduced = useReduced();
+  const svg = useRef(null);
+  const presentation = usePresentation();
+  const following = Boolean(presentation?.active);
+  const lookX = useMotionValue(0);
+  const lookY = useMotionValue(0);
+  useEffect(() => {
+    if (!following) { lookX.set(0); lookY.set(0); return; }
+    const follow = () => {
+      if (!svg.current) return;
+      const look = gazeToward({ x: presentation.x.get(), y: presentation.y.get() }, svg.current.getBoundingClientRect());
+      lookX.set(look.x); lookY.set(look.y);
+    };
+    const unwatchX = presentation.x.on('change', follow);
+    const unwatchY = presentation.y.on('change', follow);
+    window.addEventListener('scroll', follow, { passive: true });
+    window.addEventListener('resize', follow); follow();
+    return () => { unwatchX(); unwatchY(); window.removeEventListener('scroll', follow); window.removeEventListener('resize', follow); };
+  }, [following, presentation?.x, presentation?.y, lookX, lookY]);
   const a11y = label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true };
   return (
     <motion.svg
+      ref={svg}
+      data-following-cursor={following ? 'true' : undefined}
       className={`mascot ${className}`}
       width={size}
       height={size * 1.1}
@@ -89,7 +113,7 @@ export default function Mascot({ mood = 'happy', size = 96, label, className = '
       <rect x="16" y="40" width="68" height="64" rx="26" fill="var(--yellow)" stroke={ink} strokeWidth="3.5" />
       <ellipse cx="27" cy="77" rx="5" ry="3.4" fill="var(--peach)" />
       <ellipse cx="73" cy="77" rx="5" ry="3.4" fill="var(--peach)" />
-      <Eyes mood={mood} reduced={reduced} />
+      <Eyes mood={mood} reduced={reduced} following={following} lookX={lookX} lookY={lookY} />
       <Mouth mood={mood} />
     </motion.svg>
   );

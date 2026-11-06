@@ -90,8 +90,8 @@ export default function Mentor({ context }) {
                 {words.greeting}
               </p>
             </div>
-            {chat.messages.map((message, i) => (
-              <ChatBubble key={i} message={message} words={words} />
+            {chat.messages.map((message) => (
+              <ChatBubble key={message.id} message={message} words={words} />
             ))}
           </div>
 

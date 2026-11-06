@@ -2,7 +2,7 @@
 // offline and free: streaming order, fallbacks, safety flags, bad input, rate limits, origins.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildApp } from '../src/app.js';
+import { buildApp } from './consented-app.js';
 import { loadConfig } from '../src/config.js';
 import type { MentorModel } from '../src/mentor/model.js';
 import { isSensitive } from '../src/mentor/safety.js';

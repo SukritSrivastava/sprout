@@ -115,12 +115,14 @@ test('header links glide to their sections on the home page', async ({ page }, t
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   for (const [name, id] of [
     ['How it works', 'how'],
-    ['Mentor', 'meet-mentor'],
   ]) {
     await nav.getByRole('link', { name }).click();
     await expect(page).toHaveURL(new RegExp(`#${id}$`));
     await expect(page.locator(`#${id} h2`)).toBeInViewport();
   }
+  await nav.getByRole('link', { name: 'Mentor', exact: true }).click();
+  await expect(page).toHaveURL(/\/app#mentor$/);
+  await expect(page.locator('#mentor h2')).toBeInViewport();
 });
 
 test('header links from the demo page go back to home sections', async ({ page }, testInfo) => {

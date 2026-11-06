@@ -10,6 +10,9 @@ export const paypalSettings = {
   rewardDollars: 2,
   // Largest single payout to a guardian, in dollars.
   maxPayoutDollars: 50,
-  // The adults who can approve a payout; any two different ones are needed.
+  // The adults who can approve a payout; any two different ones are needed. Each one's PIN is
+  // PAYOUT_PIN_MENTOR / PAYOUT_PIN_ADMIN / PAYOUT_PIN_GUARDIAN in server/.env.
   approvers: ['mentor', 'admin', 'guardian'],
+  // The (sample) kid whose payout requests the payout page makes.
+  childName: 'Aanya (sample)',
 };

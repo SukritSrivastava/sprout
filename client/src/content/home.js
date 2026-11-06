@@ -12,7 +12,7 @@ export const home = {
     intro:
       'Do a small activity, earn a little, split it into four jars, and ask a mentor the money questions you were scared to ask.',
     openDemo: 'Open the demo',
-    tour: 'Take the 1½-minute tour',
+    tour: 'Take the 2-minute tour',
     // The sample card on the right
     card: {
       title: 'Aanya’s jars',
@@ -85,7 +85,7 @@ export const home = {
   comingSoon: {
     tag: 'Live and coming soon',
     title: 'Real PayPal money flow, and what’s next.',
-    text: 'The rows stamped Live work today on the PayPal sandbox (test money) and a local blockchain. The others are clickable previews with sample data.',
+    text: 'Try PayPal sandbox payments, the local blockchain, the NGO workspace and Seedlings lessons with a saved garden. The others are clickable previews.',
     // Which previews to show here, in order (ids from src/previews/index.js).
     show: ['donate', 'payout', 'impact', 'ngo', 'seedlings'],
     rowStamp: 'Try the preview',
