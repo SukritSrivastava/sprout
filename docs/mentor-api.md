@@ -236,8 +236,9 @@ All `/api/ngo/*` routes use the allowed-origin check and `Cache-Control: no-stor
 are limited to 60/minute per address; unlocking is additionally limited to 20/5 minutes. The
 existing mentor/admin PINs are used, with the same five-guess lockout counter as payouts.
 One configured staff PIN is sufficient; PayPal credentials and other adult PINs are not needed
-to unlock the NGO workspace. Settings load at server startup. After a PIN changes, restart the
-API and re-fetch `/api/ngo/config` (the setup screen provides **Check access again**).
+to unlock the NGO workspace. Settings load at server startup. The current `npm run dev` command
+restarts the API after `.env` saves; production needs a manual restart. Then re-fetch
+`/api/ngo/config` (the setup screen provides **Check access again**).
 The config response never contains PIN values. The visibility toggle is entirely client-side
 and affects only the value entered by the person signing in.
 

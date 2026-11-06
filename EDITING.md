@@ -88,7 +88,9 @@ and update it to your new words.
   in `server/src/learning/store.ts`; existing saved decisions do not change when the seed list is
   edited. Learning credits must stay distinct from PayPal USD; do not relabel them as real money.
   `JUDGE_GUIDE.md` covers the judge walkthrough. Keep actual staff PINs out of it. After changing
-  a PIN in `server/.env`, restart the API and use **Check access again** on the setup screen.
+  a PIN in `server/.env`, save it and use **Check access again** on the setup screen. The current
+  dev runner reloads settings automatically; production/older dev commands need a restart.
+  `npm run check:config -w server` checks the local settings without printing credentials.
 
 - Payout recovery words are in `client/src/content/payout.js`. Keep the request code field and
   adult PIN check: only a code is saved in sessionStorage, never a PIN. Each adult must use a

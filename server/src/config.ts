@@ -63,9 +63,14 @@ const schema = z.object({
   GEMINI_API_KEY: z.string().trim().optional(),
   GEMINI_MODEL: z.string().trim().optional(),
 }).superRefine((config, ctx) => {
-  const pins = [config.PAYOUT_PIN_MENTOR, config.PAYOUT_PIN_ADMIN, config.PAYOUT_PIN_GUARDIAN].filter(Boolean);
-  if (new Set(pins).size !== pins.length) {
-    ctx.addIssue({ code: 'custom', path: ['PAYOUT_PIN_MENTOR'], message: 'Each adult must have a different payout PIN.' });
+  const keys = ['PAYOUT_PIN_MENTOR', 'PAYOUT_PIN_ADMIN', 'PAYOUT_PIN_GUARDIAN'] as const;
+  for (const [index, key] of keys.entries()) {
+    for (const other of keys.slice(index + 1)) {
+      if (config[key] && config[key] === config[other]) {
+        // Name the conflicting settings, never their secret values.
+        ctx.addIssue({ code: 'custom', path: [other], message: `must differ from ${key}. Each adult must have a different payout PIN.` });
+      }
+    }
   }
 });
 

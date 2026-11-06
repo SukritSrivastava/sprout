@@ -1,5 +1,32 @@
 # Verification
 
+## Guardian PIN environment setup fix (2026-11-06)
+
+- Reproduced the local failure: the running API reported `configured:false` despite a saved
+  guardian PIN. The source-only watcher ignored `.env` edits. The saved guardian/admin PINs
+  also matched, so a fresh API failed validation while incorrectly naming the mentor setting.
+  Credentials were inspected only in memory and were never printed or changed by the assistant.
+- The user saved distinct PINs. `npm run check:config -w server` now passes, and the running API
+  reports guardian access configured. The actual local `/soon/safety` page displays its PIN form;
+  screenshot: `qa/guardian-local-configured.png`. The saved guardian PIN also authorized an
+  isolated in-memory acknowledgement; no saved consent or payment records were changed by it.
+- `server/scripts/dev.mjs` retains tsx source watching and polls `.env` metadata, restarting on
+  saves/replacements. Production still needs a restart. Errors now identify both conflicting
+  settings without exposing either value. No dependency or permission bypass was added.
+- `npm test`: **143 passed** (24 client, 113 server, 6 Solidity). New checks cover every duplicate
+  role pair, guardian-only setup, `.env` reload, invalid-setting recovery, editor file replacement,
+  and clearing settings. Log: `qa/guardian-env-unit-final.log`.
+- `npm run build`: **passed**; the existing bundle-size advisory remains.
+  Log: `qa/guardian-env-build.log`.
+- Full desktop/phone browser run: **230 passed, 9 intentional skips**; one phone presentation
+  case failed during trace-file cleanup (`ENOENT`), after its assertions. That case **passed**
+  separately with a dedicated artifact directory (52.8 seconds). All **22 guardian browser
+  checks passed** in the full run. Logs: `qa/guardian-env-e2e-final.log` and
+  `qa/guardian-env-browser-recheck.log`. Live Gemini was not requested in this run.
+- Earlier feature tests used explicit synthetic PINs and disposable APIs. They did not establish
+  that the host API had reloaded the user's settings. This fix adds a dev-runner regression and
+  separately verifies the actual local configuration and screen before handoff.
+
 ## Parent/guardian consent and deletion (2026-11-06)
 
 - `/soon/safety` now records dated, PIN-authorized demo permission for A12/B07/C33, withdraws

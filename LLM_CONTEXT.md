@@ -5,7 +5,8 @@ ChatGPT/Codex, Gemini, Cursor, Copilot…) can continue the project without the 
 conversations. **The source code wins if this file disagrees with it**, and then fix this file.
 
 Snapshot: **2026-11-06**, after guardian consent/deletion, Seedlings and the silent presentation feature.
-Last commit at writing: `1359975`. The user pushes to GitHub themselves.
+Baseline commit: `138164b`; the guardian environment follow-up is recorded in `VERIFICATION.md`.
+The user pushes to GitHub themselves.
 
 ---
 
@@ -117,7 +118,7 @@ npm run dev                            # web 127.0.0.1:5173 + api 127.0.0.1:8787
 | --- | --- |
 | `npm run dev` | concurrently: `[web]` Vite, `[api]` tsx watch, `[chain]` Hardhat node |
 | `npm run dev:web` / `dev:api` / `dev:chain` | one of them |
-| `npm test` | client node tests (24) + server tests (110) + Solidity contract tests (6) |
+| `npm test` | client node tests (24) + server tests (113) + Solidity contract tests (6) |
 | `npm run test:e2e` | Playwright (starts/reuses chain, api, web) |
 | `npm run test:all` | both |
 | `npm run build` | client → `client/dist`, server → `server/dist` |
@@ -127,9 +128,10 @@ npm run dev                            # web 127.0.0.1:5173 + api 127.0.0.1:8787
 | `npm run build -w chain` | recompile the contract and export `chain/build/ImpactLedger.json` |
 | `npm run make:voice` | parked Gemini TTS script |
 
-`client/vite.config.js` proxies `/api` → `http://127.0.0.1:8787`. The API only reloads `.env` on
-restart: `tsx watch` restarts when a `server/src` file changes, so touching `server/src/index.ts`
-reloads it.
+`client/vite.config.js` proxies `/api` → `http://127.0.0.1:8787`. `server/scripts/dev.mjs` keeps
+`tsx watch` for source edits and also polls `.env` metadata for saves/replacements,
+asking tsx to restart. Production `npm run start` still needs a manual restart after settings edits.
+`npm run check:config -w server` validates local settings without printing credentials.
 
 ### `server/.env` settings (validated with zod in `server/src/config.ts`; documented in `.env.example`)
 
@@ -405,8 +407,11 @@ lock an adult after 5.
 
 ## 11. Verification status
 
-`npm test`: **140 pass** (24 client, 110 server, 6 contract), after guardian consent/deletion.
-Full Playwright with `LIVE_AI=1`, two workers: **232 pass, 8 intentional skips**, no failures or
+`npm test`: **143 pass** (24 client, 113 server, 6 contract), after the guardian environment fix.
+Latest full browser run: 230 pass, 9 intentional skips; one phone presentation trace-cleanup
+error passed a dedicated rerun. All 22 guardian browser checks passed. Build and local saved-PIN
+validation passed; no saved consent was submitted by the assistant.
+The earlier full Playwright run with `LIVE_AI=1`, two workers had **232 pass, 8 intentional skips**, no failures or
 retries (desktop + phone; details in `VERIFICATION.md`). Guardian API tests also passed five
 consecutive repeats (55 checks). Build and all 12 live Gemini evaluation checks passed.
 PayPal browser tests (`e2e/paypal.spec.js`) replace PayPal's
@@ -461,9 +466,11 @@ Learning credits (not money) split 50/30/10/remainder into sample jars; fraction
 in Invest so every jar remains nonnegative and the total is conserved. Staff get full-history
 PayPal USD aggregates and a names-free CSV. Fifteen-minute staff tokens stay in page memory;
 PIN lockouts are shared with payouts. UI words: `content/ngo.js`; scoped theme: `ngo.css`.
-NGO access follow-up: saving `.env` does not restart the API's source watcher. The user saved a
-valid admin PIN while the old server still reported no roles; reloading the API fixed login.
-Keep manual restart guidance in the setup state and `JUDGE_GUIDE.md`. **Check access again**
+NGO/guardian access follow-up: the old source-only watcher missed `.env` saves. The dev runner
+now reloads saved settings automatically; an already-running old command needs one restart.
+The guardian incident also exposed matching admin/guardian PINs; validation now names the actual
+conflicting settings instead of always blaming the mentor PIN. Keep production restart guidance
+in the setup state and `JUDGE_GUIDE.md`. **Check access again**
 fetches roles without remounting the page; the form chooses an available role. **Show PIN**
 reveals only typed input, resets on submit, and never reads a configured PIN from the server.
 Do not publish actual PINs in the judge guide: these credentials are also used for payouts.

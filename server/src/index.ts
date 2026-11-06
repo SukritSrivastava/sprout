@@ -1,5 +1,5 @@
 // Entry point: load settings, build the app, start listening. `npm run dev` runs this with tsx,
-// which restarts the server whenever a source file changes. Restart manually after editing .env.
+// which restarts for source edits; scripts/dev.mjs also restarts it after server/.env is saved.
 import { loadConfig } from './config.js';
 import { buildApp } from './app.js';
 

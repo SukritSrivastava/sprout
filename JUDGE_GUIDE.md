@@ -39,11 +39,13 @@ separate PayPal flows use sandbox USD. Access expires after 15 minutes.
 ## If access is unavailable
 
 1. Ask the host to confirm the staff PIN was saved under the matching role in `server/.env`.
-2. Restart the dev server after changing the PIN settings.
+2. Save the file; `npm run dev` reloads settings automatically. Restart an older dev command or a production API manually.
 3. Press **Check access again**, or refresh the page.
 
-The API loads `server/.env` at startup. Its source watcher does not reload this hidden file,
-so saving a PIN must be followed by a server restart in development and production modes.
+The API loads `server/.env` at startup. The development runner also detects saves/replacements of
+this hidden file and restarts the API. Production still requires a manual restart. Run
+`npm run check:config -w server` to validate local settings without exposing PINs; an error names
+the settings that conflict. Admin, mentor and guardian PINs must be different.
 Five wrong PINs lock that role for 15 minutes; wait for the lockout to expire instead of retrying.
 The form never displays the server's stored PIN, and the public config endpoint exposes only
 available roles. No staff PIN or token is saved in browser storage.

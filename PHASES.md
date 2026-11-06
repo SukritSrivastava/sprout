@@ -7,6 +7,11 @@ receipts, NGO learning reviews, saved Seedlings lessons and guardian demo permis
 Full-site Hindi, classroom/offline and certificates remain previews. The historical prompts below
 describe earlier phases; the status section records what now works.
 
+Guardian setup fix (2026-11-06): development now reloads `.env` saves/replacements through the
+existing tsx watcher; production still needs a restart. Duplicate-PIN errors identify the actual
+roles, and `npm run check:config -w server` validates local settings without exposing credentials.
+Regression coverage includes hidden-file edits, invalid-setting recovery and guardian access.
+
 Each phase has a **frontend track** and a **backend track** that can run at the same time.
 Phase 0 fixes the API contract (`docs/mentor-api.md`) so both sides build against the same shape.
 

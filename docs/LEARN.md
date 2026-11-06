@@ -256,8 +256,10 @@ four jars. The next state is written before becoming visible in memory. Staff ac
 `client/src/content/ngo.js`; workspace styling in `client/src/ngo.css` extends the shared theme.
 The access screen can re-fetch roles after setup without a page reload. Its Show PIN button
 changes only the typed input's visibility, never fetches the server's PIN, and does not submit
-the form. PIN changes in `.env` require restarting the server because the source watcher ignores
-hidden settings files. `JUDGE_GUIDE.md` walks through access and review checks without secrets.
+the form. `server/scripts/dev.mjs` watches `.env` saves and asks the existing tsx source watcher
+to restart, so new PINs take effect in development. Production APIs still need a restart.
+`npm run check:config -w server` validates local settings without showing secret values.
+`JUDGE_GUIDE.md` walks through access and review checks without secrets.
 
 | Word | Meaning here |
 | --- | --- |

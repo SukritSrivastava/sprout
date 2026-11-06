@@ -136,7 +136,7 @@ blockchain still starts empty on every `npm run dev`.)
 
 Before using `/app`, Seedlings or approving NGO activities:
 
-1. Set a unique `PAYOUT_PIN_GUARDIAN` (at least six characters) in local `server/.env`, then restart the API.
+1. Set a unique `PAYOUT_PIN_GUARDIAN` (6–64 characters) in local `server/.env`. `npm run dev` reloads saved settings automatically; restart the API when using a production build.
 2. Open `/soon/safety`, choose the sample learner and read all three permission statements.
 3. Tick the statements, enter the guardian PIN and select **Record demo permission**.
 
@@ -146,6 +146,10 @@ deletion requires re-entering the PIN and typing the learner code. It leaves Pay
 blockchain receipts intact. Existing learning files start with permission pending until a guardian
 agrees. This is a local demo acknowledgement, not verified adult identity or production legal consent.
 For the full automatic presentation, record A12 permission first; the presentation never agrees for you.
+
+If a saved PIN is not available, run `npm run check:config -w server`. It checks the actual local
+settings without printing credentials. Admin, mentor and guardian PINs must differ; duplicate-PIN
+errors name the conflicting settings. An older dev command started before this fix needs one restart.
 
 **NGO workspace:** open `/soon/ngo` and use an existing mentor/admin payout PIN. For a judge-ready
 walkthrough and setup troubleshooting, see [JUDGE_GUIDE.md](JUDGE_GUIDE.md). One staff PIN opens the workspace;
