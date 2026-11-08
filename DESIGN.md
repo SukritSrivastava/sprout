@@ -1,7 +1,7 @@
 # Sprout design system
 
-Bold neo-brutalist, light only. Agreed brief: `docs/REDESIGN.md`. Canonical values live at the
-top of `client/src/styles.css`; components only use those variables.
+Bold neo-brutalist, light only. Canonical values live at the
+top of `client/src/shared/styles.css`; components only use those variables.
 
 ## Principles
 
@@ -34,7 +34,7 @@ top of `client/src/styles.css`; components only use those variables.
 Font: **Bricolage Grotesque** (variable, self-hosted, optical sizing on). Hindi falls back to
 Nirmala UI / Noto Sans Devanagari because Bricolage has no Devanagari glyphs.
 
-The silent presentation adds two narrowly used reference colors in `client/src/presentation.css`:
+The silent presentation adds two narrowly used reference colors in `client/src/features/presentation/styles.css`:
 `--presentation-blue: #76aaff` for the folded cursor edge, attention mark and target outline;
 `--presentation-paper: #eff7ec` for its pale green face. The cursor SVG consumes those variables
 and the existing ink/muted colors. Site and payment UI tokens are unchanged.
@@ -49,7 +49,7 @@ selected) · `.card` · `.highlight` (purple boxed words) · `.band` (+ `-mint`,
 ## Motion
 
 Built with **Motion** (`motion/react`) and **Lenis** smooth scrolling. Shared pieces in
-`client/src/lib/motion.jsx`: `Reveal` (fade + lift on first scroll into view), `Stagger` (children
+`client/src/shared/motion.jsx`: `Reveal` (fade + lift on first scroll into view), `Stagger` (children
 one after another), `liftOnHover`, one easing curve `ease`.
 
 - Page changes fade out/in (0.35s). Section links glide with Lenis (1.1s).

@@ -2,7 +2,7 @@
 export const ngo = {
   title: 'NGO & mentor dashboard', tag: 'For the grown-ups', back: 'All features',
   intro: 'Check the effort. Celebrate the progress. Keep a clear record of both.',
-  note: 'Working local demo · Saved activity reviews, sample learners. Learning credits and PayPal sandbox dollars stay separate.',
+  note: 'Sample workspace · Saved activity reviews, sample learners. Learning credits and PayPal sandbox dollars stay separate.',
   lockedTitle: 'A little care goes a long way.',
   lockedText: 'Give every activity a proper look. Approve it when it’s ready, or send it back for another try.',
   promises: ['One saved decision per activity.', 'Credits go into sample learning jars.', 'A report you can actually download.'],

@@ -1,12 +1,27 @@
 # Deployment audit: Vercel website and API
 
 **Date:** 2026-11-06. **Application baseline:** `b4429e6`.
+
+**Current hosting:** the user changed the target to Render API, Vercel website and Supabase on
+2026-11-08; [ADR-005](docs/ADR-005-RENDER-VERCEL-SUPABASE.md) supersedes the provider choice in
+this historical audit. Shared-state, privacy, transaction and recovery findings still apply.
+The obsolete Vercel API config has been removed; use the current [setup](docs/SETUP.md#render-vercel-and-supabase).
 **Verdict:** Do not deploy this version unchanged. Vercel + Neon + Base Sepolia is viable;
 the current files and process-local state cannot safely act as shared cloud records.
 
 This audit records issues and repairs needed, not a completed database migration or hosted
 validation. See [the accepted hosting decision](docs/ADR-001-HOSTING.md) and
 [the release checklist](docs/DEPLOYMENT_CHECKLIST.md).
+
+This is a historical baseline. Shared storage and durable ledger publication were implemented
+later; [verification](VERIFICATION.md) records their local checks and remaining hosted gates.
+Source paths and line numbers in the findings retain their original meaning. After the
+2026-11-08 feature reorganization, use the [file map](docs/CODE_MAP.md) for current locations.
+
+Vercel project/routing configuration was added on 2026-11-08, with explicit hosted origins,
+platform IP handling, no-store API responses and local compiled-artifact checks. D10's real
+preview checks and D6's actual function-artifact inclusion remain release gates. See
+[setup](docs/SETUP.md#vercel-website-and-api); the historical findings below are retained.
 
 ## Scope and evidence
 
@@ -21,13 +36,13 @@ found no `dangerouslySetInnerHTML`, `eval()` or matching Gemini-key literal. Tho
 are not a complete security proof. Generated files, dependencies, private `.env` contents and
 ignored payment/learning records were outside the source inventory.
 
-[server/scripts/audit-deployment.ts](server/scripts/audit-deployment.ts) reproduces defects with
+[The audit harness](server/scripts/platform/audit-deployment.ts) reproduces baseline defects with
 fake providers, in-memory apps and disposable synthetic files. **Passing these audit checks means
 the defects were reproduced, not fixed.** They deliberately live outside the normal regression
 suite. From the repository root:
 
 ```sh
-node --import tsx --test server/scripts/audit-deployment.ts
+node --import tsx --test server/scripts/platform/audit-deployment.ts
 ```
 
 ## Fix before a public judging demo

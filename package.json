@@ -15,6 +15,8 @@
     "preview": "concurrently --names web,api --prefix-colors green,magenta \"npm run preview -w client\" \"npm run start -w server\"",
     "test": "npm test -w client && npm test -w server && npm test -w chain",
     "test:e2e": "playwright test",
+    "test:preview": "playwright test --config playwright.preview.config.js",
+    "check:deployment": "node scripts/platform/check-deployment.mjs",
     "test:all": "npm test && npm run test:e2e",
     "eval:mentor": "npm run eval:mentor -w server",
     "make:voice": "npm run make:voice -w server --",
@@ -23,5 +25,8 @@
   "devDependencies": {
     "@playwright/test": "^1.64.1",
     "concurrently": "^10.0.6"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

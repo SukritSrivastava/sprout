@@ -4,6 +4,17 @@ Date: 2026-11-05. Reviewed revision: `18ac6ab244c94b6564ae400660f69d72b1b1f2e1` 
 
 This is a local, sandbox-only prototype. PayPal's sandbox hostname is hard-coded, so these findings do not establish exposure of real money. Severity describes impact on the application's integrity and the consequences of exposing it to untrusted users. No audit can guarantee that every defect has been found. No live PayPal payments, credential extraction, deployment, or destructive testing was performed.
 
+## Review follow-up (2026-11-07)
+
+Source paths and line numbers below refer to their dated review baseline. The 2026-11-08
+feature reorganization moved implementation and tests; see the [current file map](docs/CODE_MAP.md).
+
+The six findings from the current-code review have implementation fixes and regression coverage.
+See [verification](VERIFICATION.md) for the final results and provider boundaries. The
+seven-digit redaction issue listed as deferred in the older notes below is now fixed; the filter
+also handles Devanagari and other decimal digit scripts. The dated findings below retain the
+earlier audit history.
+
 ## Priority follow-up (2026-11-05)
 
 After the re-audit, the user selected the fixes needed for the local sandbox demo. This follow-up

@@ -1,12 +1,15 @@
 // ✏️ EDIT ME: guardian permission words. The policy id must match the server's policy.
 export const guardian = {
-  title: 'Guardian consent & safety', policy: 'demo-permission-v1',
+  title: 'Guardian consent & safety', policy: 'demo-permission-v2',
+  tag: 'Working · sample demo', gateTag: 'Sample learner A12 · shared demo',
+  setup: 'Guardian access needs to be configured by the demo operator. The guardian screen explains the next step.',
+  withdrawalEffect: 'Learning and AI entry stop. Existing saved progress stays on the demo server until you delete it or agree again.',
   intro: 'A grown-up decides when a sample learner can learn and ask Paisa Mentor for help.',
-  note: 'Working local demo · A PIN records a demo acknowledgement. It does not verify a real guardian’s identity or provide production legal consent.',
+  note: 'Sample demo · A PIN records a demo acknowledgement. It does not verify a real guardian’s identity or provide production legal consent.',
   statements: [
     'I am the responsible guardian for this sample learning session.',
     'I allow this sample learner to use picture lessons, learning activities and Paisa Mentor. AI can make mistakes; a trusted adult should help.',
-    'I understand learning progress is saved on this computer. AI questions and recent chat history may go to Google Gemini after emails and long numbers are blanked out. Chats are not saved on the server or shown to NGO staff.',
+    'I understand learning progress is saved on the demo server and shared across visitors using the same sample learner code. AI questions and recent chat history may go to Google Gemini after emails and long numbers are blanked out. Chats are not saved on the server or shown to NGO staff.',
   ],
   states: { pending: 'Permission needed', active: 'Permission recorded', withdrawn: 'Permission withdrawn', deleted: 'Learning data deleted' },
   data: 'Saved learning data includes the fixed sample code, activity decisions, learning-credit jars, lesson completions and permission dates. No child name, address or bank details are collected by this feature.',

@@ -1,0 +1,33 @@
+// Demo-only words. The existing PIN forms return when DEMO_OPEN_ACCESS is false on the server.
+export const demoAccess = {
+  en: {
+    title: 'PIN protection · disabled for this demo',
+    text: 'Staff access, guardian actions and payout approvals would be PIN protected. The PIN checks are implemented and ready to enable; they are switched off here so you can explore every feature.',
+    session: 'Open demo access', loading: 'Opening the demo workspace…',
+    recovery: 'Restore this request and its approvals using the request code. No PIN is needed in this demo.',
+    approvals: 'Try the two-adult approval flow. Choose any two sample roles; PIN checks are disabled for the demo.',
+    payoutIntro: 'Kids ask, two sample adult roles approve, and PayPal pays a guardian. No PIN is needed in this demo.',
+    payoutDetail: 'Two different sample adult roles approve this exact request. PIN protection is implemented and disabled for the demo.',
+    guardianNote: 'Demo access is open. Try recording, withdrawing or deleting sample permission without a PIN. Learning screens stay accessible for judging; this does not verify a real guardian or provide legal consent.',
+    withdrawn: 'Sample permission withdrawn. Learning stays open for this demo.',
+    withdrawal: 'This records a sample withdrawal. Learning and AI stay open in demo mode. With PIN protection enabled, withdrawal pauses them.',
+    classroomTitle: 'Your classroom, open for the demo',
+    classroomText: 'Each learner would have a PIN on a shared tablet. PIN entry is disabled for this demo.',
+    welcome: (name) => `Welcome, ${name ?? 'friend'}! No PIN needed for the demo.`,
+  },
+  hi: {
+    title: 'PIN सुरक्षा · इस डेमो में बंद है',
+    text: 'स्टाफ प्रवेश, अभिभावक के काम और भुगतान की मंज़ूरी PIN से सुरक्षित होंगे। PIN जाँच का कोड तैयार है; डेमो में इसे बंद रखा है ताकि आप हर सुविधा देख सकें।',
+    session: 'खुला डेमो प्रवेश', loading: 'डेमो कार्यक्षेत्र खुल रहा है…',
+    recovery: 'अनुरोध कोड से यह अनुरोध और उसकी मंज़ूरियाँ वापस लाएँ। इस डेमो में PIN की ज़रूरत नहीं है।',
+    approvals: 'दो वयस्कों की मंज़ूरी आज़माएँ। कोई भी दो नमूना भूमिकाएँ चुनें; डेमो में PIN जाँच बंद है।',
+    payoutIntro: 'बच्चे अनुरोध करते हैं, दो नमूना वयस्क भूमिकाएँ मंज़ूरी देती हैं और PayPal अभिभावक को भुगतान करता है। डेमो में PIN नहीं चाहिए।',
+    payoutDetail: 'दो अलग नमूना वयस्क भूमिकाएँ इसी अनुरोध को मंज़ूरी देती हैं। PIN सुरक्षा का कोड तैयार है और डेमो में बंद है।',
+    guardianNote: 'डेमो खुला है। बिना PIN नमूना अनुमति दर्ज करें, वापस लें या सीखने का डेटा हटाएँ। निर्णायकों के लिए सीखने की स्क्रीन खुली रहती हैं; यह असली अभिभावक की पहचान या कानूनी सहमति नहीं है।',
+    withdrawn: 'नमूना अनुमति वापस ली गई। डेमो में सीखना खुला रहेगा।',
+    withdrawal: 'यह नमूना अनुमति वापस लेता है। डेमो में सीखना और AI खुले रहते हैं। PIN सुरक्षा चालू होने पर अनुमति वापस लेने से ये रुकते हैं।',
+    classroomTitle: 'डेमो के लिए खुली कक्षा',
+    classroomText: 'साझा टैबलेट पर हर बच्चे का अपना PIN होगा। डेमो में PIN भरना बंद है।',
+    welcome: (name) => `स्वागत है, ${name ?? 'दोस्त'}! डेमो में PIN नहीं चाहिए।`,
+  },
+};

@@ -81,12 +81,12 @@ export const home = {
     ],
   },
 
-  // Section 5: coming soon (titles and one-liners come from src/previews/index.js)
+  // Section 5: coming soon (titles and one-liners come from src/features/catalog/registry.js)
   comingSoon: {
     tag: 'Live and coming soon',
     title: 'Real PayPal money flow, and what’s next.',
     text: 'Try PayPal sandbox payments, the local blockchain, the NGO workspace and Seedlings lessons with a saved garden. The others are clickable previews.',
-    // Which previews to show here, in order (ids from src/previews/index.js).
+    // Which previews to show here, in order (ids from src/features/catalog/registry.js).
     show: ['donate', 'payout', 'impact', 'ngo', 'seedlings'],
     rowStamp: 'Try the preview',
     seeAll: 'See all', // followed by "9 previews"

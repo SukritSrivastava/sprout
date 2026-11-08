@@ -148,7 +148,7 @@ export const mentorText = {
 
 // Backup answers the website uses if it can't reach our server at all.
 // (When the server is up but the AI isn't, the server's own backup answers are used:
-// server/src/mentor/prepared.ts.) The first matching `words` wins; otherwise `default`.
+// server/src/features/mentor/prepared.ts.) The first matching `words` wins; otherwise `default`.
 export const offlineAnswers = {
   // Used instead of the answers below when the question sounds like a scam, debt, theft,
   // bullying or self-harm. The trusted-adult card is shown with it.

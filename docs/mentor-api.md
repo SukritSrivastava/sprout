@@ -1,289 +1,211 @@
-# API contract (learning, guardian permission, mentor, PayPal and impact ledger)
+# API contract
 
-**Hosting status (2026-11-06):** current guarantees below describe one local API process. The
-Vercel website/API + Neon + Base Sepolia target is selected, but migration is pending. The
-deployment audit reproduced cross-instance stale permissions/payments, session failures,
-independent limits and unsafe publication retries. See [`../DEPLOYMENT_AUDIT.md`](../DEPLOYMENT_AUDIT.md).
-Hosted API routing, shared state and production origins have not been configured or verified.
+Requests use the site's `/api` paths. Vite proxies them to Fastify locally. JSON bodies have a **32 KiB** limit; feature schemas reject unknown fields. Errors normally contain `{error,message}`. Payment errors can also include recovery data: an HTTP failure must remain a failure even if its body says `ok:true`.
 
-## Guardian demo permission
+These contracts work with the local file backend or the optional transactional Postgres backend.
+The Vercel website rewrites to the Render API; actual hosted validation remains pending. See [hosting setup](SETUP.md#render-vercel-and-supabase).
+Database outages return `503 shared_records_unavailable`, without driver details or credentials.
+All API replies, including streams and errors, send `Cache-Control: no-store` and matching
+CDN directives. Unknown API paths return JSON 404 responses and never use the website fallback.
 
-`GET /api/guardian/status?learner=A12` returns `{configured,consent}`. Learner codes are the fixed
-samples A12, B07 and C33. Consent contains `learner`, `status` (`pending`, `active`, `withdrawn`,
-`deleted`), integer `revision`, `policy:'demo-permission-v1'`, `acknowledgedAt` and `changedAt`.
-No PIN, name, chat, activity or payment details appear in this public local-demo status.
+## Access modes
 
-`POST /api/guardian/permission` takes `{learner,pin,action,revision}`. `acknowledge` also requires
-`acknowledged:true` and `policy:'demo-permission-v1'`; `delete` requires `confirm` equal to the
-learner code. Every action checks `PAYOUT_PIN_GUARDIAN`, sharing the payout PIN lockout. Missing
-setup returns 503, wrong PIN 403, locked PIN 429, stale revision 409, malformed requests 400.
-Responses return the saved `{configured,consent}` and always use `cache-control:no-store`.
-These routes enforce the origin allow-list, 60 requests/minute and 20 changes/5 minutes per IP.
+`DEMO_OPEN_ACCESS=true` is the server default. Guardian status, NGO config and PayPal config include `demoOpenAccess`. Open mode permits NGO operations without a token, using the sample mentor role for reviews. Guardian changes and payout approve/recover/send accept an omitted or empty PIN. Learning does not require active permission. Opening the demo does not record consent.
 
-`GET /api/seedlings`, `POST /api/seedlings/complete` and `POST /api/mentor/chat` require active
-A12 permission and `x-learning-revision` matching its current revision. Otherwise they return
-403 `consent_required` or 409 `consent_changed`; these are access failures and must never trigger
-an offline chat fallback. CORS preflight permits the revision header. NGO activity reviews also
-require active permission for their activity's learner, returning 403 `consent_required` otherwise.
+Both modes retain revision checks, deletion confirmations, fixed payout recipient, two distinct approving roles, available funds, persistence and retry rules. Set the backend switch to `false` to restore protected requirements below. Browser preferences cannot change it. PINs are shared secrets, not verified adult identity.
 
-Withdrawal retains progress but blocks new learning/chat/reviews. Active AI streams abort after
-revocation and check permission before yielding later model output. Deletion removes the selected
-learner's activities/derived jars and, for A12, the garden. No saved chat history, offline queue or
-issued certificate exists yet. A minimal deleted marker prevents stale requests restoring data.
-Fresh permission after deletion uses a new revision and starts with an empty garden; deleted
-activities are not recreated. Payment records, payouts and chain receipts are unaffected.
+Feature routes check browser origins against `ALLOWED_ORIGIN`, including reads. CORS permits revision and NGO authorization headers where needed. This does not authenticate non-browser callers.
 
-Learning JSON files migrate with empty `consents` (permission pending), retaining existing progress.
-Permission writes are atomic. A failed permission write returns 503 and blocks all learning until
-the pending state can be saved. Keep the process running during a storage outage: an in-memory
-pending change cannot survive a crash before it reaches disk. Refresh saved status after uncertainty.
-This is a PIN-authorized local acknowledgement, without identity or legal-consent verification.
+## Health
 
-The agreement between the website (`client/`) and the server (`server/`). Change this file
-first, then the code on both sides. Server code: `server/src/routes/mentor.ts` and
-`server/src/mentor/`. Client code: `client/src/lib/mentorApi.js`.
-
-All requests go to the website's own address under `/api`. In development Vite forwards them to
-the Fastify server on `http://127.0.0.1:8787`.
-
----
-
-## `GET /api/health`
+`GET /api/health` returns:
 
 ```json
-{ "ok": true, "service": "sprout-server", "mentor": { "aiConfigured": true }, "paypal": { "sandboxConfigured": true } }
+{"ok":true,"service":"sprout-server","mentor":{"aiConfigured":false},"paypal":{"sandboxConfigured":false}}
 ```
 
-`aiConfigured: false` means no `GEMINI_API_KEY` is set: the chat shows "Offline mode" and the
-server answers from prepared replies. The key itself is never returned.
+Flags indicate credentials are present, not provider readiness. No secret is returned.
 
----
+`GET /api/ready` returns `{ok:true,storage:"postgres"}` after checking the current shared schema,
+or `{ok:true,storage:"local"}` for local-file/memory development. A database outage, missing schema
+or three-second deadline returns `503 not_ready` with no driver details. Checks share in-flight
+work and cache success for two seconds. This endpoint makes no provider calls or mutations.
+Render uses readiness; it is not a full PayPal/Gemini/ledger check.
 
-## `POST /api/mentor/chat` (live since 2026-11-05)
+## Guardian permission
 
-### Request body
+| Route | Input | Result |
+| --- | --- | --- |
+| `GET /api/guardian/status` | Query `learner=A12` (default), `B07` or `C33` | `{configured,demoOpenAccess,consent}` |
+| `POST /api/guardian/permission` | `{learner,action,revision,pin?}` | The same shape with saved status |
+
+`consent` contains `learner`, `status` (`pending`, `active`, `withdrawn`, `deleted`), integer `revision`, `policy`, `acknowledgedAt` and `changedAt`. Current policy: `demo-permission-v2`.
+
+Schema 4 records the policy per learner. Old active acknowledgements become pending with an
+advanced revision and require the shared-storage statement again. Progress and blocked markers
+remain. An old-policy write cannot authorize protected learning on the current API.
+
+Actions are `acknowledge`, `withdraw` and `delete`. Acknowledgement also needs `acknowledged:true` and the current `policy`. Deletion needs `confirm` equal to the learner code. A stale revision returns `409 consent_changed`.
+
+Protected mode checks `PAYOUT_PIN_GUARDIAN`: missing configuration is 503, missing PIN 400, wrong PIN 403 and locked PIN 429. Both modes require acknowledgement/deletion confirmations. Status reveals no credentials, activities or payment details.
+
+Withdrawal retains progress. Deletion removes selected activities/derived jars and A12's garden, preserves payment records, and retains a minimal revision marker. Fresh permission does not recreate deleted activities. File save failures return `503 learning_records_unavailable` and block learning until saved. Database mode locks revision checks and changes together; outages return `503 shared_records_unavailable`. Refresh status after uncertainty; restore local disk access before restarting a file-backed API.
+
+## Mentor
+
+`POST /api/mentor/chat` needs A12's current `x-learning-revision` and, in protected mode, active permission. Access failures are 403/409 and must not trigger client offline answers.
 
 ```json
 {
-  "language": "en",
-  "messages": [{ "role": "user", "text": "How long until I can buy my bicycle?" }],
-  "context": {
-    "jars": { "save": 200, "spend": 120, "give": 40, "invest": 40 },
-    "goal": { "label": "Bicycle", "cost": 6000, "monthly": 100 }
+  "language":"en",
+  "messages":[{"role":"user","text":"How can I save for my bicycle?"}],
+  "context":{
+    "jars":{"save":200,"spend":120,"give":40,"invest":40},
+    "goal":{"label":"Bicycle","cost":6000,"monthly":100}
   }
 }
 ```
 
-| Field | Rules |
-| --- | --- |
-| `language` | `"en"` or `"hi"`. Replies are written in this language (Hindi in Devanagari). |
-| `messages` | 1–12 items, oldest first; the last must be `role: "user"`. `role` is `"user"` or `"mentor"`; `text` is 1–600 characters after trimming. |
-| `context` | Optional. The demo's **sample** numbers in whole rupees. |
-| `context.jars.*` | Integers 0–100,000. |
-| `context.goal` | `label` must be `"Headphones"`, `"Bicycle"` or `"Laptop"` (free text could smuggle instructions to the AI), `cost` 1–1,000,000, `monthly` 0–100,000. |
+Language is `en` or `hi`. Send 1–12 turns ending with `user`. Trimmed user text is 1–600 characters; earlier `mentor` text is 1–1,000. Optional context contains both jars and goal. Jars are integer sample rupees, 0–100,000 each. Goal labels are `Headphones`, `Bicycle` or `Laptop`; cost is 1–1,000,000, monthly contribution 0–100,000.
 
-Unknown fields are rejected. Body limit 16KB. Checked by `server/src/mentor/schema.ts`.
+The shared website switch sets the next mentor request's language. A reply already streaming keeps its original language; its old-language follow-up suggestions cannot replace the new language's defaults. Goal labels remain canonical English API values when displayed in Hindi. API error codes/messages and CSV fields retain their existing schema; the client translates known errors at display time.
 
-### Success: `200`, streamed
+Success streams `application/x-ndjson`, one JSON event per line:
 
-`Content-Type: application/x-ndjson`: one JSON object per line, sent as soon as it is ready.
-
-```
+```text
 {"type":"start","source":"ai","flagged":false}
-{"type":"delta","text":"At ₹100 a month, "}
-{"type":"delta","text":"your ₹6,000 bicycle is…"}
-{"type":"done","suggestions":["How can I save faster for my goal?","Is it okay to spend some now?"]}
+{"type":"delta","text":"Try saving "}
+{"type":"delta","text":"a little each month."}
+{"type":"done","suggestions":["How can I plan my goal?"]}
 ```
 
-| Event | Meaning |
-| --- | --- |
-| `start` | First line, always. `source` is `"ai"` (Gemini) or `"prepared"` (built-in answer because there is no key, or Gemini failed before replying). `flagged` is `true` for sensitive topics (scams, debt, family trouble, bullying, self-harm); the UI then shows a "Talk to a trusted adult" card with Childline 1098. |
-| `delta` | A piece of the reply. Join all `text` values in order. |
-| `done` | Last line. `suggestions`: up to 3 follow-up questions in the same language, skipping ones already asked. |
+Source is `ai` or `prepared`. Missing configuration/failure before the first AI chunk uses prepared text. Sensitive topics in any user turn set `flagged`. A later model error adds a cut-short notice before `done`; a connection ending without `done` is incomplete. Revision changes stop later output without completing a normal answer.
 
-If Gemini stops halfway, the server adds a short "(the answer was cut short)" delta and still
-sends `done`.
+Defaults: `gemini-3.5-flash-lite`, 400 output tokens, 15-second timeout. Disconnects cancel model work. Instructions request short, age-appropriate guidance; they do not guarantee correctness. Emails/UPI addresses and numbers of seven or more decimal digits (including Devanagari, with optional spaces/dashes) are redacted before model submission. Chat is not persisted; redaction is not complete anonymization. Malformed bodies return 400; quotas return 429. Code: `server/src/features/mentor/`, `routes.ts`, and `client/src/features/mentor/api.js`.
 
-### Errors
+## PayPal sandbox
 
-Errors are plain JSON (not streamed): `{ "error": "<code>", "message": "<human readable>" }`.
+Only `api-m.sandbox.paypal.com` is used. Amounts are whole USD. The server fixes allowed donation amounts and the guardian recipient.
 
-| Status | `error` | When | What the UI does |
-| --- | --- | --- | --- |
-| 400 | `invalid_request` | Body breaks the rules above | Shows the message as a notice |
-| 404 | `not_found` | Wrong path | Developer error |
-| 403 | `forbidden_origin` | A browser on another website (its `Origin` isn't in `ALLOWED_ORIGIN`) | — |
-| 429 | `rate_limited` | More than 20 requests in 5 minutes from one address, or more than `MENTOR_HOURLY_LIMIT` (300) per hour from everyone together. `Retry-After` gives seconds | Shows the message as a notice |
-| network error / 5xx | — | Server unreachable | Answers from the client's prepared set, tags it, shows "Offline mode" |
-
-### Behaviour and safety
-
-- Model: `GEMINI_MODEL` (agreed: `gemini-3.5-flash-lite`), temperature 0.5, max 400 output
-  tokens, 15-second timeout, cancelled if the browser disconnects.
-- Rules live in `server/src/mentor/prompt.ts`: kid-friendly, at most 110 words, ₹ digits, no
-  personal investment advice or product picks, never asks for personal details, stays on money
-  topics, ignores instructions inside user messages that try to change its rules.
-- `server/src/mentor/safety.ts` flags risky topics in English and Hindi with a word list; flagged
-  chats get extra-careful instructions and the trusted-adult card.
-
-### Misuse protection
-
-- **Other websites:** browsers send an `Origin` header; only `ALLOWED_ORIGIN` gets answers and
-  CORS headers (`OPTIONS` preflight supported). Scripts without a browser aren't stopped by this.
-- **Quota abuse:** per-address limit (20 / 5 min) plus a shared hourly cap for everyone (300).
-  With no logins, the server can't tell a kid from a script; the caps limit the damage.
-- **Real addresses:** `TRUST_PROXY=true` only when deployed behind a host's proxy; off locally so
-  a faked `X-Forwarded-For` header can't dodge the limit.
-- **Prompt tricks:** rules tell the AI to ignore instructions inside messages and to distrust
-  earlier "mentor" turns sent back by the browser (they can be edited). Goal names are a fixed list.
-- **Memory:** the rate limiter forgets quiet addresses.
-- **Check it:** `npm run eval:mentor` runs 12 misuse attempts against the real AI (off-topic,
-  coding, stock tips in English and Hindi, forged history, role-play jailbreak, prompt reveal,
-  Hinglish scam, self-harm, personal details, empty list, goal-name injection).
-
-### Privacy
-
-- The server never logs message text: only timing, `source` and `flagged`.
-- Nothing is stored. Chat history lives only in the browser tab and is sent with each question
-  (last 12 messages; kid questions up to 600 characters, earlier mentor replies up to 1,000,
-  which the website shortens to fit).
-- Before any turn goes to Gemini, `mentor/privacy.ts` blanks out emails/UPI ids (`[email]`) and
-  runs of 7+ digits such as phone, card or Aadhaar numbers (`[number]`). Money amounts are kept.
-- A sensitive word in **any** of the kid's messages flags the whole reply, so short follow-ups keep
-  the careful instruction and the trusted-adult card.
-- The UI reminds kids not to share real names, phone numbers, addresses or passwords, and says
-  their questions go to Google's Gemini. If the server can't be reached, the website checks the
-  same sensitive words itself (`client/src/lib/safety.js`) and still shows the trusted-adult card.
-- The stream must end with `done`; if it stops early, the website keeps what arrived, marks it
-  cut short and says so.
-- Bad requests (400) don't use up the shared hourly AI cap.
-
----
-
-## Public impact ledger (Phase 5)
-
-Server code: `server/src/routes/ledger.ts`, `server/src/ledger/`. Client: `client/src/lib/ledgerApi.js`.
-Same "only our website" origin rule as the mentor.
-
-| Route | Does | Replies |
+| Route | Input / behavior | Result |
 | --- | --- | --- |
-| `GET /api/ledger/status` | Checks the chain | `{ ok, chainId, blockNumber, contract (null until the first publish deploys it), publisher, local }` |
-| `POST /api/ledger/publish` | Seals the **sample** batch only. Body `{ batchId: 1, receipts }` where `receipts` must be exactly the sample list in `client/src/lib/sampleReceipts.js` (= `server/src/ledger/sample.ts`); anything else is `400`. The server computes the batch code and totals itself. Max 10 per device per 5 minutes. | `{ batch, alreadyPublished }`. Publishing again returns the original; a batch number holding other receipts is `409 batch_conflict`. |
-| `POST /api/ledger/publish-live` | Seals the server's own settled PayPal receipts (completed donations, payouts with status `SUCCESS`) not yet published, in a new batch (101, 102…). No body. One publish at a time. | `{ batch, alreadyPublished, receipts }`; `409 nothing_to_publish` if none |
-| `GET /api/ledger/batches/:id` | Reads a batch from the contract (never deploys it) | `{ batch }`, or `{ batch: null }` if not published yet |
+| `GET /api/paypal/config` | Public SDK/setup information | `{configured,clientId,currency,mode,demoOpenAccess,amounts,rewardDollars,maxPayoutDollars,ngoName,poolDollars,payouts}` |
+| `GET /api/paypal/receipts` | Optional `limit` 1–100 and `before` previous receipt code; pending count covers full history | `{receipts,nextCursor,poolDollars,pendingCount}` |
+| `POST /api/paypal/orders` | `{amount}` from configured amounts | `{id}` |
+| `POST /api/paypal/orders/:id/capture` | Capture an order created here and approved through PayPal | `{receipt,note,poolDollars}` |
+| `POST /api/paypal/payout-requests` | `{amount}`, integer 1–`maxPayoutDollars` | `{request,poolDollars}` |
+| `POST /api/paypal/payout-requests/:id/approve` | `{approver,pin?}` | `{request,poolDollars}` |
+| `POST /api/paypal/payout-requests/:id/recover` | `{approver,pin?}`; sends no payment | `{request,poolDollars}` |
+| `POST /api/paypal/payout-requests/:id/send` | `{approver,pin?}` from an approving role | `{request,poolDollars}` |
+| `GET /api/paypal/payouts/:batchId` | Refresh stored payout, at most once/15 seconds per batch | `{receipt,poolDollars}` |
 
-Receipt fingerprints use format **v2**: `leaf:v2|id|type|amount|currency|date|ref`, where
-`currency` is `INR` (sample batches, whole rupees) or `USD` (PayPal batches, whole dollars). A
-batch holds one currency. Batch numbers 1–100 are sample batches, 101+ are PayPal batches.
-Reads are limited to 60 per device per minute.
+`payouts` contains `{configured,guardian}` with a masked recipient. The SDK client ID is intentionally public. A request contains `{id,amount,child,approvals,receipt}`; approvals list roles (`mentor`, `admin`, `guardian`), not credentials.
 
-`batch` = `{ batchId, root (64 hex), publishedAt, donated, rewarded, paidOut, receipts, tx }`, where
-`tx` = `{ hash, blockNumber, blockHash, timestamp, from, to, gasUsed, feeEth, status }`.
+Protected payouts need three distinct configured PINs and a guardian email. Approve/recover/send checks the selected role's PIN. Sending needs that role's approval and two different approved roles. Open mode bypasses PIN checks while retaining role checks.
 
-Errors: `400 invalid_request`, `403 forbidden_origin`, `429 rate_limited`, `503 chain_unreachable`
-("The local blockchain isn’t running. Start everything with `npm run dev`.").
+Receipts contain `{id,type,amount,currency,date,ref,status,batchId}`. Owner responses also include `paypalId`; public lists omit it. Capture verifies order ID, `COMPLETED`, USD and the exact expected amount. Repeat capture returns the same receipt with `note:null`; a simultaneous capture in one process returns `409 capture_in_progress`. Cross-instance captures reuse the provider idempotency key; database uniqueness prevents a second pool credit. New notes contain `{text,source:'ai'|'prepared'}`.
 
----
+Funds and sender IDs are saved before sending. A definite first-attempt refusal becomes `REJECTED`; uncertainty becomes `UNKNOWN` with funds reserved. Retrying `UNKNOWN`/idle `SENDING` reuses the same IDs. Duplicate-provider lookups must match operation, payee, currency and amount. Automatic retries stop after 29 days from first send (legacy records use creation time).
 
-## PayPal (sandbox)
+Send and refresh use the recipient item's status. Batch `SUCCESS` without an item result is
+reported as `PENDING`, keeps funds reserved and cannot qualify for ledger publication. A later
+`REFUNDED`, `RETURNED` or `REVERSED` status restores the pool and corrects reports in both
+storage backends. Stale pending/unknown responses cannot undo `SUCCESS`; stale success cannot
+undo returned funds. These rules do not alter an already published historical ledger batch.
 
-Server code: `server/src/routes/paypal.ts`, `server/src/paypal/`. Client: `client/src/lib/paypalApi.js`,
-`client/src/previews/PayPalButton.jsx`. Talks only to `https://api-m.sandbox.paypal.com` (test money).
-Same "only our website" origin rule; orders and captures 20 per device per 5 minutes, payout
-steps 20, reads 60 per minute. Everything is saved to `DATA_FILE` (default
-`server/data/paypal-records.json`) after each change, so a restart keeps it.
+`502 payout_unknown` and `409 payout_manual_review` include request/pool recovery data. Preserve it. `503 payment_records_unavailable` blocks financial operations until pending results persist. Do not delete records or create replacement payments to clear uncertainty.
 
-| Route | Does | Replies |
+Database-backed sends claim a 90-second lease and recheck approvals and funds inside the
+reservation transaction. Another sender gets `409 send_in_progress`. After lease expiry,
+recovery reuses the committed receipt and operation IDs; a failed result save leaves the
+original reservation intact. Database storage failures return `503 shared_records_unavailable`.
+
+Other errors include `400 invalid_request`; `403 wrong_pin`, `not_an_approver`, `needs_approval`; `404 unknown_order`, `unknown_request`, `unknown_payout`; `409 pool_too_small`, `already_sent`, `send_in_progress`, `payment_not_completed`, `payout_needs_review`; `429 pin_locked`, `rate_limited`; `502 paypal_error` with provider `issue`; and `503 paypal_not_configured`, `payouts_not_configured`, `too_many_orders`.
+
+## NGO workspace
+
+| Route | Input / protected access | Result |
 | --- | --- | --- |
-| `GET /api/paypal/config` | Is PayPal set up? | `{ configured, clientId (public), currency: "USD", mode: "sandbox", amounts, rewardDollars, maxPayoutDollars, ngoName, poolDollars, payouts: { configured, guardian (masked, e.g. "sb…@personal.example.com") } }` |
-| `POST /api/paypal/orders` | Body `{ amount }`, one of `amounts`. Creates an Orders v2 order. Unpaid orders are forgotten after a day; at most 500 wait at once (`503 too_many_orders`). | `{ id }` |
-| `POST /api/paypal/orders/:id/capture` | Captures an order this server created, after the donor approved it. Checks status `COMPLETED`, USD, the order id and the exact amount. Capturing twice returns the same receipt; two captures at the same moment → one gets `409 capture_in_progress`. | `{ receipt (with paypalId), note: { text, source: "ai" \| "prepared" }, poolDollars }` |
-| `POST /api/paypal/payout-requests` | A kid's request. Body `{ amount: 1–maxPayoutDollars }`. The payee is always `GUARDIAN_PAYPAL_EMAIL`. | `{ request, poolDollars }` |
-| `POST /api/paypal/payout-requests/:id/approve` | Body `{ approver: "mentor" \| "admin" \| "guardian", pin }`. The PIN must be that adult's (`PAYOUT_PIN_*`). Five wrong PINs lock that adult for 15 minutes for everyone. | `{ request, poolDollars }` |
-| `POST /api/paypal/payout-requests/:id/send` | Body `{ approver, pin }`: an adult who approved, PIN again. Needs 2 different approvals, enough pool, and no other payout with an unknown outcome. Sends a Payouts v1 payment with a sender batch id fixed before the call. Sending again only retries an `UNKNOWN` payout, with the same ids. | `{ request, poolDollars }` |
-| `GET /api/paypal/payouts/:batchId` | Refreshes a payout's status from PayPal (at most every 15 s per payout). | `{ receipt, poolDollars }` |
-| `GET /api/paypal/receipts` | The newest 100 receipts, public view (no PayPal ids). | `{ receipts, poolDollars }` |
+| `GET /api/ngo/config` | Public | `{configured,demoOpenAccess,roles}` |
+| `POST /api/ngo/unlock` | `{approver:'mentor'|'admin',pin}` | `{token,expiresAt,role,dashboard}` |
+| `GET /api/ngo/dashboard` | Bearer token | `{dashboard}` |
+| `POST /api/ngo/reviews/:id` | Bearer token; `{decision:'approved'|'returned'}` | `{dashboard,alreadyReviewed}` |
+| `GET /api/ngo/report` | Bearer token | `{filename,csv}` |
+| `POST /api/ngo/lock` | Bearer token; `{}` | `{locked:true}` |
 
-`request` = `{ id: "REQ-2611-0001", amount, child, approvals: ["mentor", …], receipt | null }` (never the email).
-`receipt` = `{ id: "DON-2611-0001" | "PAY-…", type: "donation" | "payout", amount (whole USD), currency: "USD",
-date, ref: "donor-<16 hex>" | "guardian-<16 hex>", paypalId (capture id or payout batch id; only to the
-donor or approving adults), status, batchId }`. `ref` is a salted fingerprint of PayPal's payer id or
-the guardian's email. Payout statuses: `SENDING`, `PENDING`, `SUCCESS`, `UNCLAIMED`, `FAILED`… plus
-`UNKNOWN` (PayPal didn't confirm; money stays reserved) and `REJECTED` (PayPal refused; money back
-in the pool).
+Open-mode workspace operations need no token; the UI bypasses unlock. Unlock itself still validates configured staff credentials. Protected sessions expire after 15 minutes; guardian PINs cannot unlock staff access.
 
-Errors: `400 invalid_request`, `403 forbidden_origin` / `wrong_pin` / `needs_approval` /
-`not_an_approver`, `404 unknown_order` / `unknown_request` / `unknown_payout`,
-`409 payment_not_completed` / `capture_in_progress` / `pool_too_small` / `payout_needs_review` /
-`already_sent` / `send_in_progress`, `429 rate_limited` / `pin_locked`, `502 paypal_error` (with
-PayPal's `issue`, e.g. `ORDER_NOT_APPROVED`, `INSUFFICIENT_FUNDS`) / `payout_unknown`,
-`503 paypal_not_configured` / `payouts_not_configured` / `too_many_orders`.
+Dashboard fields: `activities`, coded `learners`, credit `totals`, USD `sandbox` aggregates. Protected reviews require that learner's permission. Repeating a decision is harmless; changing it returns `409 already_reviewed`. Missing activity is 404; missing/expired session 401. Failed saves return 503 without awarding credits. Reviews never call PayPal or spend dollars. CSV contains aggregate metrics/units without names or payment IDs. Responses are no-store.
 
-Payout recovery additions (2026-11-05): `POST /api/paypal/payout-requests/:id/recover` takes
-`{approver,pin}` and returns `{request,poolDollars}` after checking an adult's PIN. It sends no
-payment. It uses the same origin rule, per-device payout limit and PIN lockout as approvals.
-The browser stores only the request code in sessionStorage; recovery needs a PIN again.
+## Seedlings
 
-`502 payout_unknown` includes `{request,poolDollars}` so the UI can show the receipt and reserved
-balance. Duplicate batch replies trigger a sandbox-only read which must match the original
-sender operation, guardian, currency and amount. Only `UNKNOWN` (or an idle `SENDING` record
-after an interrupted save) can be resent. Retries stop after 29 days from first send; older or
-invalid timestamps produce `409 payout_manual_review`, with funds still reserved. Legacy records
-use request creation time as a conservative limit. All configured adult PINs must be distinct.
-
-`503 payment_records_unavailable` means a record could not be saved. Financial reads and changes
-stay blocked until the pending result is saved successfully. Restore disk access and recover the
-same request. Restarting during a disk outage can still lose unsaved provider responses; check
-PayPal before attempting any replacement payment.
-
-## NGO workspace (local demo)
-
-All `/api/ngo/*` routes use the allowed-origin check and `Cache-Control: no-store`. Requests
-are limited to 60/minute per address; unlocking is additionally limited to 20/5 minutes. The
-existing mentor/admin PINs are used, with the same five-guess lockout counter as payouts.
-One configured staff PIN is sufficient; PayPal credentials and other adult PINs are not needed
-to unlock the NGO workspace. Settings load at server startup. The current `npm run dev` command
-restarts the API after `.env` saves; production needs a manual restart. Then re-fetch
-`/api/ngo/config` (the setup screen provides **Check access again**).
-The config response never contains PIN values. The visibility toggle is entirely client-side
-and affects only the value entered by the person signing in.
-
-| Route | Input / access | Result |
-| --- | --- | --- |
-| `GET /api/ngo/config` | Public | `{configured,roles}`; no PINs, learners or payments |
-| `POST /api/ngo/unlock` | `{approver:'mentor'|'admin',pin}` | `{token,expiresAt,role,dashboard}`; token expires after 15 minutes |
-| `GET /api/ngo/dashboard` | `Authorization: Bearer <token>` | `{dashboard}` |
-| `POST /api/ngo/reviews/:id` | Bearer token, `{decision:'approved'|'returned'}` | `{dashboard,alreadyReviewed}`; repeated identical decision is harmless; conflicting decision is 409 |
-| `GET /api/ngo/report` | Bearer token | `{filename,csv}` with aggregate count/credit/USD units, no learner or payment identifiers |
-| `POST /api/ngo/lock` | Bearer token, `{}` | `{locked:true}`; invalidates the token |
-
-Dashboard fields: `activities`, `learners` (coded sample identities and credit jars), `totals`
-(pending/approved/returned/totalCredits), and `sandbox` (donated/paid/reserved/available in USD,
-from all saved PayPal receipts). Approvals do not call PayPal or change its pool. The separate
-`LEARNING_DATA_FILE` defaults to `data/learning-records.json`; paths matching the payment file
-are refused. A failed review save returns 503 without committing credits. Missing/expired tokens
-return 401; wrong PINs return 403; unknown activities return 404. Guardian PINs cannot unlock staff access.
-
-## Seedlings (shared local sample garden)
-
-The silent presentation introduces no API endpoints. Its automatic controls change only sample
-state in `/app`; it does not submit mentor chat, PayPal operations, NGO PINs/reviews, Seedlings
-completions or ledger publishes. Existing public read routes can load the displayed screens.
-Minimising or expanding autoplay controls is entirely client-side and does not change this API behavior.
-
-This public local-demo API takes no learner identity or PIN. It operates one explicitly shared
-sample garden. All routes enforce the existing browser-origin allow-list, no-store responses
-and a shared limit of 60 requests/minute per address. Seeds have no monetary value.
+Both routes need current A12 `x-learning-revision` and, in protected mode, active permission.
 
 | Route | Input | Result |
 | --- | --- | --- |
-| `GET /api/seedlings` | `x-learning-revision` header | `{garden:{completed:[{lessonId,completedAt}],seeds,totalLessons:3}}` |
-| `POST /api/seedlings/complete` | `{lessonId:'needs'|'waiting'|'sharing',answers:string[]}` | `{garden,alreadyCompleted}` after server validation and a successful file save |
+| `GET /api/seedlings` | Revision header | `{garden}` |
+| `POST /api/seedlings/complete` | `{lessonId:'needs'|'waiting'|'sharing',answers:string[]}` | `{garden,alreadyCompleted}` |
 
-The answer array has exactly one choice id per picture, in order. Unknown lessons, extra fields
-or missing answers return `400 invalid_request`; incorrect answers return `422 lesson_incomplete`
-with `incorrect:number[]` (zero-based picture indexes). No seed is awarded on failure. Replaying
-a correct completion returns `alreadyCompleted:true` without another seed. A failed write returns
-`503 learning_records_unavailable`; the previous in-memory and saved garden remain unchanged.
-Writes use the existing learning file; older version-1 files gain an empty seedlings array while
-preserving NGO reviews. No PayPal call, payout, credit-jar change or on-chain write is made.
+Garden contains `{completed:[{lessonId,completedAt}],seeds,totalLessons:3}`. Supply one ordered choice ID per picture. Missing/invented answers return 400; incorrect answers return `422 lesson_incomplete` with zero-based `incorrect` indexes. A correct, saved lesson earns one seed; replay returns `alreadyCompleted:true`. Save failures return `503 learning_records_unavailable`. Seeds never change credits, PayPal or the chain. Responses are no-store.
+
+## Ledger
+
+| Route | Input | Result |
+| --- | --- | --- |
+| `GET /api/ledger/status` | None | Local chain status, or fixed identity plus `publicationMode:'staff'`, network label, pending count and active job |
+| `GET /api/ledger/batches/:id` | Positive safe integer; optional `chainId`/`contract` scope | `{batch}`; database responses also include `identity` |
+| `POST /api/ledger/publish` | `{batchId:1,receipts}` matching the exact server sample list | `{batch,alreadyPublished}` |
+| `POST /api/ledger/publish-live` | No body; up to 64 settled unpublished PayPal receipts | `{batch,alreadyPublished,receipts}` |
+| `GET /api/ledger/jobs/:id` | Public job code | `{job,identity}`; no signing bytes or provider IDs |
+| `POST /api/ledger/jobs/:id/resume` | NGO admin bearer session in shared mode | Continue the same saved publication |
+
+Batch contains `{batchId,root,publishedAt,donated,rewarded,paidOut,receipts,tx}`. Root is 64 hex characters; `receipts` here is a count. Transaction fields include hash, block number/hash, timestamp, sender, recipient, gas, fee and status. Live batches start at 101. Status can return a null contract before publication; reads do not deploy it.
+
+Conflicting contents return `409 batch_conflict`; no eligible live receipts returns `409 nothing_to_publish`; unavailable chain returns `503 chain_unreachable`. The server computes roots and verifies the returned batch before saving publication markers. See [ledger format/lifecycle](ledger.md).
+
+Database publication and resume require an unexpired **admin** bearer token from
+`POST /api/ngo/unlock`, including in open demo mode. Mentor/guardian access cannot publish.
+Public reads require no session. CORS preflights allow `authorization`.
+
+Shared jobs contain `id`, `kind`, `chainId`, `contract`, server-computed `input`, receipt snapshot,
+`state`, transaction `hash` and optional confirmed `result`. States are `prepared`, `signed`,
+`submitted`, `confirmed` or `blocked`. Signed bytes are private to storage. An unfinished job
+reserves its receipt IDs so another request cannot create a second batch for them.
+
+Shared publication returns **202** with `{job,identity}` while pending, **200** with the job and
+confirmed batch/receipts when finished, or **409** with a blocked job and `ledger_manual_review`.
+Busy claims return `409 ledger_busy`; another worker may recover after a 90-second lease.
+No request waits indefinitely or starts a background publisher. Resume performs a bounded check
+and, when needed, resubmits the exact saved transaction. It never chooses new receipt/batch IDs.
+
+`503 ledger_setup_required` means explicit operator setup is incomplete. Chain/config/deployment
+mismatches fail closed and never deploy a replacement. Fixed identities contain `chainId`,
+`contract`, `publisher`, `deployHash`, `deployBlock` and `deployBlockHash`. A scoped batch request
+that disagrees with that identity returns `409 ledger_identity_conflict`. Database batch objects
+also carry this identity, which browser verification checks before accepting a proof.
+
+## Limits
+
+Limits are per address unless stated otherwise. Database-backed instances share budgets; file
+mode limits apply to one process. Limited responses use 429 and `Retry-After` seconds. Disallowed
+browser origins receive `403 forbidden_origin`. The shared AI cap covers mentor replies and donor
+notes; an exhausted donor-note budget selects prepared text without undoing a captured donation.
+
+| Operation | Budget |
+| --- | --- |
+| Mentor | 20/5 minutes; shared hourly AI cap defaults to 300 |
+| PayPal orders + captures | 20/5 minutes combined |
+| Payout request/approve/recover/send | 20/5 minutes combined |
+| PayPal reads | 60/minute |
+| Ledger publishes / reads | 10/5 minutes combined / 60 per minute |
+| NGO routes | 60/minute; unlock also 20/5 minutes |
+| Guardian routes | 60/minute; changes also 20/5 minutes |
+| Seedlings routes | 60/minute |
+| Wrong PIN | 5 guesses per role, then 15-minute shared lockout |
+
+The presentation introduces no endpoints and submits no API mutations.
+
+Receipt history defaults to the newest 100 entries, returned oldest-to-newest within that page.
+Pass the returned `nextCursor` as `before` to load older entries; `null` means no earlier page.
+New receipts do not shift an existing cursor. Invalid page sizes/codes return 400; provider
+identifiers remain private. `pendingCount` is full-history, independent of the page size.

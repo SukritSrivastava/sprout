@@ -1,282 +1,165 @@
-# Learn the sprout.io codebase
+# Find your way around the code
 
-A guided path through the code, in the order that makes it click. Only want to change words
-or the AI mentor's behaviour? Read `EDITING.md` instead. Budget about an hour.
-Keep this file next to the code in VS Code and open each file as you reach it.
+Start the app with `npm run dev`, then follow a visible action from its feature component to
+its API caller, server route and store. [Setup](SETUP.md) owns environment configuration;
+[the API contract](mentor-api.md) owns endpoints. [The file map](CODE_MAP.md) lists every
+source, script and test file by responsibility.
 
-Cloud planning: the selected target is Vercel website/API + Neon + Base Sepolia. The code below
-still describes the implemented local prototype. `../DEPLOYMENT_AUDIT.md` explains why file
-snapshots, in-memory sessions/limits and local publish queues need shared database operations
-before hosting; `ADR-001-HOSTING.md` records the decision. No cloud adapter is implemented yet.
+## Feature ownership
 
-Guardian permission now connects the learning features. `content/guardian.js` explains the demo
-policy; `previews/Safety.jsx` lets the guardian record, withdraw or delete with their configured
-PIN. `lib/permission.jsx` gates `/app` and Seedlings, refreshes on foreground/cross-tab changes,
-and unmounts temporary answers/chat when permission changes. The API's `routes/guardian.ts`
-uses the same PIN checker as payouts. `learning/access.ts` checks active permission and its
-revision before lessons or AI; NGO reviews check their learner's permission too. Learning records
-keep acknowledgements separately from PayPal. A12 owns the garden/chat demo; B07/C33 own the other
-sample activities. Deletion removes only the selected learner's progress and activities. A minimal
-blocked marker prevents old requests from restoring them. Nothing here verifies legal identity.
+Related code lives under `client/src/features/<feature>/` and
+`server/src/features/<feature>/`. A feature folder contains its screen, hooks, API operations
+and domain logic as needed. Server `routes.ts` handles HTTP; `store.ts` defines the local
+store and common contract; `postgres.ts` implements that contract with shared records.
+Some features only need browser code or use the shared learning store.
 
-Seedlings is now a working feature: `client/src/content/seedlings.js` holds English/Hindi
-picture lessons; `lib/useSeedlings.js` loads/saves the garden; `previews/Seedlings.jsx` displays
-native radio choices, accessible feedback and device read-aloud. On the server,
-`learning/seedlings.ts` owns correct answers and `routes/seedlings.ts` validates completions.
-The existing learning store saves each lesson once before awarding its seed, separately from
-NGO credit jars and PayPal dollars. There is one shared sample garden, without learner accounts.
-The top menu links directly to working features. `components/Layout.jsx` measures the sticky
-header height so `lib/scroll.js` keeps section links clear of both desktop menu rows.
+| Feature | Browser entrypoint | Server entrypoint | What it owns |
+| --- | --- | --- | --- |
+| Home | `features/home/Landing.jsx` | — | Landing sections and the product introduction |
+| Practice | `features/practice/Demo.jsx` | — | Temporary rupee calculator, jars, goals and withdrawal illustration |
+| Mentor | `features/mentor/Mentor.jsx` | `features/mentor/routes.ts` | Chat lifecycle, stream protocol, safety, privacy and prepared/model replies |
+| Payments | `features/payments/Donate.jsx`, `Payout.jsx` | `features/payments/routes.ts` | PayPal checkout, two-role payouts, reservations and recovery |
+| Ledger | `features/ledger/ImpactLedger.jsx` | `features/ledger/routes.ts` | Receipts, proofs, fixed chain identity and publication recovery |
+| NGO | `features/ngo/NgoDashboard.jsx` | `features/ngo/routes.ts` | Staff workspace, activity reviews, learning-credit jars and reports |
+| Seedlings | `features/seedlings/Seedlings.jsx` | `features/seedlings/routes.ts` | Picture lessons, checked answers and saved seeds |
+| Guardian | `features/guardian/Safety.jsx` | `features/guardian/routes.ts` | Permission controls, revision-driven learning gate and demo-access notice |
+| Learning | — | `features/learning/store.ts` | Records and revision checks shared by NGO, guardian, Seedlings and mentor |
+| Language | `features/language/language.jsx`, `Hindi.jsx` | — | Shared English/Hindi preference and localized structured content |
+| Presentation | `features/presentation/Tour.jsx` | — | Silent walkthrough, cursor, schedule and temporary sample-action registration |
+| Catalog | `features/catalog/Soon.jsx`, `registry.js` | — | `/soon` listing and stable `/soon/:id` component registration |
+| Classroom | `features/classroom/Classroom.jsx` | — | Shared-tablet/offline preview with temporary sample state |
+| Certificates | `features/certificates/Certificates.jsx` | — | Sample certificate checker; no certificate issuance |
 
-The presentation is separate from learning features. `components/Tour.jsx` offers manual or
-automatic delivery of the 12 steps in `content/tour.js`. `lib/presentation.jsx` shares cursor
-motion values and an allow-list of four temporary sample controls. `lib/usePresentationPointer.js`
-frames each cue, moves the SVG from `PresentationCursor.jsx`, and stops on pause/exit. `Mascot.jsx`
-uses those coordinates for bounded eye movement only during autoplay. There is no audio or API
-write automation. Pure cursor/gaze maths is in `lib/presentation.js`; tests are in `tour.test.js`
-and `e2e/tour.spec.js`.
-Automatic playback now defaults to the compact `.tour-compact` bottom bar. Its expand/minimise
-state in `Tour.jsx` preserves the clock and feeds the cursor hook a layout key for reframing.
+Paths in the table are relative to each workspace's `src/`. `chain/contracts/ImpactLedger.sol`
+belongs to the ledger feature. Hardhat's conventional contract, script and artifact directories
+stay in `chain/`; the API reads the exported `chain/build/ImpactLedger.json` artifact.
 
----
+## Shared code and entrypoints
 
-## 1. The big picture
+`client/src/main.jsx` loads providers, fonts and styles. `app/App.jsx` owns routes, page
+transitions and reduced motion; `app/Layout.jsx` owns navigation; `app/NotFound.jsx` handles
+unknown routes. Keep the CSS import order in `main.jsx`: shared styles first, then NGO,
+Seedlings, guardian and presentation styles.
 
-Sprout is two programs that run side by side, plus tests that drive them like a real person.
+`client/src/shared/` contains reusable UI, animation, scrolling, generic hooks and JSON
+transport. `shared/api.js` retains recovery fields on HTTP errors while forcing `ok:false`.
+Each feature's `api.js` names its own server operations. A component used by only one feature
+stays with that feature. Promote code to `shared/` when multiple features need the same behavior.
 
-```
- Your browser
-     │  opens http://127.0.0.1:5173
-     ▼
-┌─────────────────────────────┐        /api/*        ┌──────────────────────────────┐
-│  client/  (the website)     │ ───────────────────▶ │  server/  (the API)          │
-│  React + Vite, JavaScript   │   Vite forwards it   │  Fastify + TypeScript        │
-│  port 5173                  │ ◀─────────────────── │  port 8787                   │
-└─────────────────────────────┘        JSON          └──────────────┬───────────────┘
-                                                                    │ Phase 1+
-                                                                    ▼
-                                                        Google Gemini (AI mentor)
-                                                        key lives only in server/.env
-```
+Editable words remain under `client/src/content/`, named for their feature. They are kept
+together so copy editing does not require searching through implementation files. Translation
+keys are normalized English strings; preserve IDs and stored values. Translate strings, not
+JSX trees. See [editing](../EDITING.md).
 
-- The **website** draws everything you see and keeps the demo's sample numbers in memory.
-- The **server** exists for one reason: the Gemini key must never reach the browser. The website
-  asks the server; the server asks Gemini.
-- The browser only ever talks to port 5173. Vite quietly forwards `/api/...` to port 8787
-  (see `client/vite.config.js`). That is called a **proxy**.
+`server/src/config.ts` loads and validates settings. `index.ts` supplies persistent file paths
+and starts listening. `app.ts` selects file or Postgres stores and registers feature routes.
+It maps persistence failures to 503 responses. Keeping these entrypoints at the workspace
+root preserves configuration and data-path resolution in source and compiled output.
 
----
+`server/src/shared/http/` owns health, browser-origin checks and local request budgets.
+Origins do not authenticate scripts. Route groups have separate no-store/429 budgets;
+mentor replies and donation notes share an AI cap. `shared/security/` owns PIN verification,
+shared sessions, role lockouts and database-backed quotas. `shared/storage/` owns bounded
+connection pools, transactions and the versioned schema. Startup checks the schema; it never
+migrates on a cold start. The database stores neither chat nor raw PINs, tokens or IP addresses.
+See [ADR-002](ADR-002-TRANSACTIONAL-STORAGE.md).
 
-## 2. Run it
+Operator scripts live under `server/scripts/<feature>/`. `platform/` holds the development
+watcher and configuration/audit checks; `storage/` holds migration. Use the workspace's named
+npm commands so callers do not depend on internal script paths. Voice generation remains
+optional and parked; the presentation is silent.
 
-```bash
-npm install
-npm run dev
-```
+The browser sends `/api/*` to its own origin. Vite proxies those requests to Fastify on 8787.
+`buildApp()` constructs an API without listening, so tests inject requests with fake providers
+and disposable records.
 
-One terminal, two labelled outputs: `[web]` (green) is the website, `[api]` (magenta) is the
-server. Open http://127.0.0.1:5173. Try http://127.0.0.1:5173/api/health too: that's the server
-answering through the proxy.
+## Follow an action
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Website + server together, both reload when you save a file |
-| `npm run dev:web` / `npm run dev:api` | Just one of them |
-| `npm test` | Fast unit tests (math in the client, routes in the server) |
-| `npm run test:e2e` | Playwright opens Chromium and clicks through everything (desktop + phone) |
-| `npx playwright test --ui` | Same, with a visual runner you can step through. Great for learning |
-| `npx playwright show-report` | The last end-to-end report, with screenshots of any failure |
-| `npm run build` | Production build of both |
+For a payout, start at `client/src/features/payments/Payout.jsx`, then read that folder's
+`api.js`, followed by `server/src/features/payments/routes.ts`, `store.ts` and `postgres.ts`.
+`client.ts` is the PayPal sandbox adapter; `settings.ts` sets allowed amounts and reward values.
 
----
+1. The server records an allowed donation order. The donor approves it in PayPal's SDK.
+2. Capture verifies the provider's order ID, status, amount and USD currency before crediting the pool.
+3. A payout fixes its amount and configured recipient; two different roles approve it.
+4. The store reserves funds and saves stable sender IDs before calling PayPal.
+5. A confirmed result updates the receipt. Uncertainty keeps the reservation and reuses the IDs.
 
-## 3. Folder map
+Only a recipient item's `SUCCESS` confirms payment. A completed batch without an item result
+stays pending and reserved. Both stores accept later refunds/returns, correct reports, and
+reject late responses that would undo settlement. Automatic retry stops after 29 days;
+see [recovery](SETUP.md#records-and-recovery).
 
-```
-sprout/
-├─ client/                    the website
-│  ├─ index.html              the empty page React fills in
-│  ├─ vite.config.js          dev server + the /api proxy
-│  └─ src/
-│     ├─ main.jsx             starts React and the router, loads the font and CSS
-│     ├─ App.jsx              app shell: routes, page transitions, smooth scroll, motion toggle
-│     ├─ styles.css           the whole design system: tokens at the top, phone rules at the end
-│     ├─ pages/
-│     │  ├─ Landing.jsx       "/"   the home page: just lists its sections, in order
-│     │  ├─ Demo.jsx          "/app" the demo, built from the sections below
-│     │  └─ NotFound.jsx      any other address
-│     ├─ content/              ✏️ all the words on the site (see EDITING.md)
-│     │  ├─ site.js           header, footer, tour button, 404
-│     │  ├─ home.js           the home page
-│     │  ├─ demo.js           the demo page, jars, sample kid, mentor chat words
-│     │  └─ tour.js           the guided tour, English and Hindi
-│     ├─ previews/             the nine Coming-soon walkthroughs (/soon/...)
-│     │  ├─ index.js          the list of previews; add one here to get a page automatically
-│     │  ├─ Walkthrough.jsx   shared frame: banner, steps, Back/Next, "when it's live"
-│     │  └─ Donate.jsx …      one file per preview (More.jsx holds three small ones)
-│     ├─ components/
-│     │  ├─ Layout.jsx        header, footer, floating tour button
-│     │  ├─ Mascot.jsx        Sprout the mascot (moods: happy, think, cheer)
-│     │  ├─ Tour.jsx          the guided tour panel (its steps and words are in content/tour.js)
-│     │  ├─ landing/          Hero, HowItWorks, MeetMentor, Trust, ComingSoon, Closing
-│     │  └─ demo/             Earn, Jars, Growth, Mentor (+ ChatBubble), Withdraw sections of /app
-│     └─ lib/
-│        ├─ model.js          the maths: jar split, savings growth, goals
-│        ├─ tour.js           12 silent presentation steps, cursor cues and en/hi mode controls
-│        ├─ useMentorChat.js  the mentor chat logic (send, stream, errors, offline answers)
-│        ├─ icons.js          one shared size/stroke for every icon
-│        ├─ model.test.js     unit tests for that maths
-│        ├─ motion.jsx        shared animation pieces (Reveal, Stagger, reduced-motion flag)
-│        ├─ scroll.js         Lenis smooth scrolling + "scroll to section" helpers
-│        ├─ hooks.js          useCountUp: numbers that roll to their new value
-│        ├─ mentorApi.js      sends a question to the server and reads the streamed reply
-│        └─ ledger.js         real SHA-256 + Merkle-tree maths for the impact-ledger preview
-├─ server/                    the API
-│  ├─ src/
-│  │  ├─ index.ts             starts the server
-│  │  ├─ app.ts               builds the app and plugs in routes
-│  │  ├─ config.ts            reads + checks settings from server/.env
-│  │  ├─ routes/health.ts     GET /api/health
-│  │  ├─ routes/mentor.ts     POST /api/mentor/chat: streams the AI mentor's reply
-│  │  ├─ mentor/              schema (what a request may contain), prompt (the mentor's rules),
-│  │  │                       model (talks to Gemini), safety (risky-topic word list),
-│  │  │                       prepared (backup answers)
-│  │  ├─ rate-limit.ts        max 20 questions per 5 minutes per address
-│  │  ├─ routes/ledger.ts     publish and read impact-ledger batches (incl. real PayPal receipts)
-│  │  ├─ routes/paypal.ts     PayPal sandbox: donations, payout requests + PIN approvals, receipts
-│  │  ├─ paypal/              client.ts (talks to PayPal), store.ts (receipts + reward pool,
-│  │  │                       saved to server/data/paypal-records.json), pins.ts (adult PINs),
-│  │  │                       impactNote.ts (AI thank-you), settings.ts (✏️ amounts)
-│  │  └─ ledger/              merkle.ts (receipt maths), chain.ts (talks to the blockchain),
-│  │                          sample.ts (the only receipts the sample button may publish)
-│  ├─ test/                  route tests with a fake Gemini (no real network needed)
-│  ├─ scripts/eval-mentor.ts `npm run eval:mentor`: misuse attempts against the real AI
-│  └─ .env.example            the settings you can set; copy to .env
-├─ chain/                     the local test blockchain (Hardhat)
-│  ├─ contracts/ImpactLedger.sol      the smart contract (stores batch codes, can't be edited)
-│  ├─ contracts/ImpactLedger.t.sol    its tests, written in Solidity
-│  └─ build/ImpactLedger.json         the compiled contract the server deploys
-├─ e2e/                       Playwright browser tests
-├─ docs/
-│  ├─ LEARN.md                you are here
-│  ├─ REDESIGN.md             the agreed look and feel
-│  └─ mentor-api.md           the exact shape of every API request and reply
-├─ DESIGN.md                  design tokens, components and motion rules
-├─ PHASES.md                  the build plan, phase by phase
-└─ LLM_CONTEXT.md             full project briefing for an AI assistant
-```
+For a Seedlings lesson, read `client/src/features/seedlings/Seedlings.jsx` and
+`useSeedlings.js`, then `server/src/features/seedlings/routes.ts` and `answers.ts`.
+The route checks the answer before calling the shared `features/learning/` store. Learning
+credits and seeds update only after a successful save. Lesson uniqueness and review status
+prevent repeated rewards. Guardian deletion removes selected learning data and preserves
+payment records.
 
----
+The learning store keeps permission revisions. `features/learning/access.ts` checks A12's
+revision and, in protected mode, active permission. Database revision checks and writes share
+a transaction. Mentor streams also stop on a revision change. In a storage outage, pending
+permission changes block learning. Returning to a browser tab rechecks permission without
+resetting unsent questions or calculator choices when the revision is unchanged.
 
-## 4. Reading order
+`DEMO_OPEN_ACCESS` is server-owned and defaults to true. Open mode uses sample approval roles
+without credentials. Protected mode requires PINs, staff sessions where appropriate and active
+learner permission. Revision checks remain active in both modes. Shared ledger publication
+always needs an NGO admin session, including in open mode. Keep PINs, staff tokens and chat
+out of browser storage. A stored payout request code is a recovery reference, not authorization
+in protected mode.
 
-Read these in order. Each step says what to look for.
+## AI and ledger details
 
-1. **`client/src/lib/model.js`**: plain functions, no React. `splitReward` divides money
-   between four jars and always keeps every rupee. `projectSavings` and `monthsToGoal` do the
-   "what if I save ₹100 a month" maths. Everything else on the page just shows these answers.
-2. **`client/src/lib/model.test.js`**: how those functions are proven correct. Run `npm test`.
-3. **`client/src/components/demo/Jars.jsx`**: `useState` holds the slider value; every time it
-   changes React re-runs the function and the page updates. That is the core React idea.
-4. **`client/src/pages/Demo.jsx`**: shared state (`earned`) lives in the page and flows down to
-   sections as props (`<Jars balance={...} />`), so earning in one section updates another.
-5. **`client/src/App.jsx`**: React Router picks a page from the address; `AnimatePresence` fades
-   the old page out and the new one in; `useHashScrolling` glides to `#section` links.
-6. **`client/src/lib/motion.jsx`** and **`lib/scroll.js`**: how every reveal and smooth scroll
-   works, and how "motion off" switches it all off in one place.
-7. **`client/src/components/Mascot.jsx`**: an SVG drawn in code, with Motion animating the blink
-   and leaf sway, and different faces per `mood`.
-8. **`client/src/components/Tour.jsx`**: `useEffect` = "do this when something changes, undo it
-   when it stops". The tour's timer, keyboard listener and voice are each started and cleaned up
-   this way; each step navigates to its page and section.
-9. **`client/vite.config.js`**: the proxy that links the website to the server.
-10. **`server/src/config.ts`** → **`app.ts`** → **`routes/health.ts`** → **`index.ts`**: settings
-    are checked once with zod, routes are plugged into the app, then it listens.
-11. **`server/test/health.test.ts`**: `app.inject()` sends a pretend request straight into the
-    app. No port, no network, very fast.
-12. **The AI mentor, end to end**: `components/demo/Mentor.jsx` (the chat screen) →
-    `lib/useMentorChat.js` (what happens when you press Send) →
-    `lib/mentorApi.js` (sends the question, reads the reply line by line) →
-    `server/src/routes/mentor.ts` (checks the request, picks AI or backup answer, streams it) →
-    `server/src/mentor/model.ts` (the only file that talks to Gemini). Read `mentor/prompt.ts` to
-    see the mentor's rules.
-13. **A preview**: `previews/Walkthrough.jsx` then `previews/Payout.jsx`. Each step is
-    `{ title, render }`; state lives in the preview so it survives moving between steps.
-    Then `lib/ledger.js` + `ledger.test.js` for how "verify a receipt" really works.
-14. **`e2e/demo.spec.js`**: a real browser clicks buttons and checks what appears. Expected
-    numbers are imported from `model.js`, so the test checks the page against the maths.
+`server/src/features/mentor/schema.ts` validates messages and fixed sample goal names.
+`privacy.ts` redacts emails and numbers of seven or more decimal digits, including Devanagari
+digits, before model submission. `safety.ts` marks sensitive topics. `prompt.ts` owns model
+instructions; `prepared.ts` supplies fallback answers. The stream protocol distinguishes
+prepared and AI text; access failures must not become offline answers.
 
----
+Receipt maths lives in `client/src/features/ledger/merkle.js` and
+`server/src/features/ledger/merkle.ts`. Parity tests keep their formats aligned; different
+hashing APIs justify separate implementations. In the server ledger folder, `chain.ts` serves
+the local file-mode chain. `fixed-chain.ts` validates shared identity and prepares/broadcasts
+signed transactions; `postgres.ts` owns durable deployment/job records and leases.
+`publisher.ts` performs one bounded continuation. `server/scripts/ledger/setup.ts` is the
+explicit operator setup entrypoint. [The ledger guide](ledger.md) explains proofs and recovery;
+[ADR-003](ADR-003-DURABLE-LEDGER.md) records the design.
 
-## 5. Ideas worth understanding
+## Tests and new changes
 
-- **State → screen.** React components are functions of their state. Change state with the
-  setter (`setSave(70)`), never by editing the page directly.
-- **Effects clean up after themselves.** Every `useEffect` that adds a listener or timer returns
-  a function that removes it. Forgetting this causes double listeners and leaks.
-- **Updater functions run later.** `setElapsed((value) => value + delta)` may run after your code
-  moves on, so compute `delta` *before* calling it. The tests caught exactly this bug in the tour
-  clock (see the comment in `Tour.jsx`).
-- **Secrets stay on the server.** Anything in `client/` ends up in the browser and can be read by
-  anyone. That is why the AI key lives in `server/.env`.
-- **Validate at the edge.** The server checks every setting (and, from Phase 1, every request)
-  with zod before using it, so bad input fails early with a clear message.
-- **Tests at three levels.** Unit tests for maths, route tests with `inject`, and Playwright for
-  what a person actually sees. A fake clock (`page.clock`) makes timed things like the tour
-  testable in milliseconds.
+Client unit tests sit beside the code they cover. Server tests live in
+`server/test/<feature>/`; browser flows live in `e2e/<feature>/`. Cross-feature test helpers
+belong in each suite's `support/` folder. `server/test/platform/` covers configuration, health,
+demo mode and audit checks; `server/test/storage/` checks shared transactions across features.
+`e2e/shell/` covers navigation, responsive layout, the feature hub and default access.
+The npm test commands discover nested test files, so new feature tests run automatically.
 
----
+For a new feature, add its implementation under the matching feature folders, editable copy
+under `content/`, and tests under the same feature name. Register a `/soon/:id` screen in
+`features/catalog/registry.js`; wire a new API route in `server/src/build-app.ts`. Use direct imports
+to make dependencies visible. Keep persistence and recovery rules inside the owning feature.
+Update the file map and API/copy guides when their responsibilities change.
 
-## 6. Try it yourself
+Run `npm test`, `npm run build` and the desktop/phone Playwright suite. Client tests cover
+calculations, response handling, language and presentation maths. API tests use `app.inject()`,
+fake providers and disposable stores. Solidity tests enforce publisher-only immutable batches.
+Optional real Postgres contention and local-chain signing checks remain separate from hosted
+validation. [Verification](../VERIFICATION.md) records results and skips.
 
-Small exercises that touch each part. Undo them afterwards with `git checkout .`.
+The local file backend supports one process. Render requires shared Postgres records. Schema 3
+restricts Supabase browser roles through RLS and revoked privileges; the Fastify backend uses
+the migration/table owner. `shared/storage/database.ts` supplies verified TLS and the Supabase
+CA to `pg`. `shared/http/hosting.ts` owns single-ingress proxy trust and no-store response headers.
+`src/index.ts` starts/closes the Render process; `src/build-app.ts` constructs injectable apps.
+`render.yaml` builds from the repository root to retain the chain artifact. Build-time Vercel
+website routing lives outside browser source in `client/hosting.mjs` and points to Render.
+Actual hosted routing and recovery checks remain on the [roadmap](ROADMAP.md).
 
-1. Add a fourth savings goal (e.g. "School bag", ₹800) in `savingsGoals` in `model.js`. Watch
-   it appear in the calculator on /app. Which test would you add?
-2. Change the default jar split from 50% to 30% saving in `components/demo/Jars.jsx`. Run `npm run test:e2e` and
-   read which test fails and why.
-3. Add `uptimeSeconds: Math.round(process.uptime())` to the health response in
-   `server/src/routes/health.ts`, update its type, and fix the server test that now fails.
-4. Give Sprout a new mood in `Mascot.jsx` (say, `'sleepy'` with half-closed eyes) and show it in
-   the demo greeting.
-5. Change the mentor's personality in `server/src/mentor/prompt.ts` (say, "answer like a cricket
-   commentator"), ask it something in the demo, then change it back.
-6. Run `npx playwright test --ui`, pick the tour test, and step through it frame by frame.
-
----
-
-## 7. Words you'll see
-
-Payout recovery: `server/src/paypal/client.ts` resolves duplicate batches using only sandbox
-reads, then verifies the original operation, guardian and amount. `store.ts` holds unsaved
-changes behind a save barrier: no financial read or change proceeds until disk writes succeed.
-`Payout.jsx` remembers only a request code in sessionStorage and restores the server's saved
-approvals through the PIN-protected `/recover` route. The failure cases are tested in
-`server/test/payment-recovery.test.ts` and `e2e/paypal.spec.js`.
-
-The NGO workspace uses a separate learning store (`server/src/learning/store.ts`), so reviews
-cannot spend PayPal money. Each approved sample activity contributes credits once to the learner's
-four jars. The next state is written before becoming visible in memory. Staff access uses
-15-minute tokens held only on the page and the same PIN lockouts as payouts. UI words live in
-`client/src/content/ngo.js`; workspace styling in `client/src/ngo.css` extends the shared theme.
-The access screen can re-fetch roles after setup without a page reload. Its Show PIN button
-changes only the typed input's visibility, never fetches the server's PIN, and does not submit
-the form. `server/scripts/dev.mjs` watches `.env` saves and asks the existing tsx source watcher
-to restart, so new PINs take effect in development. Production APIs still need a restart.
-`npm run check:config -w server` validates local settings without showing secret values.
-`JUDGE_GUIDE.md` walks through access and review checks without secrets.
-
-| Word | Meaning here |
-| --- | --- |
-| Component | A function that returns part of the page (`Jars`, `Tour`) |
-| State | Data a component remembers between renders (`useState`) |
-| Props | Values a parent passes to a child component |
-| Effect | Code that runs after render to talk to the outside world (`useEffect`) |
-| Route | A server URL + method that does something (`GET /api/health`) |
-| Proxy | Vite forwarding `/api` requests from the website to the server |
-| Schema | A description of valid data that zod checks against |
-| E2E test | End-to-end: a real browser using the real site |
-| Workspace | One npm project (`client`, `server`) inside the root project |
-| Route (website) | An address like `/` or `/app` that React Router maps to a page |
-| Smooth scroll | Lenis easing the page toward where you scrolled, instead of jumping |
-| Reduced motion | The setting (OS or header toggle) that turns animations off |
+Schema 4 stores `consent_policy` per learner. A row from an older policy cannot authorize
+protected learning; v2 re-acknowledgement preserves existing progress. Local-file policy markers
+follow the same transition. `/api/ready` checks the database/schema with bounded shared work;
+`db:check` adds operator-only ownership/RLS/grant checks in a read-only transaction. Public
+receipt pagination stays inside the payment store adapters; the ledger UI prepends older pages
+without changing publication. [ADR-006](ADR-006-HOSTED-PERMISSION-AND-READINESS.md) records these choices.

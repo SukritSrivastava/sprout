@@ -1,6 +1,7 @@
 # ADR-001: Free hosting for the hackathon demo
 
-**Status:** Accepted by the user on 2026-11-06; implementation pending.
+**Status:** Superseded on 2026-11-08 by [ADR-005](ADR-005-RENDER-VERCEL-SUPABASE.md), which selects
+Render API, Vercel website and Supabase Postgres. The original decision/evidence below is historical.
 **Date:** 2026-11-06
 **Deciders:** The user
 
@@ -105,5 +106,7 @@ Sources: [Vercel Fastify](https://vercel.com/docs/frameworks/backend/fastify),
    accessible through December 15, with quotas monitored and runnable-repository instructions
    retained as a fallback. Deploy only once the prepared result is reviewable.
 
-The audit is complete; implementation and hosted validation are pending. No provider project
-was created and no deployment was performed during this decision/audit.
+The audit is complete. Transactional storage and durable ledger jobs/fixed identity now have
+local implementations and verification; see [ADR-003](ADR-003-DURABLE-LEDGER.md). Public-chain
+setup, host configuration and hosted validation remain pending. No provider project or public
+deployment was created during these implementation phases.

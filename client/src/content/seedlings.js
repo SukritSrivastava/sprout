@@ -3,7 +3,7 @@ export const seedlings = {
   en: {
     back: 'All features', tag: 'Ages 8–11 · learning with pictures', title: 'Little lessons. A growing garden.',
     intro: 'Learn what we need, practise waiting, and find a little room to share. Every finished lesson plants one seed.',
-    note: 'Working local demo · One shared sample garden on this computer. Seeds are learning rewards, with no cash value. No names or accounts are collected.',
+    note: 'Sample demo · One shared sample garden saved on the demo server. Seeds are learning rewards, with no cash value. No names or accounts are collected.',
     language: 'Lesson language', garden: 'Our sample garden', seedCount: (n) => `${n} of 3 seeds planted`,
     gardenHint: 'One lesson, one seed. Practise again any time; your saved seeds stay the same.',
     empty: 'Your first seed starts with one little lesson.', growing: 'Look what you’re growing!',
@@ -36,7 +36,7 @@ export const seedlings = {
   hi: {
     back: 'सभी सुविधाएँ', tag: 'उम्र 8–11 · तस्वीरों से सीखें', title: 'छोटे सबक। बढ़ता बगीचा।',
     intro: 'ज़रूरतें पहचानें, इंतज़ार करना सीखें और बाँटने की खुशी पाएँ। हर पूरा सबक एक बीज लगाता है।',
-    note: 'काम करने वाला स्थानीय डेमो · इस कंप्यूटर पर एक साझा नमूना बगीचा। बीज सीखने के इनाम हैं, पैसे नहीं। कोई नाम या खाता नहीं लिया जाता।',
+    note: 'नमूना डेमो · डेमो सर्वर पर सहेजा गया एक साझा नमूना बगीचा। बीज सीखने के इनाम हैं, पैसे नहीं। कोई नाम या खाता नहीं लिया जाता।',
     language: 'सबक की भाषा', garden: 'हमारा नमूना बगीचा', seedCount: (n) => `3 में से ${n} बीज लगाए`,
     gardenHint: 'एक सबक, एक बीज। दोबारा अभ्यास करें; वही बीज फिर नहीं मिलेगा।', empty: 'एक छोटा सबक पूरा करें और पहला बीज लगाएँ।', growing: 'देखो, तुम्हारा बगीचा बढ़ रहा है!',
     allDone: 'तीनों बीज लग गए! हर सबक का अभ्यास फिर कर सकते हैं।', lessons: 'सबक चुनें', complete: 'बीज लग गया', ready: 'शुरू करें',

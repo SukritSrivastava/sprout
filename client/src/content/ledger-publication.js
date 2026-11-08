@@ -1,0 +1,28 @@
+export const ledgerPublication = {
+  en: {
+    older:'Load older receipts', loadingOlder:'Loading older receipts…', receiptCount:'Receipts shown: {0}.',
+    checking:'Checking the test ledger…', unavailable:'The test ledger is unavailable. Saved publications can be checked again later.',
+    staff:'Everyone can view and verify receipts. An NGO admin must unlock publishing.',
+    pin:'NGO admin PIN', unlock:'Unlock publishing', unlocked:'Publishing is unlocked for this session.', lock:'Lock publishing',
+    waiting:'This publication is saved and waiting for confirmation. Check the same publication again; it will not create another batch.',
+    blocked:'This publication needs staff review. Its receipt batch and transaction have been preserved.',
+    check:'Check saved publication', code:'Publication code',
+    baseNote:'Working on Base Sepolia with test ETH. The contract identity is fixed; no visitor wallet is needed.',
+    localFixedNote:'Working on a fixed local test contract with fake ETH. No visitor wallet is needed.',
+    publicDetail:'Public test-chain publication uses saved jobs and a fixed contract. Only confirmed recipient payments enter a new receipt batch.',
+    scope:'This proof belongs to a different chain or contract. Refresh the ledger before verifying it.',
+  },
+  hi: {
+    older:'पुरानी रसीदें देखें', loadingOlder:'पुरानी रसीदें आ रही हैं…', receiptCount:'रसीदों की संख्या: {0}।',
+    checking:'टेस्ट लेजर की जाँच हो रही है…', unavailable:'टेस्ट लेजर अभी उपलब्ध नहीं है। सहेजे प्रकाशन बाद में फिर जाँच सकते हैं।',
+    staff:'सभी लोग रसीदें देख और जाँच सकते हैं। प्रकाशन खोलने के लिए NGO एडमिन चाहिए।',
+    pin:'NGO एडमिन PIN', unlock:'प्रकाशन खोलें', unlocked:'इस सत्र के लिए प्रकाशन खुला है।', lock:'प्रकाशन लॉक करें',
+    waiting:'यह प्रकाशन सहेजा गया है और पुष्टि की प्रतीक्षा है। इसी प्रकाशन को फिर जाँचें; नया बैच नहीं बनेगा।',
+    blocked:'इस प्रकाशन को स्टाफ की समीक्षा चाहिए। रसीद बैच और लेनदेन सुरक्षित रखे गए हैं।',
+    check:'सहेजा प्रकाशन जाँचें', code:'प्रकाशन कोड',
+    baseNote:'Base Sepolia पर टेस्ट ETH के साथ काम कर रहा है। अनुबंध की पहचान तय है; दर्शक का वॉलेट नहीं चाहिए।',
+    localFixedNote:'तय स्थानीय टेस्ट अनुबंध पर नकली ETH के साथ काम कर रहा है। दर्शक का वॉलेट नहीं चाहिए।',
+    publicDetail:'पब्लिक टेस्ट-चेन प्रकाशन में सहेजे काम और तय अनुबंध इस्तेमाल होते हैं। प्राप्तकर्ता को मिले पुष्ट भुगतान ही नए रसीद बैच में आते हैं।',
+    scope:'यह प्रमाण दूसरी चेन या अनुबंध का है। जाँच से पहले लेजर रीफ़्रेश करें।',
+  },
+};

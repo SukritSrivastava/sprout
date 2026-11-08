@@ -2,6 +2,7 @@
 // Safe to change: anything inside quotes. Keep the names on the left (like `howItWorks:`) as they are.
 
 export const site = {
+  apiUnavailable: 'Can’t reach the server right now. Please try again shortly.',
   // Top bar
   nav: {
     howItWorks: 'How it works',
@@ -9,11 +10,11 @@ export const site = {
     comingSoon: 'Coming soon',
     features: [
       { id: 'seedlings', label: 'Seedlings', status: 'Saved learning garden' },
-      { id: 'safety', label: 'Guardian permission', status: 'Working local demo' },
+      { id: 'safety', label: 'Guardian permission', status: 'Sample demo' },
       { id: 'donate', label: 'Donate', status: 'PayPal sandbox' },
       { id: 'payout', label: 'Payouts', status: 'PayPal sandbox' },
       { id: 'impact', label: 'Impact ledger', status: 'Test blockchain' },
-      { id: 'ngo', label: 'NGO workspace', status: 'Working local demo' },
+      { id: 'ngo', label: 'NGO workspace', status: 'Sample demo' },
     ],
     openDemo: 'Open the demo',
     home: 'Home',

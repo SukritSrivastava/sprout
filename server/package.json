@@ -4,26 +4,35 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/dev.mjs",
+    "dev": "node scripts/platform/dev.mjs",
     "build": "tsc",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts",
-    "eval:mentor": "tsx scripts/eval-mentor.ts",
-    "make:voice": "tsx scripts/make-voice.ts",
-    "check:paypal": "tsx scripts/check-paypal.ts",
-    "check:config": "tsx scripts/check-config.ts"
+    "test": "node --import tsx --test \"test/**/*.test.ts\"",
+    "eval:mentor": "tsx scripts/mentor/eval.ts",
+    "make:voice": "tsx scripts/presentation/make-voice.ts",
+    "check:paypal": "tsx scripts/payments/check-paypal.ts",
+    "check:config": "tsx scripts/platform/check-config.ts",
+    "db:migrate": "tsx scripts/storage/migrate.ts",
+    "db:check": "tsx scripts/storage/check.ts",
+    "ledger:setup": "tsx scripts/ledger/setup.ts"
   },
   "devDependencies": {
     "@breezystack/lamejs": "^1.2.7",
+    "@electric-sql/pglite": "^0.5.15",
     "@types/node": "^26.6.6",
+    "@types/pg": "^8.23.1",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
     "fastify": "^5.12.8",
+    "pg": "^8.23.1",
     "viem": "^2.57.16",
     "zod": "^4.6.7"
+  },
+  "engines": {
+    "node": "22.x"
   }
 }

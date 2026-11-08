@@ -1,0 +1,33 @@
+# The API needs the repository root so the committed chain artifact stays available.
+services:
+  - type: web
+    name: sprout-api
+    runtime: node
+    plan: free
+    region: singapore
+    rootDir: .
+    buildCommand: npm ci --include=dev && npm run build -w server && npm run check:deployment -- --api-only
+    startCommand: node server/dist/index.js
+    healthCheckPath: /api/ready
+    autoDeployTrigger: "off"
+    envVars:
+      - key: NODE_VERSION
+        value: 22.23.4
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: render
+      - key: DEMO_OPEN_ACCESS
+        value: "true"
+      - key: LEDGER_CHAIN_ID
+        value: "84532"
+      - key: CHAIN_RPC_URL
+        value: https://sepolia.base.org
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_SSL_CA
+        sync: false
+      - key: ALLOWED_ORIGIN
+        sync: false
+# Set optional PayPal/Gemini credentials, adult PINs and the test publisher in Render settings.
+# Run db:migrate and ledger:setup explicitly; a build/start never changes the schema or deploys a contract.
