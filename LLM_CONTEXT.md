@@ -51,9 +51,11 @@ The storage, ledger and hosting changes have local checks. The user approved a s
 preview in Render's My Workspace and SukritSrivastava's Supabase organization. Its new Supabase
 project has schema 4, 16 default-deny RLS tables, three synthetic learners/activities and no
 payment receipts or ledger target. See [current preview setup](docs/SETUP.md#current-preview).
-Render has no Sprout service yet. Vercel deployment tools are unavailable in this session and
-both dashboards require sign-in. The user authorized committing and pushing this release on
-`codex/sprout-preview`; check that branch's remote state before planning deployment. Private database URL/CA and a dedicated test publisher key
+Render has a reviewed-plan handoff for one separate free Singapore API; the plan is not applied
+and no Sprout service exists yet. The tested release was pushed to `codex/sprout-preview` at
+`34d314c` under explicit user authorization; main was unchanged. See [current preview setup](docs/SETUP.md#current-preview)
+for the Blueprint review link. Vercel deployment tools are unavailable in this session and
+the dashboards require sign-in. Private database URL/CA and a dedicated test publisher key
 are not configured. Base setup, deployment and real preview checks remain pending. Do not
 claim hosted API/TLS/provider checks passed from the database migration alone.
 Classroom/offline and certificates remain the separate product queue.

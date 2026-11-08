@@ -1,5 +1,33 @@
 # Verification
 
+## Preview branch publication and Render plan — 2026-11-08
+
+The user explicitly authorized committing/pushing the 345-path reviewed release selection.
+Only that selection was staged; configured private values were absent, ignored/generated files
+were excluded and the unrelated untracked dependency-audit output was left local. The staged
+whitespace check found one extra blank line in the Hindi payment copy, which was removed.
+Rename detection reports 237 changed files for those 345 added/modified/deleted paths.
+
+Commit `34d314cf75a949977fc701e19236acd681bc7ca0` was pushed to `codex/sprout-preview` and
+verified with `git ls-remote`. Main was not changed. Before publication, the Blueprint was
+set explicitly to Singapore alongside Supabase and passed the published Render JSON Schema.
+The local validator does not validate URI formats, which are unused by this Blueprint.
+All 99 relative links/anchors in the eight changed guides resolved. No application behavior
+changed after the full 193-test / 283-browser-check runs recorded below.
+
+Render's connected planner accepted that exact commit with `planningOutcome: planned` and
+no notices. It proposes one `CreateService`: free Node API `sprout-api-rf1v`, Singapore,
+one instance, repository-root build, `/api/ready`, auto-deploys off and Blueprint auto-sync
+off. No existing service, Render database or paid resource is part of this plan.
+[Setup](docs/SETUP.md#current-preview) owns the Blueprint/sync IDs and review link.
+
+The plan is **not applied**. Its required manual settings are `DATABASE_URL`,
+`DATABASE_SSL_CA` and `ALLOWED_ORIGIN`. The user was given the reviewed dashboard plan
+and the private-settings route; the eventual Vercel origin remains unknown. Available
+Supabase, Vercel and Render tabs were opened for the user's sign-in. No preview URL,
+deployment success, private DB connection, public-chain setup or live provider call follows
+from source publication or infrastructure planning.
+
 ## Isolated Supabase preview — 2026-11-08
 
 After the local release checks below, the user explicitly selected Render **My Workspace**
@@ -28,8 +56,8 @@ is intentional: browser roles receive no access and Fastify uses the database ow
 add public policies to remove that informational result. Local preparation evidence is in
 ignored `qa/cloud-bootstrap-check.log` and `qa/sprout-preview-bootstrap.sql`.
 
-No Sprout Render service or Vercel deployment has been created. The tested source selection
-is prepared for a new preview branch; the user has authorized commit/push. Both available
+No Sprout Render service or Vercel deployment had been created at this database checkpoint.
+The later source publication and unapplied Render plan are recorded above. Both available
 dashboards are signed out. The connectors do not expose Supabase's Data API/enforced-SSL
 toggles or password and provide no Vercel deployment tools in this session. These platform
 settings, private database URL/CA, direct verified TLS/pooler connection, publisher funding,

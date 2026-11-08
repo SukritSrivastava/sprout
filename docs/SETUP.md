@@ -140,12 +140,13 @@ existing unrelated applications/projects intact.
 
 | Resource | Confirmed state |
 | --- | --- |
-| Render workspace | `tea-db5va3ss728c7395toe0`; no Sprout service created yet |
+| Render workspace | `tea-db5va3ss728c7395toe0`; one new free Singapore API is planned, not applied |
+| Render Blueprint | `exs-dbo6iqbm8hqs73fmqje0`; [review sync `exe-dbo6iqrm8hqs73fmqkkg`](https://dashboard.render.com/blueprint/exs-dbo6iqbm8hqs73fmqje0/sync/exe-dbo6iqrm8hqs73fmqkkg) for `sprout-api-rf1v`; automatic sync and deploys disabled |
 | Supabase organization | `wnywynycogkfsnqtazqa`; free plan |
 | Supabase project | [sprout-preview](https://supabase.com/dashboard/project/kajgeyaedubckbswpucs), ref `kajgeyaedubckbswpucs`, Singapore (`ap-southeast-1`), healthy |
 | Database migration | Schema **4**, migration `20261108111851` / `sprout_schema_v4_fresh_preview` |
 | Vercel frontend | No project/deployment created; deployment tools are absent and dashboard sign-in is required |
-| Git release | The user authorized committing/pushing the reviewed release to `codex/sprout-preview`; verify its remote state before deployment |
+| Git release | [codex/sprout-preview](https://github.com/SukritSrivastava/sprout/tree/codex/sprout-preview) pushed at `34d314c` under explicit user authorization; main unchanged |
 | Base Sepolia | No fixed ledger deployment or target saved |
 
 The fresh Supabase migration used the application's own versioned schema statements, with the
@@ -159,10 +160,19 @@ Remaining operator work:
 3. Enable enforced SSL in its database SSL settings.
 4. Download its server root certificate.
 5. Save its Session pooler URL and certificate privately in backend settings as described below.
-6. Publish the tested preview branch under the user's explicit authorization.
-7. Review the Render Blueprint plan from that branch before applying it.
-8. Sign in to Vercel and configure the frontend project using the table below.
-9. Complete the exact-origin, fixed-ledger and actual-preview checks in this guide.
+6. Review the linked Render Blueprint plan from the pushed preview branch.
+7. Approve the plan in Render if its single free API matches the review.
+8. Save the database URL and CA on the new service's Environment page.
+9. Sign in to Vercel and configure the frontend project using the table below.
+10. Save the actual Vercel frontend origin as Render `ALLOWED_ORIGIN`.
+11. Complete fixed-ledger and actual-preview checks in this guide.
+
+The Render plan targets commit `34d314cf75a949977fc701e19236acd681bc7ca0` and creates only
+`sprout-api-rf1v`. It requires `DATABASE_URL`, `DATABASE_SSL_CA` and `ALLOWED_ORIGIN`. The
+connector requires user approval of the reviewed plan before applying it. Use dashboard
+approval and private service settings to keep credentials out of chat/tool arguments; an
+initial deploy can fail until all required values are present. The Vercel origin must come
+from the actual frontend project. Do not substitute a guessed URL or a wildcard.
 
 The connectors do not expose the Data API/SSL platform toggles or the database password.
 Those settings and the direct Render-to-Supabase verified TLS connection are still unverified.
